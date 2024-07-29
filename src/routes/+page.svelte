@@ -1,2 +1,14 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+    import Mobile from "$lib/mobile.svelte";
+    import Desktop from "$lib/desktop.svelte";
+    let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    let w;
+    isMobile = isMobile || w < 768;
+</script>
+<svelte:window bind:innerWidth={w} />
+
+{#if isMobile}
+    <Mobile />
+{:else}
+    <Desktop />
+{/if}
