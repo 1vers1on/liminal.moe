@@ -1,5 +1,8 @@
 <script>
     import { onMount } from "svelte";
+    import { createClient } from '@supabase/supabase-js'
+    const supabase = createClient('https://supaproxy.hoosiertransfer.net/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+
     let terminalOutput = [];
     let inputValue = "";
     let cursorPosition = 0;
@@ -7,120 +10,7 @@
     let currentDirectory = "~";
     let commandHistory = [];
     let historyIndex = -1;
-    let loggedInUser = null;
-
-    function setCookie(name, value, days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
-        const expires = "expires=" + date.toUTCString();
-        document.cookie = name + "=" + value + ";" + expires + ";path=/";
-    }
-
-    function getCookie(name) {
-        const cookieName = name + "=";
-        const decodedCookie = decodeURIComponent(document.cookie);
-        const cookiesArray = decodedCookie.split(';');
-        for(let i = 0; i < cookiesArray.length; i++) {
-            let cookie = cookiesArray[i].trim();
-            if (cookie.indexOf(cookieName) === 0) {
-                return cookie.substring(cookieName.length, cookie.length);
-            }
-        }
-        return "";
-    }
-
-    function checkSession() {
-        const token = getCookie("sessionToken");
-        if (token) {
-            loggedInUser = getCookie("username");
-        }
-    }
-
-    function login(username, password) {
-        // Simulated login (replace with actual login logic)
-        if (username === "user" && password === "password") {
-            setCookie("sessionToken", "12345", 7);
-            setCookie("username", username, 7);
-            loggedInUser = username;
-            terminalOutput = [...terminalOutput, `Welcome, ${username}! You are now logged in.`];
-        } else {
-            terminalOutput = [...terminalOutput, "Login failed. Please try again."];
-        }
-    }
-
-    function register(username, password) {
-        // Simulated registration (replace with actual registration logic)
-        terminalOutput = [...terminalOutput, "User registered successfully."];
-        login(username, password);
-    }
-
-    function sendMessage(message) {
-        // Simulated send message function
-        terminalOutput = [...terminalOutput, `${loggedInUser}: ${message}`];
-    }
-
-    function receiveMessage(message, from) {
-        // Simulated receive message function
-        terminalOutput = [...terminalOutput, `${from}: ${message}`];
-    }
-
-    function processCommand(command) {
-        terminalOutput = [
-            ...terminalOutput,
-            `${currentDirectory} $ ${command}`,
-        ];
-        command = command.split(" ");
-
-        switch (command[0].toLowerCase()) {
-            case "login":
-                if (command.length >= 3) {
-                    login(command[1], command[2]);
-                } else {
-                    terminalOutput = [...terminalOutput, "Usage: login <username> <password>"];
-                }
-                break;
-            case "register":
-                if (command.length >= 3) {
-                    register(command[1], command[2]);
-                } else {
-                    terminalOutput = [...terminalOutput, "Usage: register <username> <password>"];
-                }
-                break;
-            case "send":
-                if (loggedInUser && command.length >= 2) {
-                    sendMessage(command.slice(1).join(" "));
-                } else {
-                    terminalOutput = [...terminalOutput, "You must be logged in to send messages."];
-                }
-                break;
-            case "logout":
-                loggedInUser = null;
-                document.cookie = "sessionToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                terminalOutput = [...terminalOutput, "You are now logged out."];
-                break;
-            case "clear":
-                terminalOutput = [];
-                break;
-            default:
-                terminalOutput = [...terminalOutput, `Command not found: ${command[0]}`];
-        }
-
-        setTimeout(() => {
-            terminalElement.scrollTop = terminalElement.scrollHeight;
-        }, 0);
-    }
-
-    onMount(() => {
-        checkSession();
-        if (loggedInUser) {
-            terminalOutput = [...terminalOutput, `Welcome back, ${loggedInUser}.`];
-        }
-        window.addEventListener("keydown", handleKeydown);
-        return () => {
-            window.removeEventListener("keydown", handleKeydown);
-        };
-    });
+    let loggedIn = false;
 
     function handleKeydown(event) {
         if (event.key === "Enter") {
@@ -163,6 +53,56 @@
             }
         }
     }
+
+    function processCommand(command) {
+        terminalOutput = [
+            ...terminalOutput,
+            `${currentDirectory} $ ${command}`,
+        ];
+        if (!command.startsWith("/")) {
+            return;
+        }
+        command = command.substr(1);
+        command = command.split(" ");
+
+        switch (command[0].toLowerCase()) {
+            case "?":
+            case "help":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Available commands: help<br>login<br>register<br>clear<br>registerAnon",
+                ];
+                break;
+            case "clear":
+                terminalOutput = [];
+                break;
+            default:
+                terminalOutput = [
+                    ...terminalOutput,
+                    `Command not found: ${command[0]}`,
+                ];
+        }
+
+        setTimeout(() => {
+            terminalElement.scrollTop = terminalElement.scrollHeight;
+        }, 0);
+    }
+
+    onMount(async () => {
+        terminalOutput = [];
+        const { data, error } = await supabase.auth.signInAnonymously({
+        options: {
+            data: {
+                username: "test"
+            }
+        }
+        });
+        terminalOutput[0] = error;
+        window.addEventListener("keydown", handleKeydown);
+        return () => {
+            window.removeEventListener("keydown", handleKeydown);
+        };
+    });
 </script>
 
 <div class="terminal" bind:this={terminalElement}>
@@ -190,7 +130,6 @@
     .terminal {
         background-color: #000;
         color: #0f0;
-        font-family: monospace;
         padding: 10px;
         height: calc(100vh - 20px);
         overflow-y: auto;

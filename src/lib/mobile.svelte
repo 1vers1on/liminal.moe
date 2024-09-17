@@ -1,7 +1,7 @@
 <script>
     import { createClient } from '@supabase/supabase-js'
     import { onMount } from 'svelte';
-    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+    const supabase = createClient('https://supaproxy.hoosiertransfer.net/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
 
     async function getMotd() {
         const { data, error } = await supabase
@@ -203,7 +203,6 @@
     .terminal {
         background-color: #000;
         color: #0f0;
-        font-family: monospace;
         padding: 10px;
         height: 100vh;
         overflow-y: auto;

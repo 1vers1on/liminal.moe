@@ -1,17 +1,19 @@
 <script>
     import { onMount } from "svelte";
     import { createClient } from '@supabase/supabase-js'
-    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs')
+    const supabase = createClient('https://supaproxy.hoosiertransfer.net/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+
     async function getMotd() {
         const { data, error } = await supabase
             .from('motd')
             .select('message')
-            .eq('id', 1)
+            .order('id', { ascending: false })
+            .limit(1)
             .single();
         
         if (error) {
             console.error('Error fetching message of the day:', error);
-            return "Error fetching message of the day.";
+            return JSON.stringify(error);
         }
 
         return data.message;
@@ -267,7 +269,6 @@
     .terminal {
         background-color: #000;
         color: #0f0;
-        font-family: monospace;
         padding: 10px;
         height: calc(100vh - 20px);
         overflow-y: auto;
