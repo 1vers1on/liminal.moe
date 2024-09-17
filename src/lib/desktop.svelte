@@ -1,5 +1,21 @@
 <script>
     import { onMount } from "svelte";
+    import { createClient } from '@supabase/supabase-js'
+    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs')
+    async function getMotd() {
+        const { data, error } = await supabase
+            .from('motd')
+            .select('message')
+            .eq('id', 1)
+            .single();
+        
+        if (error) {
+            console.error('Error fetching message of the day:', error);
+            return "Error fetching message of the day.";
+        }
+
+        return data.message;
+    }
 
     function isToday(date) {
         const now = new Date();
@@ -30,6 +46,7 @@
 
     let motd = [
         "Hello there! Welcome to HoosierTransfer's website.",
+        "<span style='color:#f0f;'>Fetching message of the day...</span>",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
         '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow" style="color:#0ff;">Github</a>                                         ┃',
@@ -117,11 +134,9 @@
                     ...terminalOutput,
                     "<br>",
                     "I'm HoosierTransfer a c++ and java developer with a passion for creating things.",
-                    "I'm also a cellular automata enthusiast.",
                     "Some little things about me~",
                     "<br>",
-                    "~ I go by he/him pronouns",
-                    "   ↳ I don't care what pronouns you use just be respectful",
+                    "~ I go by any pronouns",
                     "~ Yes, i'm from Indiana (I don't live there anymore though)",
                     "~ I use arch btw",
                 ];
@@ -154,6 +169,7 @@
                                 "<br>",
                                 "┏━━━━━Projects━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Eagler Lambda</span>    ┃",
+                                "┃ <span style='color:#0ff;'>Eagler 1.12</span>      ┃",
                                 "┃ <span style='color:#0ff;'>Science Help</span>     ┃",
                                 "┃ <span style='color:#0ff;'>Spork Viewer</span>     ┃",
                                 "┃ <span style='color:#0ff;'>Sussy OS</span>         ┃",
@@ -171,7 +187,7 @@
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
                                 `┃ <span style='color:#0ff;'>Age: ${yearsAgo("2009-08-07")}</span>                  ┃`,
-                                "┃ <span style='color:#0ff;'>Pronouns: He/Him</span>         ┃",
+                                "┃ <span style='color:#0ff;'>Pronouns: Any</span>            ┃",
                                 "┃ <span style='color:#0ff;'>Languages: C++, Java</span>     ┃",
                                 "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
@@ -216,6 +232,10 @@
     onMount(() => {
         terminalOutput = motd;
         window.addEventListener("keydown", handleKeydown);
+        getMotd().then(message => {
+            terminalOutput[1] = message;
+            motd[1] = message;
+        });
         return () => {
             window.removeEventListener("keydown", handleKeydown);
         };

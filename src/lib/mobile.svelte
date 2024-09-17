@@ -1,5 +1,36 @@
 <script>
-    import { onMount } from "svelte";
+    import { createClient } from '@supabase/supabase-js'
+    import { onMount } from 'svelte';
+    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+
+    async function getMotd() {
+        const { data, error } = await supabase
+            .from('motd')
+            .select('message')
+            .order('id', { ascending: false })
+            .limit(1)
+            .single();
+        
+        if (error) {
+            console.error('Error fetching message of the day:', error);
+            return "Error fetching message of the day.";
+        }
+
+        return data.message;
+    }
+
+    function yearsAgo(date) {
+        const now = new Date();
+        const pastDate = new Date(date);
+        let years = now.getFullYear() - pastDate.getFullYear();
+
+        const monthDiff = now.getMonth() - pastDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < pastDate.getDate())) {
+            years--;
+        }
+
+        return years;
+    }
 
     let terminalOutput = [];
     let inputValue = "";
@@ -21,6 +52,11 @@
             inputValue = commandHistory[historyIndex];
         }
     }
+
+    let motd = [
+        "Welcome to HoosierTransfer's website! Type 'help' for available commands.",
+        "Fetching message of the day..."
+    ];
 
     function processCommand(command) {
         terminalOutput = [
@@ -48,8 +84,7 @@
                     "I'm also a cellular automata enthusiast.",
                     "Some little things about me~",
                     "<br>",
-                    "~ I go by he/him pronouns",
-                    "   ↳ I don't care what pronouns you use just be respectful",
+                    "~ I go by any pronouns",
                     "~ Yes, i'm from Indiana (I don't live there anymore though)",
                     "~ I use arch btw",
                 ];
@@ -99,13 +134,14 @@
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
                                 `┃ <span style='color:#0ff;'>Age: ${yearsAgo("2009-08-07")}</span>                  ┃`,
-                                "┃ <span style='color:#0ff;'>Pronouns: He/Him</span>         ┃",
+                                "┃ <span style='color:#0ff;'>Pronouns: Any</span>            ┃",
                                 "┃ <span style='color:#0ff;'>Languages: C++, Java</span>     ┃",
                                 "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
                             ];
                         }
+
                         break;
                     case "contact":
                         if (currentDirectory === "~") {
@@ -137,14 +173,19 @@
         }
 
         setTimeout(() => {
-            terminalElement.scrollTop = terminalElement.scrollHeight;
+            const terminal = document.querySelector('.terminal');
+            terminal.scrollTop = terminal.scrollHeight;
         }, 0);
 
-        inputElement.focus();
+        inputValue = "";
     }
 
     onMount(() => {
-        terminalOutput = ["Welcome to HoosierTransfer's website! Type 'help' for available commands.", "This site is best viewed on a desktop."];
+        terminalOutput = motd;
+        getMotd().then(message => {
+            terminalOutput[1] = message;
+            motd[1] = message;
+        });
     });
 </script>
 
