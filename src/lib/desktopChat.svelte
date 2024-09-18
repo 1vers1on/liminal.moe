@@ -7,10 +7,39 @@
     let inputValue = "";
     let cursorPosition = 0;
     let terminalElement;
-    let currentDirectory = "~";
+    let currentUsername = "guest";
     let commandHistory = [];
     let historyIndex = -1;
     let loggedIn = false;
+
+    async function signUpNewUser(username, email, password) {
+        let error = null;
+        const { data, supabaseError } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    username: username
+                }
+            },
+        });
+        if (supabaseError) {
+            error = supabaseError.message;
+            return false;
+        }
+        currentUsername = username;
+        loggedIn = true;
+        return true;
+    }
+
+    async function signInUser(usernameOrEmail, password) {
+        // get email for username
+        const { data, error } = await supabase
+            .from('profiles')
+            .select()
+            .eq('username', 'HoosierT')
+        console.log(data);
+    }
 
     function handleKeydown(event) {
         if (event.key === "Enter") {
@@ -55,9 +84,17 @@
     }
 
     function processCommand(command) {
+        if (!loggedIn && !command.startsWith("/")) {
+            terminalOutput = [
+                ...terminalOutput,
+                `${currentUsername} > ${command}`,
+                "You need to log in.",
+            ];
+            return;
+        }
         terminalOutput = [
             ...terminalOutput,
-            `${currentDirectory} $ ${command}`,
+            `${currentUsername} > ${command}`,
         ];
         if (!command.startsWith("/")) {
             return;
@@ -70,8 +107,38 @@
             case "help":
                 terminalOutput = [
                     ...terminalOutput,
-                    "Available commands: help<br>login<br>register<br>clear<br>registerAnon",
+                    "Available commands: help<br>login<br>register<br>clear",
                 ];
+                break;
+            case "register":
+                if (command.length < 4) {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "Usage: /register &ltusername&gt &ltemail&gt &ltpassword&gt",
+                    ];
+                } else {
+                    const [_, username, email, password] = command;
+                    signUpNewUser(username, email, password);
+                    terminalOutput = [
+                        ...terminalOutput,
+                        `Registered user: ${username}`,
+                    ];
+                }
+                break;
+            case "login":
+                if (command.length < 3) {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "Usage: /login &ltusername or email&gt &ltpassword&gt",
+                    ];
+                } else {
+                    const [_, usernameOrEmail, password] = command;
+                    signInUser(usernameOrEmail, password);
+                    terminalOutput = [
+                        ...terminalOutput,
+                        `Logged in as: ${usernameOrEmail}`,
+                    ];
+                }
                 break;
             case "clear":
                 terminalOutput = [];
@@ -90,14 +157,6 @@
 
     onMount(async () => {
         terminalOutput = [];
-        const { data, error } = await supabase.auth.signInAnonymously({
-        options: {
-            data: {
-                username: "test"
-            }
-        }
-        });
-        terminalOutput[0] = error;
         window.addEventListener("keydown", handleKeydown);
         return () => {
             window.removeEventListener("keydown", handleKeydown);
@@ -110,7 +169,7 @@
         <div class="terminal-line">{@html line}</div>
     {/each}
     <div class="input-line">
-        <span class="prompt">{currentDirectory} $</span>
+        <span class="prompt">{currentUsername} ></span>
         <span class="input-text"> 
             {#each inputValue.split("") as char, i}
                 {#if i === cursorPosition}
