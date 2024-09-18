@@ -1,44 +1,67 @@
 <script>
     import { onMount } from "svelte";
     import { createClient } from '@supabase/supabase-js'
-    const supabase = createClient('https://supaproxy.hoosiertransfer.net/', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
 
     let terminalOutput = [];
     let inputValue = "";
     let cursorPosition = 0;
     let terminalElement;
-    let currentUsername = "guest";
     let commandHistory = [];
     let historyIndex = -1;
     let loggedIn = false;
+    let userId = "";
+    let channel = supabase.channel("general_channel");
+    let currentUsername;
 
-    async function signUpNewUser(username, email, password) {
-        let error = null;
-        const { data, supabaseError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    username: username
-                }
-            },
-        });
-        if (supabaseError) {
-            error = supabaseError.message;
-            return false;
-        }
-        currentUsername = username;
-        loggedIn = true;
-        return true;
+    function messageRecieved(data) {
+        terminalOutput = [
+            ...terminalOutput,
+            `${data.username}<span style="color: #fff;">: ${data.content}</span>`
+        ];
     }
 
-    async function signInUser(usernameOrEmail, password) {
-        // get email for username
-        const { data, error } = await supabase
-            .from('profiles')
-            .select()
-            .eq('username', 'HoosierT')
-        console.log(data);
+    async function sendMessage(message) {
+        const { data, error } = await supabase.rpc('add_message_to_general_channel', { user_id: userId, message_content: message });
+    }
+
+    async function signUpNewUser(username, password) {
+        if (password.length < 3) {
+            return "Password too short.";
+        }
+        const { data, error } = await supabase.rpc('add_user', { p_username: username, p_password: password });
+        if (error) {
+            return "Error registering user. Try a new username.";
+        }
+        userId = data;
+        loggedIn = true;
+        currentUsername = username;
+        return "Registered user";
+    }
+
+    async function signInUser(username, password) {
+        const { data, error } = await supabase.rpc('authenticate_user', { p_username: username, p_password: password });
+        if (error) {
+            return "Error logging in.";
+        }
+        if (!data) {
+            return "Invalid username or password";
+        }
+        userId = data;
+        loggedIn = true;
+        currentUsername = username;
+        return "Logged in";
+    }
+
+    async function addMessages() {
+        const { data, error } = await supabase.from("general_channel").select("*").order('created_at', { ascending: false }).limit(10);
+        for (let i = data.length - 1; i >= 0; i--) {
+            let message = data[i];
+            terminalOutput = [
+                ...terminalOutput,
+                `${message.username}<span style="color: #fff;">: ${message.content}</span>`
+            ];
+        }
     }
 
     function handleKeydown(event) {
@@ -83,22 +106,25 @@
         }
     }
 
-    function processCommand(command) {
+    async function processCommand(command) {
         if (!loggedIn && !command.startsWith("/")) {
             terminalOutput = [
                 ...terminalOutput,
-                `${currentUsername} > ${command}`,
+                `> ${command}`,
                 "You need to log in.",
             ];
             return;
         }
-        terminalOutput = [
-            ...terminalOutput,
-            `${currentUsername} > ${command}`,
-        ];
+
         if (!command.startsWith("/")) {
+            await sendMessage(command);
             return;
         }
+        terminalOutput = [
+            ...terminalOutput,
+            `> ${command}`,
+        ];
+
         command = command.substr(1);
         command = command.split(" ");
 
@@ -111,17 +137,17 @@
                 ];
                 break;
             case "register":
-                if (command.length < 4) {
+                if (command.length < 3) {
                     terminalOutput = [
                         ...terminalOutput,
-                        "Usage: /register &ltusername&gt &ltemail&gt &ltpassword&gt",
+                        "Usage: /register &ltusername&gt &ltpassword&gt",
                     ];
                 } else {
                     const [_, username, email, password] = command;
-                    signUpNewUser(username, email, password);
+                    let response = await signUpNewUser(username, email, password);
                     terminalOutput = [
                         ...terminalOutput,
-                        `Registered user: ${username}`,
+                        response,
                     ];
                 }
                 break;
@@ -132,11 +158,11 @@
                         "Usage: /login &ltusername or email&gt &ltpassword&gt",
                     ];
                 } else {
-                    const [_, usernameOrEmail, password] = command;
-                    signInUser(usernameOrEmail, password);
+                    const [_, username, password] = command;
+                    let response = await signInUser(username, password);
                     terminalOutput = [
                         ...terminalOutput,
-                        `Logged in as: ${usernameOrEmail}`,
+                        response,
                     ];
                 }
                 break;
@@ -157,7 +183,19 @@
 
     onMount(async () => {
         terminalOutput = [];
+        await addMessages();
+        channel.on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: "general_channel"
+            },
+            (payload) => messageRecieved(payload.new)
+            )
+            .subscribe();
         window.addEventListener("keydown", handleKeydown);
+        
         return () => {
             window.removeEventListener("keydown", handleKeydown);
         };
@@ -169,7 +207,7 @@
         <div class="terminal-line">{@html line}</div>
     {/each}
     <div class="input-line">
-        <span class="prompt">{currentUsername} ></span>
+        <span class="prompt">></span>
         <span class="input-text"> 
             {#each inputValue.split("") as char, i}
                 {#if i === cursorPosition}
