@@ -13,6 +13,18 @@
     let userId = "";
     let channel = supabase.channel("general_channel");
     let currentUsername;
+    let anonUserNumber = -1;
+
+    async function addMessages() {
+        const { data, error } = await supabase.from("general_channel").select("*").order('created_at', { ascending: false }).limit(40);
+        for (let i = data.length - 1; i >= 0; i--) {
+            let message = data[i];
+            terminalOutput = [
+                ...terminalOutput,
+                `${message.username}<span style="color: #fff;">: ${message.content}</span>`
+            ];
+        }
+    }
 
     function messageRecieved(data) {
         terminalOutput = [
@@ -22,6 +34,10 @@
     }
 
     async function sendMessage(message) {
+        if (anonUserNumber != -1) {
+            const { data, error } = await supabase.rpc('add_message_anon', { user_number: anonUserNumber, message_content: message });
+        }
+
         const { data, error } = await supabase.rpc('add_message_to_general_channel', { user_id: userId, message_content: message });
     }
 
@@ -34,8 +50,10 @@
             return "Error registering user. Try a new username.";
         }
         userId = data;
+        window.localStorage.setItem("userId", userId);
         loggedIn = true;
         currentUsername = username;
+        await addMessages();
         return "Registered user";
     }
 
@@ -48,20 +66,11 @@
             return "Invalid username or password";
         }
         userId = data;
+        window.localStorage.setItem("userId", userId);
         loggedIn = true;
         currentUsername = username;
+        await addMessages();
         return "Logged in";
-    }
-
-    async function addMessages() {
-        const { data, error } = await supabase.from("general_channel").select("*").order('created_at', { ascending: false }).limit(10);
-        for (let i = data.length - 1; i >= 0; i--) {
-            let message = data[i];
-            terminalOutput = [
-                ...terminalOutput,
-                `${message.username}<span style="color: #fff;">: ${message.content}</span>`
-            ];
-        }
     }
 
     function handleKeydown(event) {
@@ -133,7 +142,7 @@
             case "help":
                 terminalOutput = [
                     ...terminalOutput,
-                    "Available commands: help<br>login<br>register<br>clear",
+                    "Available commands: help<br>login<br>register<br>clear<br>logout<br>anon",
                 ];
                 break;
             case "register":
@@ -169,6 +178,18 @@
             case "clear":
                 terminalOutput = [];
                 break;
+            case "logout":
+                userId = null;
+                loggedIn = false;
+                anonUserNumber = -1;
+                window.localStorage.removeItem("userId");
+                break;
+            case "anon":
+                userId = null;
+                loggedIn = true;
+                anonUserNumber = Math.floor(1000 + Math.random() * 9000);
+                addMessages();
+                break;
             default:
                 terminalOutput = [
                     ...terminalOutput,
@@ -183,7 +204,17 @@
 
     onMount(async () => {
         terminalOutput = [];
-        await addMessages();
+        let user_id = window.localStorage.getItem("userId");
+        if (user_id) {
+            userId = user_id;
+            loggedIn = true;
+            addMessages();
+        } else {
+            terminalOutput = [
+                ...terminalOutput,
+                "Log in or register. Do /help to see commands. Create a temporary user with /anon",
+            ];
+        }
         channel.on(
             'postgres_changes',
             {
