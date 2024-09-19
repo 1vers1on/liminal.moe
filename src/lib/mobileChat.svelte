@@ -14,12 +14,9 @@
     let channel = supabase.channel("general_channel");
     let currentUsername;
     let anonUserNumber = -1;
-    let cooldown = false;
-    let added = false;
 
     async function addMessages() {
-        if (added) return;
-        const { data, error } = await supabase.from("general_channel").select("*").order('created_at', { ascending: false }).limit(50);
+        const { data, error } = await supabase.from("general_channel").select("*").order('created_at', { ascending: false }).limit(40);
         for (let i = data.length - 1; i >= 0; i--) {
             let message = data[i];
             terminalOutput = [
@@ -27,8 +24,6 @@
                 `${message.username}<span style="color: #fff;">: ${message.content}</span>`
             ];
         }
-        terminalElement.scrollTop = terminalElement.scrollHeight;
-        added = true;
     }
 
     function messageRecieved(data) {
@@ -36,7 +31,6 @@
             ...terminalOutput,
             `${data.username}<span style="color: #fff;">: ${data.content}</span>`
         ];
-        terminalElement.scrollTop = terminalElement.scrollHeight;
     }
 
     async function sendMessage(message) {
@@ -122,9 +116,6 @@
     }
 
     async function processCommand(command) {
-        if (command.length == 0) {
-            return;
-        }
         if (!loggedIn && !command.startsWith("/")) {
             terminalOutput = [
                 ...terminalOutput,
@@ -134,12 +125,8 @@
             return;
         }
 
-        if (!command.startsWith("/") && !cooldown) {
+        if (!command.startsWith("/")) {
             await sendMessage(command);
-            cooldown = true;
-            setTimeout(() => { cooldown = false }, 1000);
-            return;
-        } else if (!command.startsWith("/")) {
             return;
         }
         terminalOutput = [
@@ -172,7 +159,6 @@
                         response,
                     ];
                 }
-                anonUserNumber = -1;
                 break;
             case "login":
                 if (command.length < 3) {
@@ -188,7 +174,6 @@
                         response,
                     ];
                 }
-                anonUserNumber = -1;
                 break;
             case "clear":
                 terminalOutput = [];
@@ -200,7 +185,7 @@
                 window.localStorage.removeItem("userId");
                 break;
             case "anon":
-                if (userId != null) break;
+                userId = null;
                 loggedIn = true;
                 anonUserNumber = Math.floor(1000 + Math.random() * 9000);
                 addMessages();
@@ -211,7 +196,10 @@
                     `Command not found: ${command[0]}`,
                 ];
         }
-        terminalElement.scrollTop = terminalElement.scrollHeight;
+
+        setTimeout(() => {
+            terminalElement.scrollTop = terminalElement.scrollHeight;
+        }, 0);
     }
 
     onMount(async () => {
@@ -245,24 +233,13 @@
     });
 </script>
 
-<div class="terminal" bind:this={terminalElement}>
+<div class="terminal">
     {#each terminalOutput as line}
         <div class="terminal-line">{@html line}</div>
     {/each}
     <div class="input-line">
-        <span class="prompt">></span>
-        <span class="input-text"> 
-            {#each inputValue.split("") as char, i}
-                {#if i === cursorPosition}
-                    <span class="cursor">█</span>{@html char}
-                {:else}
-                    {@html char}
-                {/if}
-            {/each}
-            {#if cursorPosition === inputValue.length}
-            <span class="cursor end">█</span>
-        {/if}
-        </span>
+        <span class="prompt">{currentDirectory} $</span>
+        <input type="text" bind:value={inputValue} on:keydown={handleInput} autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
     </div>
 </div>
 
@@ -271,17 +248,13 @@
         background-color: #000;
         color: #0f0;
         padding: 10px;
-        height: calc(100vh - 20px);
+        height: 100vh;
         overflow-y: auto;
     }
 
-    .terminal::-webkit-scrollbar {
-        display: none;
-    }
-
     .terminal-line {
+        white-space: pre-wrap;
         word-break: break-word;
-        white-space: pre;
     }
 
     .input-line {
@@ -293,23 +266,13 @@
         margin-right: 5px;
     }
 
-    .input-text {
-        white-space: pre;
-
-        min-width: 1px;
-    }
-
-    .cursor {
-        animation: blink 1s step-end infinite;
-    }
-
-    .cursor.end {
-        margin-left: -1ch;
-    }
-
-    @keyframes blink {
-        50% {
-            opacity: 0;
-        }
+    input {
+        background-color: #ffffff28;
+        border: none;
+        color: #0f0;
+        font-family: monospace;
+        font-size: inherit;
+        flex-grow: 1;
+        outline: none;
     }
 </style>

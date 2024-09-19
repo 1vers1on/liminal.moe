@@ -1,5 +1,5 @@
 <script>
-    import Mobile from "$lib/mobile.svelte";
+    import MobileChat from "$lib/mobileChat.svelte";
     import DesktopChat from "$lib/desktopChat.svelte";
     let isMobile = false;
     let w;
@@ -8,7 +8,7 @@
 <svelte:window bind:innerWidth={w} />
 
 {#if isMobile}
-    <Mobile />
+    <DesktopChat />
 {:else}
     <DesktopChat />
 {/if}
