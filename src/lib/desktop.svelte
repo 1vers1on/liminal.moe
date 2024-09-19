@@ -1,6 +1,7 @@
 <script>
     import { onMount } from "svelte";
-    import { createClient } from '@supabase/supabase-js'
+    import { createClient } from '@supabase/supabase-js';
+    import { goto } from '$app/navigation';
     const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
 
     async function getMotd() {
@@ -58,7 +59,7 @@
         "┃  <span style='color:#0ff;'>Discord: HoosierTransfer</span>                       ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
-        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
+        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands. Use chat to go to irc chat.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
     ];
@@ -125,8 +126,11 @@
             case "help":
                 terminalOutput = [
                     ...terminalOutput,
-                    "Available commands: help<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat",
+                    "Available commands: help<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat",
                 ];
+                break;
+            case "chat":
+                goto("/chat");
                 break;
             case "clear":
                 terminalOutput = [];
