@@ -84,7 +84,7 @@
                     "I'm also a cellular automata enthusiast.",
                     "Some little things about me~",
                     "<br>",
-                    "~ I go by any pronouns",
+                    "~ I go by she/her pronouns",
                     "~ Yes, i'm from Indiana (I don't live there anymore though)",
                     "~ I use arch btw",
                 ];
@@ -134,7 +134,7 @@
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
                                 `┃ <span style='color:#0ff;'>Age: ${yearsAgo("2009-08-07")}</span>                  ┃`,
-                                "┃ <span style='color:#0ff;'>Pronouns: Any</span>            ┃",
+                                "┃ <span style='color:#0ff;'>Pronouns: she/her</span>            ┃",
                                 "┃ <span style='color:#0ff;'>Languages: C++, Java</span>     ┃",
                                 "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
