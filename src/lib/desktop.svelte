@@ -81,6 +81,8 @@
 
     let gridLocation = 0;
 
+    let conwayInterval;
+
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
     function conwayIteration() {
@@ -264,6 +266,9 @@
                 break;
 
             case "conway":
+                clearInterval(conwayInterval);
+                grid = [];
+                gridState = [];
                 for (let i = 0; i < 30; i++) {
                     grid.push([]);
                     gridState.push([]);
@@ -274,18 +279,22 @@
                     }
                 }
                 addGridToTerminal();
-                let interval = setInterval(() => {
+                clearInterval(conwayInterval);
+                conwayInterval = setInterval(() => {
                     conwayIteration();
                     updateGridOnTerminal();
                 }, 100);
                 setTimeout(() => {
-                    clearInterval(interval);
-                }, 20000);
+                    clearInterval(conwayInterval);
+                }, 60000);
                 break;
             case "chat":
                 goto("/chat");
                 break;
             case "clear":
+                grid = [];
+                gridState = [];
+                clearInterval(conwayInterval);
                 terminalOutput = [];
                 break;
             case "whoami":
@@ -408,7 +417,6 @@
                         break;
                     case "decrypt":
                         if (currentDirectory === "~") {
-                            // append every line in encryptedIsland to terminalOutput
                             terminalOutput = [
                                 ...terminalOutput,
                                 cProgram,
@@ -418,8 +426,7 @@
                     case "":
                         terminalOutput = [
                             ...terminalOutput,
-                            "cat: missing file operand",
-                            "Try 'cat --help' for more information.",
+                            "cat: missing file operand"
                         ];
                 }
                 break;

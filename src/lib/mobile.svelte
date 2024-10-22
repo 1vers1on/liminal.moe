@@ -55,6 +55,8 @@
 
     let motd = [
         "Welcome to HoosierTransfer's website! Type 'help' for available commands.",
+        "This website is best viewed on a desktop browser.",
+        "The mobile version is not being updated anymore.",
         "Fetching message of the day..."
     ];
 
