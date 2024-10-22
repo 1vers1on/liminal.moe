@@ -1,19 +1,23 @@
 <script>
     import { onMount } from "svelte";
-    import { createClient } from '@supabase/supabase-js';
-    import { goto } from '$app/navigation';
-    const supabase = createClient('https://sfwqilnzokiycbqmktsd.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs');
+    import { createClient } from "@supabase/supabase-js";
+    import { goto } from "$app/navigation";
+    import { encryptedIsland, cProgram } from "$lib/mylittleisland.js"
+    const supabase = createClient(
+        "https://sfwqilnzokiycbqmktsd.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs",
+    );
 
     async function getMotd() {
         const { data, error } = await supabase
-            .from('motd')
-            .select('message')
-            .order('id', { ascending: false })
+            .from("motd")
+            .select("message")
+            .order("id", { ascending: false })
             .limit(1)
             .single();
-        
+
         if (error) {
-            console.error('Error fetching message of the day:', error);
+            console.error("Error fetching message of the day:", error);
             return JSON.stringify(error);
         }
 
@@ -72,6 +76,57 @@
     let commandHistory = [];
     let historyIndex = -1;
 
+    function printTypewriter(text, delay = 2) {
+        return new Promise(async (resolve) => {
+            let line = terminalOutput.length;
+            for (let i = 0; i < text.length; i++) {
+                terminalOutput[line] = (terminalOutput[line] || "") + text[i];
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+            resolve();
+        });
+    }
+
+    function vigenereEncrypt(plaintext, key) {
+        let encryptedText = "";
+        key = key.toUpperCase();
+        plaintext = plaintext.toUpperCase();
+
+        for (let i = 0, j = 0; i < plaintext.length; i++) {
+            let currentLetter = plaintext[i];
+
+            if (currentLetter >= 'A' && currentLetter <= 'Z') {
+                let shift = key[j % key.length].charCodeAt(0) - 65;
+                let encryptedLetter = String.fromCharCode(((currentLetter.charCodeAt(0) - 65 + shift) % 26) + 65);
+                encryptedText += encryptedLetter;
+                j++;
+            } else {
+                encryptedText += currentLetter;
+            }
+        }
+        return encryptedText;
+    }
+
+    function vigenereDecrypt(encryptedText, key) {
+        let decryptedText = "";
+        key = key.toUpperCase();
+        encryptedText = encryptedText.toUpperCase();
+
+        for (let i = 0, j = 0; i < encryptedText.length; i++) {
+            let currentLetter = encryptedText[i];
+
+            if (currentLetter >= 'A' && currentLetter <= 'Z') {
+                let shift = key[j % key.length].charCodeAt(0) - 65;
+                let decryptedLetter = String.fromCharCode(((currentLetter.charCodeAt(0) - 65 - shift + 26) % 26) + 65);
+                decryptedText += decryptedLetter;
+                j++;
+            } else {
+                decryptedText += currentLetter;
+            }
+        }
+        return decryptedText;
+    }
+
     function handleKeydown(event) {
         if (event.key === "Enter") {
             processCommand(inputValue);
@@ -104,11 +159,16 @@
                 cursorPosition++;
             }
         } else if (event.key.length === 1) {
-            inputValue = inputValue.slice(0, cursorPosition) + event.key + inputValue.slice(cursorPosition);
+            inputValue =
+                inputValue.slice(0, cursorPosition) +
+                event.key +
+                inputValue.slice(cursorPosition);
             cursorPosition++;
         } else if (event.key === "Backspace") {
             if (cursorPosition > 0) {
-                inputValue = inputValue.slice(0, cursorPosition - 1) + inputValue.slice(cursorPosition);
+                inputValue =
+                    inputValue.slice(0, cursorPosition - 1) +
+                    inputValue.slice(cursorPosition);
                 cursorPosition--;
             }
         }
@@ -129,6 +189,9 @@
                     "Available commands: help<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat",
                 ];
                 break;
+            case "testtype":
+                printTypewriter("This is a test of the typewriter effect.");
+                break;
             case "chat":
                 goto("/chat");
                 break;
@@ -142,7 +205,8 @@
                     "I'm HoosierTransfer a c++ and java developer with a passion for creating things.",
                     "Some little things about me~",
                     "<br>",
-                    "~ I go by any pronouns",
+                    "~ I go by she/her pronouns",
+                    "~ My other username is Aether or aethergen",
                     "~ Yes, i'm from Indiana (I don't live there anymore though)",
                     "~ I use arch btw",
                 ];
@@ -165,7 +229,32 @@
                     "<span style='color:#0ff;'>projects</span>",
                     "<span style='color:#0ff;'>about</span>",
                     "<span style='color:#0ff;'>contact</span>",
+                    "<span style='color:#0ff;'>ursosilly</span>",
+                    "<span style='color:#f00;'>decrypt</span>"
                 ];
+                break;
+            case "./decrypt":
+                if (command.length !== 3) {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "Usage: ./decrypt &ltkey&gt &ltfilename&gt",
+                    ];
+                    break;
+                }
+
+                if (command[2] !== "ursosilly") {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "Error opening file",
+                    ];
+                    break;
+                }
+
+                terminalOutput = [
+                    ...terminalOutput,
+                    vigenereDecrypt(encryptedIsland, command[1]),
+                ];
+                break;
             case "cat":
                 switch (command[1]) {
                     case "projects":
@@ -193,7 +282,7 @@
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
                                 `┃ <span style='color:#0ff;'>Age: ${yearsAgo("2009-08-07")}</span>                  ┃`,
-                                "┃ <span style='color:#0ff;'>Pronouns: Any</span>            ┃",
+                                "┃ <span style='color:#0ff;'>Pronouns: she/her</span>            ┃",
                                 "┃ <span style='color:#0ff;'>Languages: C++, Java</span>     ┃",
                                 "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
@@ -210,6 +299,24 @@
                                 "┃ <span style='color:#0ff;'>Discord: HoosierTransfer</span>  ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
+                            ];
+                        }
+                        break;
+                    case "ursosilly":
+                        if (currentDirectory === "~") {
+                            // append every line in encryptedIsland to terminalOutput
+                            terminalOutput = [
+                                ...terminalOutput,
+                                encryptedIsland,
+                            ];
+                        }
+                        break;
+                    case "decrypt":
+                        if (currentDirectory === "~") {
+                            // append every line in encryptedIsland to terminalOutput
+                            terminalOutput = [
+                                ...terminalOutput,
+                                cProgram,
                             ];
                         }
                         break;
@@ -238,7 +345,7 @@
     onMount(() => {
         terminalOutput = motd;
         window.addEventListener("keydown", handleKeydown);
-        getMotd().then(message => {
+        getMotd().then((message) => {
             terminalOutput[1] = message;
             motd[1] = message;
         });
@@ -254,7 +361,7 @@
     {/each}
     <div class="input-line">
         <span class="prompt">{currentDirectory} $</span>
-        <span class="input-text"> 
+        <span class="input-text">
             {#each inputValue.split("") as char, i}
                 {#if i === cursorPosition}
                     <span class="cursor">█</span>{@html char}
@@ -263,8 +370,8 @@
                 {/if}
             {/each}
             {#if cursorPosition === inputValue.length}
-            <span class="cursor end">█</span>
-        {/if}
+                <span class="cursor end">█</span>
+            {/if}
         </span>
     </div>
 </div>
