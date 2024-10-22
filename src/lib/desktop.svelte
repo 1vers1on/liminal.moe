@@ -76,6 +76,77 @@
     let commandHistory = [];
     let historyIndex = -1;
 
+    let grid = [];
+    let gridState = [];
+
+    let gridLocation = 0;
+
+    const delay = ms => new Promise(res => setTimeout(res, ms));
+
+    function conwayIteration() {
+        let newGridState = [];
+        for (let i = 0; i < gridState.length; i++) {
+            newGridState.push([]);
+            for (let j = 0; j < gridState[i].length; j++) {
+                let neighbors = 0;
+                for (let x = -1; x <= 1; x++) {
+                    for (let y = -1; y <= 1; y++) {
+                        if (x === 0 && y === 0) {
+                            continue;
+                        }
+                        let ni = i + x;
+                        let nj = j + y;
+                        if (ni < 0) {
+                            ni = gridState.length - 1;
+                        } else if (ni >= gridState.length) {
+                            ni = 0;
+                        }
+                        if (nj < 0) {
+                            nj = gridState[i].length - 1;
+                        } else if (nj >= gridState[i].length) {
+                            nj = 0;
+                        }
+                        neighbors += gridState[ni][nj];
+                    }
+                }
+                if (gridState[i][j] === 1) {
+                    if (neighbors < 2 || neighbors > 3) {
+                        newGridState[i].push(0);
+                    } else {
+                        newGridState[i].push(1);
+                    }
+                } else {
+                    if (neighbors === 3) {
+                        newGridState[i].push(1);
+                    } else {
+                        newGridState[i].push(0);
+                    }
+                }
+            }
+        }
+        gridState = newGridState;
+
+        for (let i = 0; i < grid.length; i++) {
+            for (let j = 0; j < grid[i].length; j++) {
+                grid[i][j] = gridState[i][j] === 1 ? "■ " : "  ";
+            }
+        }
+    }
+
+    function addGridToTerminal() {
+        gridLocation = terminalOutput.length + 1;
+        terminalOutput.push("<br>");
+        for (let i = 0; i < grid.length; i++) {
+            terminalOutput.push(grid[i].join(""));
+        }
+    }
+
+    function updateGridOnTerminal() {
+        for (let i = 0; i < grid.length; i++) {
+            terminalOutput[gridLocation + i] = grid[i].join("");
+        }
+    }
+
     function printTypewriter(text, delay = 2) {
         return new Promise(async (resolve) => {
             let line = terminalOutput.length;
@@ -172,6 +243,8 @@
                 cursorPosition--;
             }
         }
+
+        event.preventDefault();
     }
 
     function processCommand(command) {
@@ -186,11 +259,28 @@
             case "help":
                 terminalOutput = [
                     ...terminalOutput,
-                    "Available commands: help<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat",
+                    "Available commands: help<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat<br>conway",
                 ];
                 break;
-            case "testtype":
-                printTypewriter("This is a test of the typewriter effect.");
+
+            case "conway":
+                for (let i = 0; i < 30; i++) {
+                    grid.push([]);
+                    gridState.push([]);
+                    for (let j = 0; j < 30; j++) {
+                        gridState[i].push(Math.random() < 0.5 ? 1 : 0);
+
+                        grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    }
+                }
+                addGridToTerminal();
+                let interval = setInterval(() => {
+                    conwayIteration();
+                    updateGridOnTerminal();
+                }, 100);
+                setTimeout(() => {
+                    clearInterval(interval);
+                }, 20000);
                 break;
             case "chat":
                 goto("/chat");
@@ -222,6 +312,12 @@
                 break;
             case "motd":
                 terminalOutput = [...terminalOutput, ...motd];
+                break;
+            case ":3":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "meow",
+                ];
                 break;
             case "ls":
                 terminalOutput = [
@@ -264,7 +360,6 @@
                                 "<br>",
                                 "┏━━━━━Projects━━━━━┓",
                                 "┃ <span style='color:#0ff;'>Eagler Lambda</span>    ┃",
-                                "┃ <span style='color:#0ff;'>Eagler 1.12</span>      ┃",
                                 "┃ <span style='color:#0ff;'>Science Help</span>     ┃",
                                 "┃ <span style='color:#0ff;'>Spork Viewer</span>     ┃",
                                 "┃ <span style='color:#0ff;'>Sussy OS</span>         ┃",
