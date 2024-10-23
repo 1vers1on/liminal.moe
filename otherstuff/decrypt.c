@@ -3,11 +3,10 @@
 #include <string.h>
 #include <ctype.h>
 
-// Function to decrypt Vigenère cipher
 void decryptVigenere(char* cipherText, char* key) {
     int textLen = strlen(cipherText);
     int keyLen = strlen(key);
-    char plainText[textLen + 1]; // Create a buffer for the decrypted text
+    char plainText[textLen + 1];
 
     for (int i = 0, j = 0; i < textLen; i++) {
         if (isalpha(cipherText[i])) {
@@ -16,11 +15,11 @@ void decryptVigenere(char* cipherText, char* key) {
             plainText[i] = (cipherText[i] - k - offset + 26) % 26 + offset;
             j++;
         } else {
-            plainText[i] = cipherText[i]; // Non-alphabet characters remain unchanged
+            plainText[i] = cipherText[i];
         }
     }
 
-    plainText[textLen] = '\0'; // Null-terminate the decrypted string
+    plainText[textLen] = '\0';
     printf("Decrypted Text: %s\n", plainText);
 }
 
@@ -33,19 +32,16 @@ int main(int argc, char* argv[]) {
     char* key = argv[1];
     char* filename = argv[2];
 
-    // Open the file for reading
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("Error opening file");
         return 1;
     }
 
-    // Find the file size
     fseek(file, 0, SEEK_END);
     long fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    // Allocate memory to read the file content
     char *cipherText = (char*)malloc(fileSize + 1);
     if (cipherText == NULL) {
         perror("Memory allocation error");
@@ -53,16 +49,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Read the file content
     fread(cipherText, 1, fileSize, file);
-    cipherText[fileSize] = '\0'; // Null-terminate the cipher text
+    cipherText[fileSize] = '\0';
 
     fclose(file);
 
-    // Decrypt the file content
     decryptVigenere(cipherText, key);
 
-    // Free allocated memory
     free(cipherText);
 
     return 0;
