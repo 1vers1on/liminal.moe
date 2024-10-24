@@ -107,8 +107,6 @@
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
         '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow" style="color:#0ff;">Github</a>                                         ┃',
         "┃                                                 ┃",
-        '┃  <a href="https://discord.gg/EFv6RKexw9" target="_blank" rel="nofollow" style="color:#0ff;">Discord Server</a>                                 ┃',
-        "┃                                                 ┃",
         "┃  <span style='color:#0ff;'>Discord: HoosierTransfer</span>                       ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
@@ -302,7 +300,7 @@
                 "<br>",
                 "~ I go by she/her pronouns",
                 "~ Transgender and Pansexual",
-                "~ My other username is Aether or aethergen",
+                "~ My other username is Aether or 1vers1on",
                 "~ Yes, i'm from Indiana (I don't live there anymore though)",
                 "~ I use arch btw",
             ];
