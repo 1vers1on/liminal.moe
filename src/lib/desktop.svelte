@@ -215,6 +215,12 @@
         }
     }
 
+    function updateGridDirect() {
+        for (let i = 0; i < grid.length; i++) {
+            terminalOutput[gridLocation + i] = grid[i].join("");
+        }
+    }
+
     function printTypewriter(text, delay = 2) {
         return new Promise(async (resolve) => {
             let line = terminalOutput.length;
