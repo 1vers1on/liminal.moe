@@ -18,43 +18,43 @@
 
     // ANSI color codes to CSS colors
     const COLORS = {
-        '0': 'inherit', // reset
-        '30': '#000000', // black
-        '31': '#cd3131', // red
-        '32': '#0dbc79', // green
-        '33': '#e5e510', // yellow
-        '34': '#2472c8', // blue
-        '35': '#bc3fbc', // magenta
-        '36': '#11a8cd', // cyan
-        '37': '#e5e5e5', // white
-        '90': '#666666', // bright black
-        '91': '#f14c4c', // bright red
-        '92': '#23d18b', // bright green
-        '93': '#f5f543', // bright yellow
-        '94': '#3b8eea', // bright blue
-        '95': '#d670d6', // bright magenta
-        '96': '#29b8db', // bright cyan
-        '97': '#ffffff'  // bright white
+        "0": "inherit", // reset
+        "30": "#000000", // black
+        "31": "#cd3131", // red
+        "32": "#0dbc79", // green
+        "33": "#e5e510", // yellow
+        "34": "#2472c8", // blue
+        "35": "#bc3fbc", // magenta
+        "36": "#11a8cd", // cyan
+        "37": "#e5e5e5", // white
+        "90": "#666666", // bright black
+        "91": "#f14c4c", // bright red
+        "92": "#23d18b", // bright green
+        "93": "#f5f543", // bright yellow
+        "94": "#3b8eea", // bright blue
+        "95": "#d670d6", // bright magenta
+        "96": "#29b8db", // bright cyan
+        "97": "#ffffff", // bright white
     };
 
     // Background colors (40-47, 100-107)
     const BG_COLORS = {
-        '40': '#000000',
-        '41': '#cd3131',
-        '42': '#0dbc79',
-        '43': '#e5e510',
-        '44': '#2472c8',
-        '45': '#bc3fbc',
-        '46': '#11a8cd',
-        '47': '#e5e5e5',
-        '100': '#666666',
-        '101': '#f14c4c',
-        '102': '#23d18b',
-        '103': '#f5f543',
-        '104': '#3b8eea',
-        '105': '#d670d6',
-        '106': '#29b8db',
-        '107': '#ffffff'
+        "40": "#000000",
+        "41": "#cd3131",
+        "42": "#0dbc79",
+        "43": "#e5e510",
+        "44": "#2472c8",
+        "45": "#bc3fbc",
+        "46": "#11a8cd",
+        "47": "#e5e5e5",
+        "100": "#666666",
+        "101": "#f14c4c",
+        "102": "#23d18b",
+        "103": "#f5f543",
+        "104": "#3b8eea",
+        "105": "#d670d6",
+        "106": "#29b8db",
+        "107": "#ffffff",
     };
 
     async function getMotd() {
@@ -125,10 +125,20 @@
 
     let grid = [];
     let gridState = [];
-
     let gridLocation = 0;
 
     let conwayInterval;
+
+    let antX, antY;
+    let antDirection = 0;
+
+    let runningInterval;
+
+    let intervalSpeed = 100;
+
+    let gridColors = [];
+
+    let antRule = "RL";
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -174,12 +184,6 @@
             }
         }
         gridState = newGridState;
-
-        for (let i = 0; i < grid.length; i++) {
-            for (let j = 0; j < grid[i].length; j++) {
-                grid[i][j] = gridState[i][j] === 1 ? "■ " : "  ";
-            }
-        }
     }
 
     function addGridToTerminal() {
@@ -191,6 +195,21 @@
     }
 
     function updateGridOnTerminal() {
+        for (let i = 0; i < gridState.length; i++) {
+            for (let j = 0; j < gridState[i].length; j++) {
+                if (gridColors.length === 0) {
+                    grid[i][j] = gridState[i][j] === 1 ? "■ " : "  ";
+                } else {
+                    if (gridState[i][j] > 0) {
+                        let colorIndex = gridState[i][j] % gridColors.length;
+                        grid[i][j] = `<span style="color:${gridColors[colorIndex]}">■</span> `;
+                    } else {
+                        grid[i][j] = "  ";
+                    }
+                }
+            }
+        }
+
         for (let i = 0; i < grid.length; i++) {
             terminalOutput[gridLocation + i] = grid[i].join("");
         }
@@ -251,15 +270,71 @@
         return decryptedText;
     }
 
+    function generateEquallySpacedColors(n) {
+        const colors = [];
+
+        for (let i = 0; i < n; i++) {
+            const hue = Math.floor((360 / n) * i);
+            const color = `#${hslToHex(hue, 100, 50)}`;
+            colors.push(color);
+        }
+
+        return colors;
+    }
+
+    function hslToHex(h, s, l) {
+        l /= 100;
+        const a = s * Math.min(l, 1 - l) / 100;
+        const f = n => {
+            const k = (n + h / 30) % 12;
+            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color).toString(16).padStart(2, '0');
+        };
+        return `${f(0)}${f(8)}${f(4)}`;
+    }
+
+    const antInterval = () => {
+        let ant = gridState[antX][antY];
+        let turn = antRule.charAt(ant);
+        if (turn === "R") {
+            antDirection = (antDirection + 1) % 4;
+        } else {
+            antDirection = (antDirection - 1 + 4) % 4;
+        }
+        gridState[antX][antY] = (ant + 1) % antRule.length;
+        switch (antDirection) {
+            case 0:
+                antY = (antY + 1) % 30;
+                break;
+            case 1:
+                antX = (antX + 1) % 30;
+                break;
+            case 2:
+                antY = (antY - 1 + 30) % 30;
+                break;
+            case 3:
+                antX = (antX - 1 + 30) % 30;
+                break;
+        }
+        updateGridOnTerminal();
+    };
+
+    const conwayIntervalFunc = () => {
+        conwayIteration();
+        updateGridOnTerminal();
+    };
+
     const commands = {
         help: () => {
             terminalOutput = [
                 ...terminalOutput,
-                "Available commands: help<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay",
+                "Use man to get more information about a command.",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>exit",
             ];
         },
 
         conway: () => {
+            gridColors = [];
             clearInterval(conwayInterval);
             grid = [];
             gridState = [];
@@ -274,10 +349,8 @@
             }
             addGridToTerminal();
             clearInterval(conwayInterval);
-            conwayInterval = setInterval(() => {
-                conwayIteration();
-                updateGridOnTerminal();
-            }, 100);
+            conwayInterval = setInterval(conwayIntervalFunc, intervalSpeed);
+            runningInterval = conwayIntervalFunc;
         },
 
         chat: () => {
@@ -295,7 +368,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "<br>",
-                "I'm HoosierTransfer a c++ and java developer with a passion for creating things.",
+                "I'm HoosierTransfer a c++ and rust developer with a passion for creating things.",
                 "Some little things about me~",
                 "<br>",
                 "~ I go by she/her pronouns",
@@ -429,7 +502,10 @@
         },
         cowsay: (command) => {
             if (command.length === 1) {
-                terminalOutput = [...terminalOutput, "Usage: cowsay &lt;message&gt"];
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: cowsay &lt;message&gt",
+                ];
                 return;
             }
             const message = command.slice(1).join(" ");
@@ -449,62 +525,260 @@
         },
 
         neofetch: () => {
-            neofetch(command);
+            neofetch();
         },
 
         fastfetch: () => {
-            neofetch(command);
+            neofetch();
+        },
+
+        ant: (command) => {
+            clearInterval(conwayInterval);
+            if (command.length === 1) {
+                antRule = "RL";
+                gridColors = [];
+            } else {
+                command[1] = command[1].toUpperCase();
+                for (let i = 0; i < command[1].length; i++) {
+                    if (command[1][i] !== "R" && command[1][i] !== "L") {
+                        terminalOutput = [
+                            ...terminalOutput,
+                            "\u001b[31mInvalid rule. Must be a string of R's and L's",
+                        ];
+                        return;
+                    }
+                }
+
+                antRule = command[1];
+                gridColors = generateEquallySpacedColors(antRule.length);
+            }
+            grid = [];
+            gridState = [];
+            for (let i = 0; i < 30; i++) {
+                grid.push([]);
+                gridState.push([]);
+                for (let j = 0; j < 30; j++) {
+                    gridState[i].push(0);
+
+                    grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                }
+            }
+            antX = 15;
+            antY = 15;
+            addGridToTerminal();
+            clearInterval(conwayInterval);
+            conwayInterval = setInterval(antInterval, intervalSpeed);
+            runningInterval = antInterval;
+        },
+
+        setspeed: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: setspeed &lt;speed&gt",
+                ];
+                return;
+            }
+            const newSpeed = parseInt(command[1]);
+            if (isNaN(newSpeed)) {
+                terminalOutput = [...terminalOutput, "Invalid speed"];
+                return;
+            }
+            intervalSpeed = newSpeed;
+            if (conwayInterval) {
+                clearInterval(conwayInterval);
+                conwayInterval = setInterval(runningInterval, intervalSpeed);
+            }
+        },
+        colortest: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: colorTest &lt;number&gt",
+                ];
+                return;
+            }
+            
+            let nOfColors = parseInt(command[1]);
+            if (isNaN(nOfColors)) {
+                terminalOutput = [...terminalOutput, "Invalid number"];
+                return;
+            }
+
+            let colors = generateEquallySpacedColors(nOfColors);
+            let colorString = "";
+            for (let i = 0; i < colors.length; i++) {
+                colorString += `<span style="color:${colors[i]};">■</span> <br>`;
+            }
+
+            terminalOutput = [...terminalOutput, colorString];
+        },
+
+        exit: () => {
+            window.close();
+        },
+
+        man: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: man &ltcommand&gt"
+                ];
+                return;
+            }
+
+            switch (command[1]) {
+                case "ls":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "ls - list directory contents",
+                        "Usage: ls",
+                    ];
+                    break;
+                case "cat":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "cat - print file on the standard output",
+                        "Usage: cat &lt;filename&gt",
+                    ];
+                    break;
+                case "conway":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "conway - run Conway's Game of Life",
+                        "Usage: conway",
+                    ];
+                    break;
+                case "javascript":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "javascript - run JavaScript code",
+                        "Usage: javascript &lt;code&gt",
+                    ];
+                    break;
+                case "cowsay":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "cowsay - generate an ASCII cow",
+                        "Usage: cowsay &lt;message&gt",
+                    ];
+                    break;
+                case "neofetch":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "neofetch - print system information",
+                        "Usage: neofetch",
+                    ];
+                    break;
+                case "ant":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "ant - run Langton's Ant",
+                        "Usage: ant &lt;rule&gt",
+                    ];
+                    break;
+                case "setspeed":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "setspeed - set the delay between frrames in the simulation",
+                        "Usage: setspeed &lt;speed&gt",
+                    ];
+                    break;
+                case "exit":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "exit - close the terminal",
+                        "Usage: exit",
+                    ];
+                    break;
+                case "colortest":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "colortest - generate a list of colors",
+                        "Usage: colortest &lt;number&gt",
+                    ];
+                    break;
+                case "help":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "help - display available commands",
+                        "Usage: help",
+                    ];
+                    break;
+                case "chat":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "chat - go to the chat page",
+                        "Usage: chat",
+                    ];
+                    break;
+                case "clear":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "clear - clear the terminal",
+                        "Usage: clear",
+                    ];
+                    break;
+                case "whoami":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "whoami - print information about me",
+                        "Usage: whoami",
+                    ];
+                    break;
+                case "echo":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "echo - print arguments to the terminal",
+                        "Usage: echo &lt;message&gt",
+                    ];
+                    break;
+                case "motd":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "motd - print the message of the day",
+                        "Usage: motd",
+                    ];
+                    break;
+
+                default:
+                    terminalOutput = [...terminalOutput, "No manual entry for " + command[1]];
+            }
         },
     };
-    // const COLORS = {
-    //     '0': 'inherit', // reset
-    //     '30': '#000000', // black
-    //     '31': '#cd3131', // red
-    //     '32': '#0dbc79', // green
-    //     '33': '#e5e510', // yellow
-    //     '34': '#2472c8', // blue
-    //     '35': '#bc3fbc', // magenta
-    //     '36': '#11a8cd', // cyan
-    //     '37': '#e5e5e5', // white
-    //     '90': '#666666', // bright black
-    //     '91': '#f14c4c', // bright red
-    //     '92': '#23d18b', // bright green
-    //     '93': '#f5f543', // bright yellow
-    //     '94': '#3b8eea', // bright blue
-    //     '95': '#d670d6', // bright magenta
-    //     '96': '#29b8db', // bright cyan
-    //     '97': '#ffffff'  // bright white
-    // };
+
     async function neofetch(command) {
         let battery;
         try {
             battery = await navigator.getBattery();
-        } catch {
-
-        }
+        } catch {}
         let output;
         if (platform.toLowerCase().includes("linux")) {
-            output =   ["\u001b[96m                  -`                     ",
-                        "\u001b[96m                 .o+`                    ",
-                        "\u001b[96m                `ooo/                    ",
-                        "\u001b[96m               `+oooo:                   ",
-                        "\u001b[96m              `+oooooo:                  ",
-                        "\u001b[96m              -+oooooo+:                 ",
-                        "\u001b[96m            `/:-:++oooo+:                ",
-                        "\u001b[96m           `/++++/+++++++:               ",
-                        "\u001b[96m          `/++++++++++++++:              ",
-                        "\u001b[96m         `/+++ooooooooooooo/`            ",
-                        "\u001b[96m        ./ooosssso++osssssso+`           ",
-                        "\u001b[96m       .oossssso-````/ossssss+`          ",
-                        "\u001b[96m      -osssssso.      :ssssssso.         ",
-                        "\u001b[96m     :osssssss/        osssso+++.        ",
-                        "\u001b[96m    /ossssssss/        +ssssooo/-        ",
-                        "\u001b[96m  `/ossssso+/:-        -:/+osssso+-      ",
-                        "\u001b[96m `+sso+:-`                 `.-/+oso:     ",
-                        "\u001b[96m`++:.                           `-/+/    ",
-                        "\u001b[96m.`                                 `/    "
-                    ];
-        } else if (platform.toLowerCase().includes("win") || platform.toLowerCase().includes("windows")) {
+            output = [
+                "\u001b[96m                  -`                     ",
+                "\u001b[96m                 .o+`                    ",
+                "\u001b[96m                `ooo/                    ",
+                "\u001b[96m               `+oooo:                   ",
+                "\u001b[96m              `+oooooo:                  ",
+                "\u001b[96m              -+oooooo+:                 ",
+                "\u001b[96m            `/:-:++oooo+:                ",
+                "\u001b[96m           `/++++/+++++++:               ",
+                "\u001b[96m          `/++++++++++++++:              ",
+                "\u001b[96m         `/+++ooooooooooooo/`            ",
+                "\u001b[96m        ./ooosssso++osssssso+`           ",
+                "\u001b[96m       .oossssso-````/ossssss+`          ",
+                "\u001b[96m      -osssssso.      :ssssssso.         ",
+                "\u001b[96m     :osssssss/        osssso+++.        ",
+                "\u001b[96m    /ossssssss/        +ssssooo/-        ",
+                "\u001b[96m  `/ossssso+/:-        -:/+osssso+-      ",
+                "\u001b[96m `+sso+:-`                 `.-/+oso:     ",
+                "\u001b[96m`++:.                           `-/+/    ",
+                "\u001b[96m.`                                 `/    ",
+            ];
+        } else if (
+            platform.toLowerCase().includes("win") ||
+            platform.toLowerCase().includes("windows")
+        ) {
             output = [
                 "\u001b[31m        ,.=:!!t3Z3z.,                   \u001b[96m",
                 "\u001b[31m       :tt:::tt333EE3                   \u001b[96m",
@@ -521,28 +795,32 @@
                 "\u001b[34m E::::::::zt33L\u001b[33m @EEEtttt::::z3F         \u001b[96m",
                 '\u001b[34m{3=*^```"*4E3)\u001b[33m ;EEEtttt:::::tZ`         \u001b[96m',
                 "\u001b[34m             `\u001b[33m :EEEEtttt::::z7          ",
-                '\u001b[33m                 "VEzjt:;;z>*`          '
+                '\u001b[33m                 "VEzjt:;;z>*`          ',
             ];
-        } else if (platform.toLowerCase().includes("mac") || platform.toLowerCase().includes("iPhone") || platform.toLowerCase().includes("iPad")) {
+        } else if (
+            platform.toLowerCase().includes("mac") ||
+            platform.toLowerCase().includes("iPhone") ||
+            platform.toLowerCase().includes("iPad")
+        ) {
             output = [
-                    `\u001b[37m                     ..'            \u001b[96m`,
-                    `\u001b[37m                 ,xNMM.             \u001b[96m`,
-                    `\u001b[37m               .OMMMMo              \u001b[96m`,
-                    `\u001b[37m               lMM"                 \u001b[96m`,
-                    `\u001b[37m     .;loddo:.  .olloddol;.         \u001b[96m`,
-                    `\u001b[37m   cKMMMMMMMMMMNWMMMMMMMMMM0:       \u001b[96m`,
-                    `\u001b[37m .KMMMMMMMMMMMMMMMMMMMMMMMWd.       \u001b[96m`,
-                    `\u001b[37m XMMMMMMMMMMMMMMMMMMMMMMMX.         \u001b[96m`,
-                    `\u001b[37m;MMMMMMMMMMMMMMMMMMMMMMMM:          \u001b[96m`,
-                    `\u001b[37m:MMMMMMMMMMMMMMMMMMMMMMMM:          \u001b[96m`,
-                    `\u001b[37m.MMMMMMMMMMMMMMMMMMMMMMMMX.         \u001b[96m`,
-                    `\u001b[37m kMMMMMMMMMMMMMMMMMMMMMMMMWd.       \u001b[96m`,
-                    `\u001b[37m 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk      \u001b[96m`,
-                    `\u001b[37m  'XMMMMMMMMMMMMMMMMMMMMMMMMK.      \u001b[96m`,
-                    `\u001b[37m    kMMMMMMMMMMMMMMMMMMMMMMd        \u001b[96m`,
-                    `\u001b[37m     ;KMMMMMMMWXXWMMMMMMMk.         \u001b[96m`,
-                    `\u001b[37m       "cooc*"    "*coo'"           \u001b[96m`
-                ];
+                `\u001b[37m                     ..'            \u001b[96m`,
+                `\u001b[37m                 ,xNMM.             \u001b[96m`,
+                `\u001b[37m               .OMMMMo              \u001b[96m`,
+                `\u001b[37m               lMM"                 \u001b[96m`,
+                `\u001b[37m     .;loddo:.  .olloddol;.         \u001b[96m`,
+                `\u001b[37m   cKMMMMMMMMMMNWMMMMMMMMMM0:       \u001b[96m`,
+                `\u001b[37m .KMMMMMMMMMMMMMMMMMMMMMMMWd.       \u001b[96m`,
+                `\u001b[37m XMMMMMMMMMMMMMMMMMMMMMMMX.         \u001b[96m`,
+                `\u001b[37m;MMMMMMMMMMMMMMMMMMMMMMMM:          \u001b[96m`,
+                `\u001b[37m:MMMMMMMMMMMMMMMMMMMMMMMM:          \u001b[96m`,
+                `\u001b[37m.MMMMMMMMMMMMMMMMMMMMMMMMX.         \u001b[96m`,
+                `\u001b[37m kMMMMMMMMMMMMMMMMMMMMMMMMWd.       \u001b[96m`,
+                `\u001b[37m 'XMMMMMMMMMMMMMMMMMMMMMMMMMMk      \u001b[96m`,
+                `\u001b[37m  'XMMMMMMMMMMMMMMMMMMMMMMMMK.      \u001b[96m`,
+                `\u001b[37m    kMMMMMMMMMMMMMMMMMMMMMMd        \u001b[96m`,
+                `\u001b[37m     ;KMMMMMMMWXXWMMMMMMMk.         \u001b[96m`,
+                `\u001b[37m       "cooc*"    "*coo'"           \u001b[96m`,
+            ];
         }
 
         if (navigator.userAgent.includes("CrOS")) {
@@ -564,7 +842,7 @@
                 "\u001b[31m    ,:ccccccccclllcd\u001b[33m0000OOOOOOl.       \u001b[96m",
                 "\u001b[31m      '::ccccccccc\u001b[33mdOOOOOOOkx:.         \u001b[96m",
                 "\u001b[31m        ..,::cccc\u001b[33mxOOOkkko;.            \u001b[96m",
-                "\u001b[31m            ..,:\u001b[33mdOkxl:.                \u001b[96m"
+                "\u001b[31m            ..,:\u001b[33mdOkxl:.                \u001b[96m",
             ];
         }
 
@@ -573,25 +851,44 @@
             "\u001b[37m-------------------",
             "OS\u001b[37m: " + platform,
             "Host\u001b[37m: Github Pages",
-            "Uptime\u001b[37m: " + Math.floor((new Date() - pageLoadTime) / 1000) + " seconds",
+            "Uptime\u001b[37m: " +
+                Math.floor((new Date() - pageLoadTime) / 1000) +
+                " seconds",
             "Packages\u001b[37m: " + Object.keys(commands).length,
             "Shell\u001b[37m: web 1.0",
-            "Display\u001b[37m: " + displayWidth + "x" + displayHeight + " @ " + refreshRate + "Hz",
+            "Display\u001b[37m: " +
+                displayWidth +
+                "x" +
+                displayHeight +
+                " @ " +
+                refreshRate +
+                "Hz",
             "Terminal Font\u001b[37m: Consolas",
             "User Agent\u001b[37m: " + navigator.userAgent,
             "CPU\u001b[37m: " + navigator.hardwareConcurrency + " thread(s)",
             "GPU Vendor\u001b[37m: " + gpuVendor,
-            "Locale\u001b[37m: " + Intl.DateTimeFormat().resolvedOptions().locale
+            "Locale\u001b[37m: " +
+                Intl.DateTimeFormat().resolvedOptions().locale,
         ];
 
         if (battery) {
-            stats.push("Battery\u001b[37m: " + (battery.charging ? "Charging" : "Discharging") + " (" + Math.floor(battery.level * 100) + "%)");
+            stats.push(
+                "Battery\u001b[37m: " +
+                    (battery.charging ? "Charging" : "Discharging") +
+                    " (" +
+                    Math.floor(battery.level * 100) +
+                    "%)",
+            );
         }
 
         stats.push("");
 
-        stats.push("\u001b[30m███\u001b[31m███\u001b[32m███\u001b[33m███\u001b[34m███\u001b[37m███\u001b[36m███\u001b[37m███");
-        stats.push("\u001b[90m███\u001b[91m███\u001b[92m███\u001b[93m███\u001b[94m███\u001b[95m███\u001b[96m███\u001b[97m███");
+        stats.push(
+            "\u001b[30m███\u001b[31m███\u001b[32m███\u001b[33m███\u001b[34m███\u001b[37m███\u001b[36m███\u001b[37m███",
+        );
+        stats.push(
+            "\u001b[90m███\u001b[91m███\u001b[92m███\u001b[93m███\u001b[94m███\u001b[95m███\u001b[96m███\u001b[97m███",
+        );
 
         for (let i = 0; i < stats.length; i++) {
             output[i] += stats[i];
@@ -604,33 +901,33 @@
         const regex = /\u001b\[(\d+)m(.*?)(?=\u001b|\n|$)/g;
         let result = text;
         let matches = [...text.matchAll(regex)];
-        
+
         if (matches.length === 0) return text;
 
-        let processed = '';
+        let processed = "";
         let lastIndex = 0;
 
         for (let match of matches) {
             const [fullMatch, code, content] = match;
             const index = match.index;
-            
+
             processed += text.substring(lastIndex, index);
-            
+
             if (COLORS[code]) {
                 processed += `<span style="color: ${COLORS[code]}">${content}</span>`;
             } else if (BG_COLORS[code]) {
                 processed += `<span style="background-color: ${BG_COLORS[code]}">${content}</span>`;
-            } else if (code === '0') {
+            } else if (code === "0") {
                 processed += content;
             } else {
                 processed += content;
             }
-            
+
             lastIndex = index + fullMatch.length;
         }
-        
+
         processed += text.substring(lastIndex);
-        
+
         return processed;
     }
 
@@ -665,6 +962,14 @@
             if (cursorPosition < inputValue.length) {
                 cursorPosition++;
             }
+        } else if (event.key === "v" && event.ctrlKey) {
+            navigator.clipboard.readText().then((text) => {
+                inputValue =
+                    inputValue.slice(0, cursorPosition) +
+                    text +
+                    inputValue.slice(cursorPosition);
+                cursorPosition += text.length;
+            });
         } else if (event.key.length === 1) {
             inputValue =
                 inputValue.slice(0, cursorPosition) +
@@ -679,7 +984,7 @@
                 cursorPosition--;
             }
         }
-
+        
         event.preventDefault();
     }
 
@@ -718,13 +1023,15 @@
         displayWidth = window.screen.availWidth;
         platform = window.navigator.platform;
 
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const canvas1 = document.createElement("canvas");
+        const gl =
+            canvas1.getContext("webgl") ||
+            canvas1.getContext("experimental-webgl");
         if (gl) {
-            const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
             gpuVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
         }
-        canvas.remove();
+        canvas1.remove();
 
         let lastTimestamp = 0;
         let frameCount = 0;
@@ -747,6 +1054,7 @@
 
             window.requestAnimationFrame(estimateRefreshRate);
         }
+
 
         window.requestAnimationFrame(estimateRefreshRate);
 
