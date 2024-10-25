@@ -414,7 +414,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>exit",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed",
             ];
         },
 
@@ -764,10 +764,6 @@
             terminalOutput = [...terminalOutput, colorString];
         },
 
-        exit: () => {
-            window.close();
-        },
-
         canvastest: async () => {
             terminalOutput = [
                 ...terminalOutput,
@@ -857,13 +853,6 @@
                         "Usage: setspeed &lt;speed&gt",
                     ];
                     break;
-                case "exit":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "exit - close the terminal",
-                        "Usage: exit",
-                    ];
-                    break;
                 case "colortest":
                     terminalOutput = [
                         ...terminalOutput,
@@ -921,7 +910,13 @@
                         "Usage: canvastest",
                     ];
                     break;
-
+                case "export":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "export - set an environment variable",
+                        "Usage: export &lt;variable&gt=&lt;value&gt",
+                    ];
+                    break;
 
                 default:
                     terminalOutput = [...terminalOutput, "No manual entry for " + command[1]];
