@@ -149,6 +149,8 @@
     let commandInputCallback;
     let timerCountingDown = false;
 
+    let transMode = false;
+
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
     function conwayIteration() {
@@ -451,7 +453,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>trans",
             ];
         },
 
@@ -822,7 +824,7 @@
             }
         },
 
-        turn_me_into_a_girl: () => {
+        turn_me_into_a_girl: async () => {
             terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.", "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl."];
             commandInputCallback = async (command) => {
                 if (command.toLowerCase() === "y" || command.toLowerCase() === "yes") {
@@ -882,9 +884,26 @@
             };
         },
 
+        trans: makeTransFlagColors,
+
         man: manual,
         woman: manual
     };
+
+    function makeTransFlagColors() {
+        for (let i = 0; i < terminalOutput.length; i++) {
+            const imod5 = i % 5;
+            if (imod5 == 0 || imod5 == 4) {
+                terminalOutput[i] = '<span style="color: #5BCEFA !important">' + terminalOutput[i] + '</span>';
+            } else if (imod5 == 1 || imod5 == 3) {
+                terminalOutput[i] = '<span style="color: #F5A9B8 !important">' + terminalOutput[i] + '</span>';
+            } else if (imod5 == 2) {
+                terminalOutput[i] = '<span style="color: #FFFFFF !important">' + terminalOutput[i] + '</span>';
+            }
+        }
+
+        transMode = true;
+    }
 
     function manual(command) {
         if (command.length === 1) {
@@ -1023,6 +1042,14 @@
                     ...terminalOutput,
                     "turn_me_into_a_girl - Turns you into a cute and silly girl :3",
                     "Usage: turn_me_into_a_girl",
+                ];
+                break;
+
+            case "trans":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "trans - Makes your terminal trans flag colors",
+                    "Usage: trans",
                 ];
                 break;
 
@@ -1200,8 +1227,9 @@
             const index = match.index;
 
             processed += text.substring(lastIndex, index);
-
-            if (COLORS[code]) {
+            if (transMode) {
+                processed += content;
+            } else if (COLORS[code]) {
                 processed += `<span style="color: ${COLORS[code]}">${content}</span>`;
             } else if (BG_COLORS[code]) {
                 processed += `<span style="background-color: ${BG_COLORS[code]}">${content}</span>`;
@@ -1312,6 +1340,10 @@
         setTimeout(() => {
             terminalElement.scrollTop = terminalElement.scrollHeight;
         }, 0);
+
+        if (transMode) {
+            makeTransFlagColors();
+        }
     }
 
     onMount(() => {
