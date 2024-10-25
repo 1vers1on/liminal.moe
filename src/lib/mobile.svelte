@@ -151,7 +151,7 @@
                                 ...terminalOutput,
                                 "<br>",
                                 "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
-                                "┃ <span style='color:#0ff;'>Discord: HoosierTransfer</span>  ┃",
+                                "┃ <span style='color:#0ff;'>Discord: 1vers1on</span>         ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
                             ];

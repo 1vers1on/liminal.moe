@@ -109,7 +109,7 @@
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
         '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow" style="color:#0ff;">Github</a>                                         ┃',
         "┃                                                 ┃",
-        "┃  <span style='color:#0ff;'>Discord: HoosierTransfer</span>                       ┃",
+        "┃  <span style='color:#0ff;'>Discord: 1vers1on</span>                              ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands. Use chat to go to irc chat.",
@@ -646,7 +646,7 @@
                             ...terminalOutput,
                             "<br>",
                             "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
-                            "┃ <span style='color:#0ff;'>Discord: HoosierTransfer</span>  ┃",
+                            "┃ <span style='color:#0ff;'>Discord: 1vers1on</span>         ┃",
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
                         ];
