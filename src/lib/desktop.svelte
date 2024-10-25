@@ -822,145 +822,148 @@
             }
         },
 
-        man: (command) => {
-            if (command.length === 1) {
+        man: manual,
+        woman: manual
+    };
+
+    function manual(command) {
+        if (command.length === 1) {
+            terminalOutput = [
+                ...terminalOutput,
+                "Usage: man &ltcommand&gt",
+            ];
+            return;
+        }
+
+        switch (command[1]) {
+            case "ls":
                 terminalOutput = [
                     ...terminalOutput,
-                    "Usage: man &ltcommand&gt",
+                    "ls - list directory contents",
+                    "Usage: ls",
                 ];
-                return;
-            }
+                break;
+            case "cat":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "cat - print file on the standard output",
+                    "Usage: cat &lt;filename&gt",
+                ];
+                break;
+            case "conway":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "conway - run Conway's Game of Life",
+                    "Usage: conway",
+                ];
+                break;
+            case "javascript":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "javascript - run JavaScript code",
+                    "Usage: javascript &lt;code&gt",
+                ];
+                break;
+            case "cowsay":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "cowsay - generate an ASCII cow",
+                    "Usage: cowsay &lt;message&gt",
+                ];
+                break;
+            case "neofetch":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "neofetch - print system information",
+                    "Usage: neofetch",
+                ];
+                break;
+            case "ant":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "ant - run Langton's Ant",
+                    "Usage: ant &lt;rule&gt",
+                ];
+                break;
+            case "setspeed":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "setspeed - set the delay between frrames in the simulation",
+                    "Usage: setspeed &lt;speed&gt",
+                ];
+                break;
+            case "colortest":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "colortest - generate a list of colors",
+                    "Usage: colortest &lt;number&gt",
+                ];
+                break;
+            case "help":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "help - display available commands",
+                    "Usage: help",
+                ];
+                break;
+            case "chat":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "chat - go to the chat page",
+                    "Usage: chat",
+                ];
+                break;
+            case "clear":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "clear - clear the terminal",
+                    "Usage: clear",
+                ];
+                break;
+            case "whoami":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "whoami - print information about me",
+                    "Usage: whoami",
+                ];
+                break;
+            case "echo":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "echo - print arguments to the terminal",
+                    "Usage: echo &lt;message&gt",
+                ];
+                break;
+            case "motd":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "motd - print the message of the day",
+                    "Usage: motd",
+                ];
+                break;
 
-            switch (command[1]) {
-                case "ls":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "ls - list directory contents",
-                        "Usage: ls",
-                    ];
-                    break;
-                case "cat":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "cat - print file on the standard output",
-                        "Usage: cat &lt;filename&gt",
-                    ];
-                    break;
-                case "conway":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "conway - run Conway's Game of Life",
-                        "Usage: conway",
-                    ];
-                    break;
-                case "javascript":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "javascript - run JavaScript code",
-                        "Usage: javascript &lt;code&gt",
-                    ];
-                    break;
-                case "cowsay":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "cowsay - generate an ASCII cow",
-                        "Usage: cowsay &lt;message&gt",
-                    ];
-                    break;
-                case "neofetch":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "neofetch - print system information",
-                        "Usage: neofetch",
-                    ];
-                    break;
-                case "ant":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "ant - run Langton's Ant",
-                        "Usage: ant &lt;rule&gt",
-                    ];
-                    break;
-                case "setspeed":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "setspeed - set the delay between frrames in the simulation",
-                        "Usage: setspeed &lt;speed&gt",
-                    ];
-                    break;
-                case "colortest":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "colortest - generate a list of colors",
-                        "Usage: colortest &lt;number&gt",
-                    ];
-                    break;
-                case "help":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "help - display available commands",
-                        "Usage: help",
-                    ];
-                    break;
-                case "chat":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "chat - go to the chat page",
-                        "Usage: chat",
-                    ];
-                    break;
-                case "clear":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "clear - clear the terminal",
-                        "Usage: clear",
-                    ];
-                    break;
-                case "whoami":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "whoami - print information about me",
-                        "Usage: whoami",
-                    ];
-                    break;
-                case "echo":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "echo - print arguments to the terminal",
-                        "Usage: echo &lt;message&gt",
-                    ];
-                    break;
-                case "motd":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "motd - print the message of the day",
-                        "Usage: motd",
-                    ];
-                    break;
+            case "canvastest":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "canvastest - test canvas rendering",
+                    "Usage: canvastest",
+                ];
+                break;
+            case "export":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "export - set an environment variable",
+                    "Usage: export &lt;variable&gt=&lt;value&gt",
+                ];
+                break;
 
-                case "canvastest":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "canvastest - test canvas rendering",
-                        "Usage: canvastest",
-                    ];
-                    break;
-                case "export":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "export - set an environment variable",
-                        "Usage: export &lt;variable&gt=&lt;value&gt",
-                    ];
-                    break;
-
-                default:
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "No manual entry for " + command[1],
-                    ];
-            }
-        },
-    };
+            default:
+                terminalOutput = [
+                    ...terminalOutput,
+                    "No manual entry for " + command[1],
+                ];
+        }
+    }
 
     async function neofetch(command) {
         let battery;
