@@ -825,12 +825,26 @@
         },
 
         turn_me_into_a_girl: async () => {
-            terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.", "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl."];
+            terminalOutput = [
+                ...terminalOutput,
+                "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.",
+                "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl.",
+            ];
             commandInputCallback = async (command) => {
-                if (command.toLowerCase() === "y" || command.toLowerCase() === "yes") {
-                    terminalOutput = [...terminalOutput, "\u001b[35mOkay then! As you wish.", "\u001b[35mPlease wait warmly... (Press c to cancel)"];
+                if (
+                    command.toLowerCase() === "y" ||
+                    command.toLowerCase() === "yes"
+                ) {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "\u001b[35mOkay then! As you wish.",
+                        "\u001b[35mPlease wait warmly... (Press c to cancel)",
+                    ];
                     let timerLine = terminalOutput.length;
-                    terminalOutput = [...terminalOutput, "\u001b[37m[--------------------] 0%"];
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "\u001b[37m[--------------------] 0%",
+                    ];
                     const totalTime = 20000;
                     const startTime = new Date();
                     let lastTime = startTime;
@@ -838,11 +852,15 @@
                     let progress = 0;
                     let easing = (x) => {
                         return 1 - Math.pow(1 - x, 4);
-                    }
+                    };
                     timerCountingDown = true;
                     while (progress < 1) {
                         if (!timerCountingDown) {
-                            terminalOutput = [...terminalOutput, "\u001b[37mThat's totally fine. Don't worry about it.", "\u001b[37mYou're a good person."];
+                            terminalOutput = [
+                                ...terminalOutput,
+                                "\u001b[37mThat's totally fine. Don't worry about it.",
+                                "\u001b[37mYou're a good person.",
+                            ];
                             return;
                         }
                         currentTime = new Date();
@@ -859,17 +877,27 @@
                                 bar += "-";
                             }
                         }
-                        bar += "\u001b[37m] " + Math.floor(easing(progress) * 100) + "%";
+                        bar +=
+                            "\u001b[37m] " +
+                            Math.floor(easing(progress) * 100) +
+                            "%";
                         terminalOutput[timerLine] = bar;
                         await delay(1000 / 60);
                     }
                     timerCountingDown = false;
-                    terminalOutput[timerLine] = "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%";
+                    terminalOutput[timerLine] =
+                        "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%";
                     const line = terminalOutput.length;
                     terminalOutput[line] = "\u001b[95m";
-                    const string1 = "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
+                    const string1 =
+                        "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
                     for (let i = 0; i < string1.length; i++) {
-                        if (string1.charAt(i) == "<" && string1.charAt(i + 1) == "b" && string1.charAt(i + 2) == "r" && string1.charAt(i + 3) == ">") {
+                        if (
+                            string1.charAt(i) == "<" &&
+                            string1.charAt(i + 1) == "b" &&
+                            string1.charAt(i + 2) == "r" &&
+                            string1.charAt(i + 3) == ">"
+                        ) {
                             terminalOutput[line] += "<br>";
                             i += 3;
                             await delay(20);
@@ -878,8 +906,15 @@
                         terminalOutput[line] += string1.charAt(i);
                         await delay(20);
                     }
-                } else if (command.toLowerCase() === "n" || command.toLowerCase() === "no") {
-                    terminalOutput = [...terminalOutput, "\u001b[37mThat's totally fine. Don't worry about it.", "\u001b[37mYou're a good person."];
+                } else if (
+                    command.toLowerCase() === "n" ||
+                    command.toLowerCase() === "no"
+                ) {
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "\u001b[37mThat's totally fine. Don't worry about it.",
+                        "\u001b[37mYou're a good person.",
+                    ];
                 }
             };
         },
@@ -887,18 +922,27 @@
         trans: makeTransFlagColors,
 
         man: manual,
-        woman: manual
+        woman: manual,
     };
 
     function makeTransFlagColors() {
         for (let i = 0; i < terminalOutput.length; i++) {
             const imod5 = i % 5;
             if (imod5 == 0 || imod5 == 4) {
-                terminalOutput[i] = '<span style="color: #5BCEFA !important">' + terminalOutput[i] + '</span>';
+                terminalOutput[i] =
+                    '<span style="color: #5BCEFA !important">' +
+                    terminalOutput[i] +
+                    "</span>";
             } else if (imod5 == 1 || imod5 == 3) {
-                terminalOutput[i] = '<span style="color: #F5A9B8 !important">' + terminalOutput[i] + '</span>';
+                terminalOutput[i] =
+                    '<span style="color: #F5A9B8 !important">' +
+                    terminalOutput[i] +
+                    "</span>";
             } else if (imod5 == 2) {
-                terminalOutput[i] = '<span style="color: #FFFFFF !important">' + terminalOutput[i] + '</span>';
+                terminalOutput[i] =
+                    '<span style="color: #FFFFFF !important">' +
+                    terminalOutput[i] +
+                    "</span>";
             }
         }
 
@@ -907,10 +951,7 @@
 
     function manual(command) {
         if (command.length === 1) {
-            terminalOutput = [
-                ...terminalOutput,
-                "Usage: man &ltcommand&gt",
-            ];
+            terminalOutput = [...terminalOutput, "Usage: man &ltcommand&gt"];
             return;
         }
 
@@ -1036,7 +1077,7 @@
                     "Usage: export &lt;variable&gt=&lt;value&gt",
                 ];
                 break;
-            
+
             case "turn_me_into_a_girl":
                 terminalOutput = [
                     ...terminalOutput,
@@ -1294,7 +1335,7 @@
                     inputValue.slice(cursorPosition);
                 cursorPosition += text.length;
             });
-        } else if (event.key === "c" && timerCountingDown)  {
+        } else if (event.key === "c" && timerCountingDown) {
             timerCountingDown = false;
         } else if (event.key.length === 1) {
             inputValue =
@@ -1425,14 +1466,7 @@
 </div>
 
 <style>
-    /*
-* Prefixed by https://autoprefixer.github.io
-* PostCSS: v8.4.14,
-* Autoprefixer: v10.4.7
-* Browsers: last 4 version
-*/
-
-.terminal {
+    .terminal {
         background-color: #000;
         color: #0f0;
         padding: 10px;
@@ -1454,8 +1488,8 @@
         display: -ms-flexbox;
         display: flex;
         -webkit-box-align: center;
-            -ms-flex-align: center;
-                align-items: center;
+        -ms-flex-align: center;
+        align-items: center;
     }
 
     .prompt {
@@ -1470,7 +1504,7 @@
 
     .cursor {
         -webkit-animation: blink 1s step-end infinite;
-                animation: blink 1s step-end infinite;
+        animation: blink 1s step-end infinite;
     }
 
     .cursor.end {
