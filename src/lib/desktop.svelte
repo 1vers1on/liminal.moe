@@ -128,6 +128,7 @@
     let grid = [];
     let gridState = [];
     let gridLocation = 0;
+    let gridColors = [];
 
     let gridCanvases = [];
     let activeGridCanvas;
@@ -140,14 +141,13 @@
 
     let antX, antY;
     let antDirection = 0;
+    let antRule = "RL";
 
     let runningInterval;
-
     let intervalSpeed = 100;
 
-    let gridColors = [];
-
-    let antRule = "RL";
+    let commandInputCallback;
+    let timerCountingDown = false;
 
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
@@ -451,7 +451,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed",
             ];
         },
 
@@ -822,6 +822,81 @@
             }
         },
 
+        confirmtest: async () => {
+            terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to do this?"];
+            commandInputCallback = async (command) => {
+                if (command === "yes") {
+                    terminalOutput = [...terminalOutput, "Confirmed"];
+                } else {
+                    terminalOutput = [...terminalOutput, "Cancelled"];
+                }
+
+                commnandInputCallback = async (command) => {
+                    terminalOutput = [...terminalOutput, "Please enter a command"];
+                };
+            };
+        },
+
+        turn_me_into_a_girl: () => {
+            terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.", "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl."];
+            commandInputCallback = async (command) => {
+                if (command.toLowerCase() === "y" || command.toLowerCase() === "yes") {
+                    terminalOutput = [...terminalOutput, "\u001b[35mOkay then! As you wish.", "\u001b[35mPlease wait warmly... (Press c to cancel)"];
+                    let timerLine = terminalOutput.length;
+                    terminalOutput = [...terminalOutput, "\u001b[37m[--------------------] 0%"];
+                    const totalTime = 20000;
+                    const startTime = new Date();
+                    let lastTime = startTime;
+                    let currentTime;
+                    let progress = 0;
+                    let easing = (x) => {
+                        return 1 - Math.pow(1 - x, 4);
+                    }
+                    timerCountingDown = true;
+                    while (progress < 1) {
+                        if (!timerCountingDown) {
+                            terminalOutput = [...terminalOutput, "\u001b[37mThat's totally fine. Don't worry about it.", "\u001b[37mYou're a good person."];
+                            return;
+                        }
+                        currentTime = new Date();
+                        progress = (currentTime - startTime) / totalTime;
+                        let bar = "\u001b[37m[\u001b[1337m";
+                        let barProgress = easing(progress) * 20;
+                        for (let i = 0; i < 20; i++) {
+                            if (i < barProgress) {
+                                bar += "=";
+                            } else {
+                                if (bar.endsWith("=")) {
+                                    bar += "\u001b[37m";
+                                }
+                                bar += "-";
+                            }
+                        }
+                        bar += "\u001b[37m] " + Math.floor(easing(progress) * 100) + "%";
+                        terminalOutput[timerLine] = bar;
+                        await delay(1000 / 60);
+                    }
+                    timerCountingDown = false;
+                    terminalOutput[timerLine] = "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%";
+                    const line = terminalOutput.length;
+                    terminalOutput[line] = "\u001b[95m";
+                    const string1 = "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
+                    for (let i = 0; i < string1.length; i++) {
+                        if (string1.charAt(i) == "<" && string1.charAt(i + 1) == "b" && string1.charAt(i + 2) == "r" && string1.charAt(i + 3) == ">") {
+                            terminalOutput[line] += "<br>";
+                            i += 3;
+                            await delay(20);
+                            continue;
+                        }
+                        terminalOutput[line] += string1.charAt(i);
+                        await delay(20);
+                    }
+                } else if (command.toLowerCase() === "n" || command.toLowerCase() === "no") {
+                    terminalOutput = [...terminalOutput, "\u001b[37mThat's totally fine. Don't worry about it.", "\u001b[37mYou're a good person."];
+                }
+            };
+        },
+
         man: manual,
         woman: manual
     };
@@ -949,6 +1024,7 @@
                     "Usage: canvastest",
                 ];
                 break;
+
             case "export":
                 terminalOutput = [
                     ...terminalOutput,
@@ -1104,6 +1180,7 @@
         stats.push(
             "\u001b[30m███\u001b[31m███\u001b[32m███\u001b[33m███\u001b[34m███\u001b[37m███\u001b[36m███\u001b[37m███",
         );
+
         stats.push(
             "\u001b[90m███\u001b[91m███\u001b[92m███\u001b[93m███\u001b[94m███\u001b[95m███\u001b[96m███\u001b[97m███",
         );
@@ -1135,6 +1212,14 @@
                 processed += `<span style="color: ${COLORS[code]}">${content}</span>`;
             } else if (BG_COLORS[code]) {
                 processed += `<span style="background-color: ${BG_COLORS[code]}">${content}</span>`;
+            } else if (code === "1337") {
+                let rainbowText = "";
+                for (let i = 0; i < content.length; i++) {
+                    let hue = (i / content.length) * 360;
+                    rainbowText += `<span style="color: hsl(${hue}, 100%, 50%)">${content[i]}</span>`;
+                }
+
+                processed += rainbowText;
             } else if (code === "0") {
                 processed += content;
             } else {
@@ -1188,6 +1273,8 @@
                     inputValue.slice(cursorPosition);
                 cursorPosition += text.length;
             });
+        } else if (event.key === "c" && timerCountingDown)  {
+            timerCountingDown = false;
         } else if (event.key.length === 1) {
             inputValue =
                 inputValue.slice(0, cursorPosition) +
@@ -1207,6 +1294,11 @@
     }
 
     function processCommand(command) {
+        if (commandInputCallback) {
+            commandInputCallback(command);
+            commandInputCallback = null;
+            return;
+        }
         terminalOutput = [
             ...terminalOutput,
             `${currentDirectory} $ ${command}`,
