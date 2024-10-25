@@ -449,11 +449,11 @@
         },
 
         neofetch: () => {
-            neofetch();
+            neofetch(command);
         },
 
         fastfetch: () => {
-            neofetch();
+            neofetch(command);
         },
     };
     // const COLORS = {
@@ -475,7 +475,7 @@
     //     '96': '#29b8db', // bright cyan
     //     '97': '#ffffff'  // bright white
     // };
-    async function neofetch() {
+    async function neofetch(command) {
         let battery;
         try {
             battery = await navigator.getBattery();
@@ -545,6 +545,29 @@
                 ];
         }
 
+        if (navigator.userAgent.includes("CrOS")) {
+            output = [
+                "\u001b[32m            .,:loool:,.                \u001b[96m",
+                "\u001b[32m        .,coooooooooooooc,.            \u001b[96m",
+                "\u001b[32m    .,lllllllllllllllllllll,.          \u001b[96m",
+                "\u001b[32m    ;ccccccccccccccccccccccccc;        \u001b[96m",
+                "\u001b[31m  '\u001b[32mccccccccccccccccccccccccccccc.      \u001b[96m",
+                "\u001b[31m ,oo\u001b[32mc::::::::okO\u001b[37m000\u001b[33m0OOkkkkkkkkkkk:     \u001b[96m",
+                "\u001b[31m.ooool\u001b[32m;;;;:x\u001b[37mK0\u001b[34mkxxxxxk\u001b[37m0X\u001b[33mK0000000000.    \u001b[96m",
+                "\u001b[31m:oooool\u001b[32m;,;O\u001b[37mK\u001b[34mddddddddddd\u001b[37mKX\u001b[33m000000000d    \u001b[96m",
+                "\u001b[31mlllllool\u001b[32m;l\u001b[37mN\u001b[34mdllllllllllld\u001b[37mN\u001b[33mK000000000    \u001b[96m",
+                "\u001b[31mlllllllll\u001b[32m\u001b[32mo\u001b[37mM\u001b[34mdccccccccccco\u001b[37mW\u001b[33mK000000000    \u001b[96m",
+                "\u001b[31m;cllllllllX\u001b[37mX\u001b[34mc:::::::::c\u001b[37m0X\u001b[33m000000000d    \u001b[96m",
+                "\u001b[31m.ccccllllllO\u001b[37mNk\u001b[34mc;,,,;cx\u001b[37mKK\u001b[33m0000000000.    \u001b[96m",
+                "\u001b[31m .cccccclllllxOO\u001b[37mOOO\u001b[31mOkx\u001b[33mO0000000000;     \u001b[96m",
+                "\u001b[31m  .:ccccccccllllllllo\u001b[33mO0000000OOO,      \u001b[96m",
+                "\u001b[31m    ,:ccccccccclllcd\u001b[33m0000OOOOOOl.       \u001b[96m",
+                "\u001b[31m      '::ccccccccc\u001b[33mdOOOOOOOkx:.         \u001b[96m",
+                "\u001b[31m        ..,::cccc\u001b[33mxOOOkkko;.            \u001b[96m",
+                "\u001b[31m            ..,:\u001b[33mdOkxl:.                \u001b[96m"
+            ];
+        }
+
         const stats = [
             "hoosiertransfer\u001b[37m@\u001b[96mnet",
             "\u001b[37m-------------------",
@@ -567,7 +590,7 @@
 
         stats.push("");
 
-        stats.push("\u001b[30m███\u001b[31m███\u001b[32m███\u001b[33m███\u001b[34m███\u001b[35m███\u001b[36m███\u001b[37m███");
+        stats.push("\u001b[30m███\u001b[31m███\u001b[32m███\u001b[33m███\u001b[34m███\u001b[37m███\u001b[36m███\u001b[37m███");
         stats.push("\u001b[90m███\u001b[91m███\u001b[92m███\u001b[93m███\u001b[94m███\u001b[95m███\u001b[96m███\u001b[97m███");
 
         for (let i = 0; i < stats.length; i++) {
