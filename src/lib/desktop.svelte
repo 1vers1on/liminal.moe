@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
     import { createClient } from "@supabase/supabase-js";
     import { goto } from "$app/navigation";
     import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
@@ -15,6 +15,8 @@
     let gpuVendor = "";
 
     let pageLoadTime = new Date();
+
+    let environmentVariables = new Map();
 
     // ANSI color codes to CSS colors
     const COLORS = {
@@ -127,6 +129,13 @@
     let gridState = [];
     let gridLocation = 0;
 
+    let gridCanvases = [];
+    let activeGridCanvas;
+    let gridCanvasContext;
+
+    let onlyUpdateChangedCells = true;
+    let changedCells = [];
+
     let conwayInterval;
 
     let antX, antY;
@@ -181,6 +190,10 @@
                         newGridState[i].push(0);
                     }
                 }
+
+                if (gridState[i][j] !== newGridState[i][j]) {
+                    changedCells.push([i, j]);
+                }
             }
         }
         gridState = newGridState;
@@ -218,6 +231,63 @@
     function updateGridDirect() {
         for (let i = 0; i < grid.length; i++) {
             terminalOutput[gridLocation + i] = grid[i].join("");
+        }
+    }
+
+    async function addCanvasGrid() {
+        terminalOutput.push({ type: "canvas" });
+        await tick();
+        for (let i = 0; i < gridCanvases.length; i++) {
+            if (gridCanvases[i]) {
+                activeGridCanvas = gridCanvases[i];
+                break;
+            }
+        }
+        gridCanvasContext = activeGridCanvas.getContext("2d");
+    }
+
+    function updateCanvasGrid() {
+        const cellSize = 300 / gridState.length;
+        if (!onlyUpdateChangedCells) {
+            gridCanvasContext.clearRect(0, 0, 300, 300);
+        }
+        if (onlyUpdateChangedCells) {
+            for (let i = 0; i < changedCells.length; i++) {
+                let x = changedCells[i][0];
+                let y = changedCells[i][1];
+                if (gridColors.length === 0) {
+                    gridCanvasContext.fillStyle = gridState[x][y] === 1 ? "#0f0" : "#000";
+                    gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                } else {
+                    if (gridState[x][y] > 0) {
+                        let colorIndex = gridState[x][y] % gridColors.length;
+                        gridCanvasContext.fillStyle = gridColors[colorIndex];
+                        gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    } else {
+                        gridCanvasContext.fillStyle = "#000";
+                        gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    }
+                }
+            }
+            changedCells = [];
+        } else {
+            for (let i = 0; i < gridState.length; i++) {
+                for (let j = 0; j < gridState[i].length; j++) {
+                    if (gridColors.length === 0) {
+                        gridCanvasContext.fillStyle = gridState[i][j] === 1 ? "#0f0" : "#000";
+                        gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                    } else {
+                        if (gridState[i][j] > 0) {
+                            let colorIndex = gridState[i][j] % gridColors.length;
+                            gridCanvasContext.fillStyle = gridColors[colorIndex];
+                            gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                        } else {
+                            gridCanvasContext.fillStyle = "#000";
+                            gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -308,26 +378,35 @@
             antDirection = (antDirection - 1 + 4) % 4;
         }
         gridState[antX][antY] = (ant + 1) % antRule.length;
+        changedCells.push([antX, antY]);
         switch (antDirection) {
             case 0:
-                antY = (antY + 1) % 30;
+                antY = (antY + 1) % gridState.length;
                 break;
             case 1:
-                antX = (antX + 1) % 30;
+                antX = (antX + 1) % gridState.length;
                 break;
             case 2:
-                antY = (antY - 1 + 30) % 30;
+                antY = (antY - 1 + gridState.length) % gridState.length;
                 break;
             case 3:
-                antX = (antX - 1 + 30) % 30;
+                antX = (antX - 1 + gridState.length) % gridState.length;
                 break;
         }
-        updateGridOnTerminal();
+        if (environmentVariables.get("text_mode") == "true") {
+            updateGridOnTerminal();
+        } else {
+            updateCanvasGrid();
+        }
     };
 
     const conwayIntervalFunc = () => {
         conwayIteration();
-        updateGridOnTerminal();
+        if (environmentVariables.get("text_mode") == "true") {
+            updateGridOnTerminal();
+        } else {
+            updateCanvasGrid();
+        }
     };
 
     const commands = {
@@ -335,7 +414,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>exit",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>exit",
             ];
         },
 
@@ -349,11 +428,18 @@
                 gridState.push([]);
                 for (let j = 0; j < 30; j++) {
                     gridState[i].push(Math.random() < 0.5 ? 1 : 0);
-
-                    grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    if (environmentVariables.get("text_mode") == "true") {
+                        grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    }
                 }
             }
-            addGridToTerminal();
+            
+            if (environmentVariables.get("text_mode") == "true") {
+                addGridToTerminal();
+            } else {
+                addCanvasGrid();
+            }
+
             clearInterval(conwayInterval);
             conwayInterval = setInterval(conwayIntervalFunc, intervalSpeed);
             runningInterval = conwayIntervalFunc;
@@ -368,6 +454,12 @@
             gridState = [];
             clearInterval(conwayInterval);
             terminalOutput = [];
+
+            gridCanvases.forEach((canvas) => {
+                if (canvas) {
+                    canvas.remove();
+                }
+            });
         },
 
         whoami: () => {
@@ -385,12 +477,55 @@
             ];
         },
 
+        export: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: export &lt;variable&gt=&lt;value&gt",
+                ];
+                return;
+            }
+
+            let variable = command[1].split("=")[0];
+            let value = command[1].split("=")[1];
+
+            if (value[0] === '"' || value[0] === "'") {
+                // get all commands after the first one
+                let i = 2;
+                while (command[i] && !command[i].endsWith(value[0])) {
+                    value += " " + command[i];
+                    i++;
+                }
+                value += " " + command[i];
+            }
+
+            environmentVariables.set(variable, value);            
+        },
+
         echo: (command) => {
             if (command.length === 1) {
                 terminalOutput = [...terminalOutput, "<br>"];
                 return;
             }
-            terminalOutput = [...terminalOutput, command.slice(1).join(" ")];
+
+            let i = 1;
+            let output = "";
+            while (command[i]) {
+                if (command[i].startsWith("$")) {
+                    let variable = command[i].slice(1);
+                    if (environmentVariables.has(variable)) {
+                        output += environmentVariables.get(variable);
+                    } else {
+                        output += command[i];
+                    }
+                } else {
+                    output += command[i];
+                }
+                output += " ";
+                i++;
+            }
+
+            terminalOutput = [...terminalOutput, output];
         },
 
         motd: () => {
@@ -560,18 +695,26 @@
             }
             grid = [];
             gridState = [];
-            for (let i = 0; i < 30; i++) {
+            let width = 60;
+            let height = 60;
+            for (let i = 0; i < width; i++) {
                 grid.push([]);
                 gridState.push([]);
-                for (let j = 0; j < 30; j++) {
+                for (let j = 0; j < height; j++) {
                     gridState[i].push(0);
 
-                    grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    if (environmentVariables.get("text_mode") == "true") {
+                        grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    }
                 }
             }
-            antX = 15;
-            antY = 15;
-            addGridToTerminal();
+            antX = Math.floor(width / 2);
+            antY = Math.floor(height / 2);
+            if (environmentVariables.get("text_mode") == "true") {
+                addGridToTerminal();
+            } else {
+                addCanvasGrid();
+            }
             clearInterval(conwayInterval);
             conwayInterval = setInterval(antInterval, intervalSpeed);
             runningInterval = antInterval;
@@ -596,6 +739,7 @@
                 conwayInterval = setInterval(runningInterval, intervalSpeed);
             }
         },
+
         colortest: (command) => {
             if (command.length === 1) {
                 terminalOutput = [
@@ -622,6 +766,29 @@
 
         exit: () => {
             window.close();
+        },
+
+        canvastest: async () => {
+            terminalOutput = [
+                ...terminalOutput,
+                {type: "canvas"}
+            ];
+            gridCanvases = [];
+            await tick();
+            for (let i = 0; i < gridCanvases.length; i++) {
+                if (gridCanvases[i]) {
+                    activeGridCanvas = gridCanvases[i];
+                    break;
+                }
+            }
+            gridCanvasContext = activeGridCanvas.getContext("2d");
+
+            for (let i = 0; i < 30; i++) {
+                for (let j = 0; j < 30; j++) {
+                    gridCanvasContext.fillStyle = Math.random() > 0.5 ? "black" : "white";
+                    gridCanvasContext.fillRect(i * 20, j * 20, 20, 20);
+                }
+            }
         },
 
         man: (command) => {
@@ -746,6 +913,15 @@
                         "Usage: motd",
                     ];
                     break;
+                
+                case "canvastest":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "canvastest - test canvas rendering",
+                        "Usage: canvastest",
+                    ];
+                    break;
+
 
                 default:
                     terminalOutput = [...terminalOutput, "No manual entry for " + command[1]];
@@ -1071,8 +1247,12 @@
 </script>
 
 <div class="terminal" bind:this={terminalElement}>
-    {#each terminalOutput as line}
-        <div class="terminal-line">{@html processAnsiColors(line)}</div>
+    {#each terminalOutput as line, i}
+        {#if line.type === "canvas"}
+            <canvas width="300" height="300" bind:this={gridCanvases[i]}></canvas>
+        {:else}
+            <div class="terminal-line">{@html processAnsiColors(line)}</div>
+        {/if}
     {/each}
     <div class="input-line">
         <span class="prompt">{currentDirectory} $</span>
