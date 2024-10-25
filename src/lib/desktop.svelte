@@ -215,7 +215,8 @@
                 } else {
                     if (gridState[i][j] > 0) {
                         let colorIndex = gridState[i][j] % gridColors.length;
-                        grid[i][j] = `<span style="color:${gridColors[colorIndex]}">■</span> `;
+                        grid[i][j] =
+                            `<span style="color:${gridColors[colorIndex]}">■</span> `;
                     } else {
                         grid[i][j] = "  ";
                     }
@@ -256,16 +257,32 @@
                 let x = changedCells[i][0];
                 let y = changedCells[i][1];
                 if (gridColors.length === 0) {
-                    gridCanvasContext.fillStyle = gridState[x][y] === 1 ? "#0f0" : "#000";
-                    gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                    gridCanvasContext.fillStyle =
+                        gridState[x][y] === 1 ? "#0f0" : "#000";
+                    gridCanvasContext.fillRect(
+                        x * cellSize,
+                        y * cellSize,
+                        cellSize,
+                        cellSize,
+                    );
                 } else {
                     if (gridState[x][y] > 0) {
                         let colorIndex = gridState[x][y] % gridColors.length;
                         gridCanvasContext.fillStyle = gridColors[colorIndex];
-                        gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        gridCanvasContext.fillRect(
+                            x * cellSize,
+                            y * cellSize,
+                            cellSize,
+                            cellSize,
+                        );
                     } else {
                         gridCanvasContext.fillStyle = "#000";
-                        gridCanvasContext.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        gridCanvasContext.fillRect(
+                            x * cellSize,
+                            y * cellSize,
+                            cellSize,
+                            cellSize,
+                        );
                     }
                 }
             }
@@ -274,16 +291,34 @@
             for (let i = 0; i < gridState.length; i++) {
                 for (let j = 0; j < gridState[i].length; j++) {
                     if (gridColors.length === 0) {
-                        gridCanvasContext.fillStyle = gridState[i][j] === 1 ? "#0f0" : "#000";
-                        gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                        gridCanvasContext.fillStyle =
+                            gridState[i][j] === 1 ? "#0f0" : "#000";
+                        gridCanvasContext.fillRect(
+                            i * cellSize,
+                            j * cellSize,
+                            cellSize,
+                            cellSize,
+                        );
                     } else {
                         if (gridState[i][j] > 0) {
-                            let colorIndex = gridState[i][j] % gridColors.length;
-                            gridCanvasContext.fillStyle = gridColors[colorIndex];
-                            gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                            let colorIndex =
+                                gridState[i][j] % gridColors.length;
+                            gridCanvasContext.fillStyle =
+                                gridColors[colorIndex];
+                            gridCanvasContext.fillRect(
+                                i * cellSize,
+                                j * cellSize,
+                                cellSize,
+                                cellSize,
+                            );
                         } else {
                             gridCanvasContext.fillStyle = "#000";
-                            gridCanvasContext.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+                            gridCanvasContext.fillRect(
+                                i * cellSize,
+                                j * cellSize,
+                                cellSize,
+                                cellSize,
+                            );
                         }
                     }
                 }
@@ -360,11 +395,13 @@
 
     function hslToHex(h, s, l) {
         l /= 100;
-        const a = s * Math.min(l, 1 - l) / 100;
-        const f = n => {
+        const a = (s * Math.min(l, 1 - l)) / 100;
+        const f = (n) => {
             const k = (n + h / 30) % 12;
             const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-            return Math.round(255 * color).toString(16).padStart(2, '0');
+            return Math.round(255 * color)
+                .toString(16)
+                .padStart(2, "0");
         };
         return `${f(0)}${f(8)}${f(4)}`;
     }
@@ -433,7 +470,7 @@
                     }
                 }
             }
-            
+
             if (environmentVariables.get("text_mode") == "true") {
                 addGridToTerminal();
             } else {
@@ -499,7 +536,7 @@
                 value += " " + command[i];
             }
 
-            environmentVariables.set(variable, value);            
+            environmentVariables.set(variable, value);
         },
 
         echo: (command) => {
@@ -748,7 +785,7 @@
                 ];
                 return;
             }
-            
+
             let nOfColors = parseInt(command[1]);
             if (isNaN(nOfColors)) {
                 terminalOutput = [...terminalOutput, "Invalid number"];
@@ -765,10 +802,7 @@
         },
 
         canvastest: async () => {
-            terminalOutput = [
-                ...terminalOutput,
-                {type: "canvas"}
-            ];
+            terminalOutput = [...terminalOutput, { type: "canvas" }];
             gridCanvases = [];
             await tick();
             for (let i = 0; i < gridCanvases.length; i++) {
@@ -781,7 +815,8 @@
 
             for (let i = 0; i < 30; i++) {
                 for (let j = 0; j < 30; j++) {
-                    gridCanvasContext.fillStyle = Math.random() > 0.5 ? "black" : "white";
+                    gridCanvasContext.fillStyle =
+                        Math.random() > 0.5 ? "black" : "white";
                     gridCanvasContext.fillRect(i * 20, j * 20, 20, 20);
                 }
             }
@@ -791,7 +826,7 @@
             if (command.length === 1) {
                 terminalOutput = [
                     ...terminalOutput,
-                    "Usage: man &ltcommand&gt"
+                    "Usage: man &ltcommand&gt",
                 ];
                 return;
             }
@@ -902,7 +937,7 @@
                         "Usage: motd",
                     ];
                     break;
-                
+
                 case "canvastest":
                     terminalOutput = [
                         ...terminalOutput,
@@ -919,7 +954,10 @@
                     break;
 
                 default:
-                    terminalOutput = [...terminalOutput, "No manual entry for " + command[1]];
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "No manual entry for " + command[1],
+                    ];
             }
         },
     };
@@ -1161,7 +1199,7 @@
                 cursorPosition--;
             }
         }
-        
+
         event.preventDefault();
     }
 
@@ -1232,7 +1270,6 @@
             window.requestAnimationFrame(estimateRefreshRate);
         }
 
-
         window.requestAnimationFrame(estimateRefreshRate);
 
         return () => {
@@ -1244,7 +1281,8 @@
 <div class="terminal" bind:this={terminalElement}>
     {#each terminalOutput as line, i}
         {#if line.type === "canvas"}
-            <canvas width="300" height="300" bind:this={gridCanvases[i]}></canvas>
+            <canvas width="300" height="300" bind:this={gridCanvases[i]}
+            ></canvas>
         {:else}
             <div class="terminal-line">{@html processAnsiColors(line)}</div>
         {/if}
