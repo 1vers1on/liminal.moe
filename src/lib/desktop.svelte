@@ -822,21 +822,6 @@
             }
         },
 
-        confirmtest: async () => {
-            terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to do this?"];
-            commandInputCallback = async (command) => {
-                if (command === "yes") {
-                    terminalOutput = [...terminalOutput, "Confirmed"];
-                } else {
-                    terminalOutput = [...terminalOutput, "Cancelled"];
-                }
-
-                commnandInputCallback = async (command) => {
-                    terminalOutput = [...terminalOutput, "Please enter a command"];
-                };
-            };
-        },
-
         turn_me_into_a_girl: () => {
             terminalOutput = [...terminalOutput, "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.", "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl."];
             commandInputCallback = async (command) => {
@@ -1030,6 +1015,14 @@
                     ...terminalOutput,
                     "export - set an environment variable",
                     "Usage: export &lt;variable&gt=&lt;value&gt",
+                ];
+                break;
+            
+            case "turn_me_into_a_girl":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "turn_me_into_a_girl - Turns you into a cute and silly girl :3",
+                    "Usage: turn_me_into_a_girl",
                 ];
                 break;
 
