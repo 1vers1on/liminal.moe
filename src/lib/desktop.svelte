@@ -1425,7 +1425,14 @@
 </div>
 
 <style>
-    .terminal {
+    /*
+* Prefixed by https://autoprefixer.github.io
+* PostCSS: v8.4.14,
+* Autoprefixer: v10.4.7
+* Browsers: last 4 version
+*/
+
+.terminal {
         background-color: #000;
         color: #0f0;
         padding: 10px;
@@ -1443,8 +1450,12 @@
     }
 
     .input-line {
+        display: -webkit-box;
+        display: -ms-flexbox;
         display: flex;
-        align-items: center;
+        -webkit-box-align: center;
+            -ms-flex-align: center;
+                align-items: center;
     }
 
     .prompt {
@@ -1458,11 +1469,18 @@
     }
 
     .cursor {
-        animation: blink 1s step-end infinite;
+        -webkit-animation: blink 1s step-end infinite;
+                animation: blink 1s step-end infinite;
     }
 
     .cursor.end {
         margin-left: -1ch;
+    }
+
+    @-webkit-keyframes blink {
+        50% {
+            opacity: 0;
+        }
     }
 
     @keyframes blink {
