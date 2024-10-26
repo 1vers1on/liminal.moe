@@ -453,7 +453,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>trans",
+                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>trans<br>notification",
             ];
         },
 
@@ -919,6 +919,24 @@
             };
         },
 
+        notification: () => {
+            terminalOutput = [
+                ...terminalOutput,
+                "\u001b[37mPlease enter the message you would like to send.",
+            ];
+            commandInputCallback = (command) => {
+                if (Notification.permission !== "granted") {
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === "granted") {
+                            new Notification(command);
+                        }
+                    });
+                } else {
+                    new Notification(command);
+                }
+            };
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -1094,6 +1112,14 @@
                 ];
                 break;
 
+            case "notification":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "notification - send a notification",
+                    "Usage: notification &lt;message&gt",
+                ];
+                break;
+
             default:
                 terminalOutput = [
                     ...terminalOutput,
@@ -1223,7 +1249,7 @@
             "CPU\u001b[37m: " + navigator.hardwareConcurrency + " thread(s)",
             "GPU Vendor\u001b[37m: " + gpuVendor,
             "Locale\u001b[37m: " +
-                Intl.DateTimeFormat().resolvedOptions().locale,
+                Intl.DateTimeFormat().resolvedOptions().locale
         ];
 
         if (battery) {
@@ -1438,7 +1464,6 @@
         };
     });
 </script>
-
 <div class="terminal" bind:this={terminalElement}>
     {#each terminalOutput as line, i}
         {#if line.type === "canvas"}
