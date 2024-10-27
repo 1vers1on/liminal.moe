@@ -513,6 +513,7 @@
                 "~ My other username is Aether or 1vers1on",
                 "~ Yes, i'm from Indiana (I don't live there anymore though)",
                 "~ I use arch btw",
+                `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`
             ];
         },
 
