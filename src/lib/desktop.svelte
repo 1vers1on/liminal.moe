@@ -937,6 +937,13 @@
             };
         },
 
+        skibidi: () => {
+            terminalOutput = [
+                ...terminalOutput,
+                "\u001b[37mfreak",
+            ];
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
