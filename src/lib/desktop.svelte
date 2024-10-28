@@ -62,18 +62,8 @@
     };
 
     async function getMotd() {
-        const { data, error } = await supabase
-            .from("motd")
-            .select("message")
-            .order("id", { ascending: false })
-            .limit(1)
-            .single();
-
-        if (error) {
-            console.error("Error fetching message of the day:", error);
-            return JSON.stringify(error);
-        }
-
+        const response = await fetch("/api/motd");
+        const data = await response.json();
         return data.message;
     }
 
@@ -1075,6 +1065,41 @@
                 ...terminalOutput,
                 "Successfully logged out",
             ];
+        },
+
+        updateMotd: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: updateMotd &lt;message&gt",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/admin/updateMotd", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: command.slice(1).join(" ") }),
+            });
+
+            alert(response)
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to update message of the day",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully updated message of the day",
+            ];
+
         },
 
         trans: makeTransFlagColors,
