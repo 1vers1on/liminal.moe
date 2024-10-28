@@ -1,12 +1,7 @@
 <script>
     import { onMount, tick } from "svelte";
-    import { createClient } from "@supabase/supabase-js";
     import { goto } from "$app/navigation";
     import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
-    const supabase = createClient(
-        "https://sfwqilnzokiycbqmktsd.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs",
-    );
 
     let visitorCount;
 
@@ -105,7 +100,7 @@
         "┃  <span style='color:#0ff;'>Discord: 1vers1on</span>                              ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
-        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands. Use chat to go to irc chat.",
+        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
     ];
@@ -447,6 +442,7 @@
                 ...terminalOutput,
                 "\u001b[37Use man to get more information about a command.",
                 "\u001b[37Available commands:",
+                "\u001b[37msubscribeToPush",
                 "\u001b[37mhelp",
                 "\u001b[37mman",
                 "\u001b[37mchat",
@@ -477,7 +473,12 @@
             const response = await fetch("/api/auth/getUserData");
             const data = await response.json();
 
-            if (!(data.user.permission === "admin" || data.user.permission === "owner")) {
+            if (
+                !(
+                    data.user.permission === "admin" ||
+                    data.user.permission === "owner"
+                )
+            ) {
                 terminalOutput = [
                     ...terminalOutput,
                     "\u001b[37mYou do not have permission to use this command.",
@@ -491,6 +492,7 @@
                 "\u001b[37mupdatemotd",
                 "\u001b[37mupdateuserdata",
                 "\u001b[37mgetuserdata",
+                "\u001b[37mnotify",
             ];
         },
 
@@ -546,11 +548,10 @@
                 "Some little things about me~",
                 "<br>",
                 "~ I go by she/her pronouns",
-                "~ Transgender and Pansexual",
                 "~ My other username is Aether or 1vers1on",
                 "~ Yes, i'm from Indiana (I don't live there anymore though)",
                 "~ I use arch btw",
-                `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`
+                `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
             ];
         },
 
@@ -975,11 +976,34 @@
             };
         },
 
-        skibidi: () => {
-            terminalOutput = [
-                ...terminalOutput,
-                "\u001b[37mfreak",
-            ];
+        subscribeToPush: async () => {
+            if ("serviceWorker" in navigator && "PushManager" in window) {
+                navigator.serviceWorker
+                    .register("/serviceworker.js")
+                    .then((reg) => {
+                        console.log("Service Worker registered:", reg);
+                    })
+                    .catch((err) => {
+                        console.error(
+                            "Service Worker registration failed:",
+                            err,
+                        );
+                    });
+            }
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey:
+                    "BLspM6VfkiZhsWPyCECtuL6uhwTAiGsIrJgoQuag221tZDNW4B168etD5lUXdTvgsc6DWLL2gO5W8zfb-oniYms",
+            });
+
+            await fetch("/api/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(subscription),
+            });
+
+            terminalOutput = [...terminalOutput, "Subscribed to notifications"];
         },
 
         register: async (command) => {
@@ -1062,10 +1086,7 @@
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully logged in",
-            ];
+            terminalOutput = [...terminalOutput, "Successfully logged in"];
         },
 
         logout: async () => {
@@ -1082,10 +1103,7 @@
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully logged out",
-            ];
+            terminalOutput = [...terminalOutput, "Successfully logged out"];
         },
 
         updateMotd: async (command) => {
@@ -1118,7 +1136,6 @@
                 ...terminalOutput,
                 "Successfully updated message of the day",
             ];
-
         },
 
         updateuserdata: async (command) => {
@@ -1155,7 +1172,6 @@
                 ...terminalOutput,
                 "Successfully updated user data",
             ];
-
         },
 
         getuserdata: async (command) => {
@@ -1189,6 +1205,41 @@
             terminalOutput = [
                 ...terminalOutput,
                 JSON.stringify(data.user, null, 2),
+            ];
+        },
+
+        notify: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: notify &lt;message&gt",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/admin/notify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    body: command.slice(1).join(" "),
+                    title: "test",
+                }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to send notification",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully sent notification",
             ];
         },
 
@@ -1423,6 +1474,22 @@
                 ];
                 break;
 
+            case "notify":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "notify - send a notification to all users",
+                    "Usage: notify &lt;message&gt",
+                ];
+                break;
+
+            case "subscribeToPush":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "subscribeToPush - subscribe to push notifications",
+                    "Usage: subscribeToPush",
+                ];
+                break;
+
             default:
                 terminalOutput = [
                     ...terminalOutput,
@@ -1552,7 +1619,7 @@
             "CPU\u001b[37m: " + navigator.hardwareConcurrency + " thread(s)",
             "GPU Vendor\u001b[37m: " + gpuVendor,
             "Locale\u001b[37m: " +
-                Intl.DateTimeFormat().resolvedOptions().locale
+                Intl.DateTimeFormat().resolvedOptions().locale,
         ];
 
         if (battery) {
@@ -1717,7 +1784,7 @@
     }
 
     onMount(async () => {
-        const response = await fetch('/api/visitorCount');
+        const response = await fetch("/api/visitorCount");
         const data = await response.json();
         visitorCount = data.count;
 
@@ -1774,6 +1841,7 @@
         };
     });
 </script>
+
 <div class="terminal" bind:this={terminalElement}>
     {#each terminalOutput as line, i}
         {#if line.type === "canvas"}
