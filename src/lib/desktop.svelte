@@ -469,8 +469,29 @@
                 "\u001b[37mregister",
                 "\u001b[37mlogin",
                 "\u001b[37mlogout",
+                "\u001b[37madminhelp",
             ];
+        },
 
+        adminhelp: async () => {
+            const response = await fetch("/api/auth/getUserData");
+            const data = await response.json();
+
+            if (!(data.user.permission === "admin" || data.user.permission === "owner")) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "\u001b[37mYou do not have permission to use this command.",
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "\u001b[37mAvailable admin commands:",
+                "\u001b[37mupdatemotd",
+                "\u001b[37mupdateuserdata",
+                "\u001b[37mgetuserdata",
+            ];
         },
 
         conway: () => {
@@ -997,7 +1018,7 @@
                 body: JSON.stringify({ username, password }),
             });
 
-            if (response.status !== 200) {
+            if (response.status !== 201) {
                 terminalOutput = [
                     ...terminalOutput,
                     "Failed to register",
@@ -1084,8 +1105,6 @@
                 body: JSON.stringify({ message: command.slice(1).join(" ") }),
             });
 
-            alert(response)
-
             if (response.status !== 200) {
                 terminalOutput = [
                     ...terminalOutput,
@@ -1100,6 +1119,77 @@
                 "Successfully updated message of the day",
             ];
 
+        },
+
+        updateuserdata: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/admin/updateUserData", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    username: command[1],
+                    column: command[2],
+                    value: command.slice(3).join(" "),
+                }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to update user data",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully updated user data",
+            ];
+
+        },
+
+        getuserdata: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: getuserdata &lt;username&gt",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/admin/getUserData", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ username: command[1] }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to get user data",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            const data = await response.json();
+
+            terminalOutput = [
+                ...terminalOutput,
+                JSON.stringify(data.user, null, 2),
+            ];
         },
 
         trans: makeTransFlagColors,
@@ -1306,6 +1396,30 @@
                     ...terminalOutput,
                     "logout - log out of the current account",
                     "Usage: logout",
+                ];
+                break;
+
+            case "updateMotd":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "updateMotd - update the message of the day",
+                    "Usage: updateMotd &lt;message&gt",
+                ];
+                break;
+
+            case "updateuserdata":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "updateuserdata - update user data",
+                    "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
+                ];
+                break;
+
+            case "getuserdata":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "getuserdata - get user data",
+                    "Usage: getuserdata &lt;username&gt",
                 ];
                 break;
 

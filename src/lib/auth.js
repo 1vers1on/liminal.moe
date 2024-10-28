@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
-export async function isUserOwner(token) {
-    const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
+export async function isUserOwner(token) {
     if (!token) {
         return false;
     }
@@ -13,9 +13,7 @@ export async function isUserOwner(token) {
         },
     });
 
-    if (user.permission === 'owner') {
-        return true;
-    }
+    console.log('user:', user);
 
-    return false;
+    return user.permission === 'owner';
 }

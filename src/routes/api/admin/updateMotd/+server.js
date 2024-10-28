@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 export async function POST( {request, cookies} ) {
   try {
-    if (!isUserOwner(cookies.get('token'))) {
+    if (!(await isUserOwner(cookies.get('token')))) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 
