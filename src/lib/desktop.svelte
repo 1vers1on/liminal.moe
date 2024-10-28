@@ -8,6 +8,8 @@
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmd3FpbG56b2tpeWNicW1rdHNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY1MTQwNzcsImV4cCI6MjA0MjA5MDA3N30.cIcZhiECNoQviiYz9pcLJZXTf2iy4LE8B851fibaDHs",
     );
 
+    let visitorCount;
+
     let refreshRate = 0;
     let displayHeight = 0;
     let displayWidth = 0;
@@ -105,6 +107,7 @@
     let motd = [
         "Hello there! Welcome to my website.",
         "<span style='color:#f0f;'>Fetching message of the day...</span>",
+        "{visitors} Visitors so far!",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
         '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow" style="color:#0ff;">Github</a>                                         ┃',
@@ -452,9 +455,32 @@
         help: () => {
             terminalOutput = [
                 ...terminalOutput,
-                "Use man to get more information about a command.",
-                "Available commands: help<br>man<br>chat<br>clear<br>whoami<br>echo<br>export<br>motd<br>ls<br>cat<br>turn_me_into_a_girl<br>conway<br>javascript<br>cowsay<br>neofetch<br>ant<br>setspeed<br>trans<br>notification",
+                "\u001b[37Use man to get more information about a command.",
+                "\u001b[37Available commands:",
+                "\u001b[37mhelp",
+                "\u001b[37mman",
+                "\u001b[37mchat",
+                "\u001b[37mclear",
+                "\u001b[37mwhoami",
+                "\u001b[37mecho",
+                "\u001b[37mexport",
+                "\u001b[37mmotd",
+                "\u001b[37mls",
+                "\u001b[37mcat",
+                "\u001b[37mturn_me_into_a_girl",
+                "\u001b[37mconway",
+                "\u001b[37mjavascript",
+                "\u001b[37mcowsay",
+                "\u001b[37mneofetch",
+                "\u001b[37mant",
+                "\u001b[37msetspeed",
+                "\u001b[37mtrans",
+                "\u001b[37mnotification",
+                "\u001b[37mregister",
+                "\u001b[37mlogin",
+                "\u001b[37mlogout",
             ];
+
         },
 
         conway: () => {
@@ -945,6 +971,112 @@
             ];
         },
 
+        register: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: register &lt;username&gt &lt;password&gt",
+                ];
+                return;
+            }
+
+            let username = command[1];
+            let password = command[2];
+
+            if (username.length < 3) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Username must be at least 3 characters long",
+                ];
+                return;
+            }
+
+            if (password.length < 6) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Password must be at least 6 characters long",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to register",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully registered and logged in",
+            ];
+        },
+
+        login: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: login &lt;username&gt &lt;password&gt",
+                ];
+                return;
+            }
+
+            let username = command[1];
+            let password = command[2];
+
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to login",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully logged in",
+            ];
+        },
+
+        logout: async () => {
+            const response = await fetch("/api/auth/logout", {
+                method: "POST",
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to logout",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                "Successfully logged out",
+            ];
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -1125,6 +1257,30 @@
                     ...terminalOutput,
                     "notification - send a notification",
                     "Usage: notification &lt;message&gt",
+                ];
+                break;
+
+            case "register":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "register - register a new account",
+                    "Usage: register &lt;username&gt &lt;password&gt",
+                ];
+                break;
+
+            case "login":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "login - log in to an existing account",
+                    "Usage: login &lt;username&gt &lt;password&gt",
+                ];
+                break;
+
+            case "logout":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "logout - log out of the current account",
+                    "Usage: logout",
                 ];
                 break;
 
@@ -1421,7 +1577,14 @@
         }
     }
 
-    onMount(() => {
+    onMount(async () => {
+        const response = await fetch('/api/visitorCount');
+        const data = await response.json();
+        visitorCount = data.count;
+
+        // replace {visitors} with the visitor count
+        motd[2] = motd[2].replace("{visitors}", visitorCount);
+
         terminalOutput = motd;
         window.addEventListener("keydown", handleKeydown);
         getMotd().then((message) => {

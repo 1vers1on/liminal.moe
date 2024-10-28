@@ -18,6 +18,9 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@supabase/supabase-js": "^2.45.4"
+		"@prisma/client": "^5.21.1",
+		"@supabase/supabase-js": "^2.45.4",
+		"bcrypt": "^5.1.1",
+		"prisma": "^5.21.1"
 	}
 }
