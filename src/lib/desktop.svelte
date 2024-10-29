@@ -13,7 +13,12 @@
 
     let pageLoadTime = new Date();
 
-    let environmentVariables = new Map();
+    let environmentVariables = new Map( [
+        ["PRIMORDIA_UPDATE_FREQ", 10],
+        ["PRIMORDIA_GROWTH_FUNC", "return 0 + ((n >= 0.2) && (n <= 0.25)) - ((n <= 0.18) || (n >= 0.33))"],
+        ["TEXT_MODE", "false"],
+        ["UPDATES_PER_FRAME", 1]
+    ]);
 
     // ANSI color codes to CSS colors
     const COLORS = {
@@ -141,6 +146,8 @@
 
     let smoothGrid = false;
 
+    let fullUpdateGridNextFrame = false;
+
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
     let primordiaStates = 12;
@@ -203,6 +210,11 @@
 
     function primordiaIteration() {
         let newGridState = [];
+        let growthFuncFromEnv = environmentVariables.get("PRIMORDIA_GROWTH_FUNC");
+        if (growthFuncFromEnv && growthFuncFromEnv !== "return 0 + ((n >= 0.2) && (n <= 0.25)) - ((n <= 0.18) || (n >= 0.33))") {
+            primordiaGrowthFunc = new Function("n", growthFuncFromEnv);
+        }
+        
         for (let i = 0; i < gridState.length; i++) {
             newGridState.push([]);
             for (let j = 0; j < gridState[i].length; j++) {
@@ -277,7 +289,7 @@
     async function addCanvasGrid() {
         terminalOutput.push({ type: "canvas" });
         await tick();
-        for (let i = 0; i < gridCanvases.length; i++) {
+        for (let i = gridCanvases.length - 1; i >= 0; i--) {
             if (gridCanvases[i]) {
                 activeGridCanvas = gridCanvases[i];
                 break;
@@ -291,10 +303,14 @@
 
     function updateCanvasGrid() {
         const cellSize = 300 / gridState.length;
-        if (!onlyUpdateChangedCells) {
+        if (!onlyUpdateChangedCells && !fullUpdateGridNextFrame) {
             gridCanvasContext.clearRect(0, 0, 300, 300);
+
+            // fill with turbo color 0
+            gridCanvasContext.fillStyle = turboColormapRgb(0);
+            gridCanvasContext.fillRect(0, 0, 300, 300);
         }
-        if (onlyUpdateChangedCells) {
+        if (onlyUpdateChangedCells && !fullUpdateGridNextFrame) {
             for (let i = 0; i < changedCells.length; i++) {
                 let x = changedCells[i][0];
                 let y = changedCells[i][1];
@@ -366,6 +382,10 @@
                         }
                     }
                 }
+            }
+
+            if (fullUpdateGridNextFrame) {
+                fullUpdateGridNextFrame = false;
             }
         }
     }
@@ -490,30 +510,38 @@
     }
 
     const antInterval = () => {
-        let ant = gridState[antX][antY];
-        let turn = antRule.charAt(ant);
-        if (turn === "R") {
-            antDirection = (antDirection + 1) % 4;
-        } else {
-            antDirection = (antDirection - 1 + 4) % 4;
+        const updatesPerFrameEnv = environmentVariables.get("UPDATES_PER_FRAME");
+        let updatesPerFrame = 1;
+        if (!isNaN(parseInt(updatesPerFrameEnv))) {
+            updatesPerFrame = parseInt(updatesPerFrameEnv);
         }
-        gridState[antX][antY] = (ant + 1) % antRule.length;
-        changedCells.push([antX, antY]);
-        switch (antDirection) {
-            case 0:
-                antY = (antY + 1) % gridState.length;
-                break;
-            case 1:
-                antX = (antX + 1) % gridState.length;
-                break;
-            case 2:
-                antY = (antY - 1 + gridState.length) % gridState.length;
-                break;
-            case 3:
-                antX = (antX - 1 + gridState.length) % gridState.length;
-                break;
+        
+        for (let i = 0; i < updatesPerFrame; i++) {
+            let ant = gridState[antX][antY];
+            let turn = antRule.charAt(ant);
+            if (turn === "R") {
+                antDirection = (antDirection + 1) % 4;
+            } else {
+                antDirection = (antDirection - 1 + 4) % 4;
+            }
+            gridState[antX][antY] = (ant + 1) % antRule.length;
+            changedCells.push([antX, antY]);
+            switch (antDirection) {
+                case 0:
+                    antY = (antY + 1) % gridState.length;
+                    break;
+                case 1:
+                    antX = (antX + 1) % gridState.length;
+                    break;
+                case 2:
+                    antY = (antY - 1 + gridState.length) % gridState.length;
+                    break;
+                case 3:
+                    antX = (antX - 1 + gridState.length) % gridState.length;
+                    break;
+            }
         }
-        if (environmentVariables.get("text_mode") == "true") {
+        if (environmentVariables.get("TEXT_MODE") == "true") {
             updateGridOnTerminal();
         } else {
             updateCanvasGrid();
@@ -521,8 +549,17 @@
     };
 
     const conwayIntervalFunc = () => {
-        conwayIteration();
-        if (environmentVariables.get("text_mode") == "true") {
+        const updatesPerFrameEnv = environmentVariables.get("UPDATES_PER_FRAME");
+        let updatesPerFrame = 1;
+        if (!isNaN(parseInt(updatesPerFrameEnv))) {
+            updatesPerFrame = parseInt(updatesPerFrameEnv);
+        }
+
+        for (let i = 0; i < updatesPerFrame; i++) {
+            conwayIteration();
+        }
+
+        if (environmentVariables.get("TEXT_MODE") == "true") {
             updateGridOnTerminal();
         } else {
             updateCanvasGrid();
@@ -530,8 +567,17 @@
     };
 
     const primordiaIntervalFunc = () => {
-        primordiaIteration();
-        if (environmentVariables.get("text_mode") == "true") {
+        const updatesPerFrameEnv = environmentVariables.get("UPDATES_PER_FRAME");
+        let updatesPerFrame = 1;
+        if (!isNaN(parseInt(updatesPerFrameEnv))) {
+            updatesPerFrame = parseInt(updatesPerFrameEnv);
+        }
+
+        for (let i = 0; i < updatesPerFrame; i++) {
+            primordiaIteration();
+        }
+
+        if (environmentVariables.get("TEXT_MODE") == "true") {
             updateGridOnTerminal();
         } else {
             updateCanvasGrid();
@@ -563,6 +609,7 @@
                 "\u001b[37mneofetch",
                 "\u001b[37mant",
                 "\u001b[37msetspeed",
+                "\u001b[37mgridsize",
                 "\u001b[37mtrans",
                 "\u001b[37mnotification",
                 "\u001b[37mregister",
@@ -609,13 +656,13 @@
                 gridState.push([]);
                 for (let j = 0; j < 30; j++) {
                     gridState[i].push(Math.random() < 0.5 ? 1 : 0);
-                    if (environmentVariables.get("text_mode") == "true") {
+                    if (environmentVariables.get("TEXT_MODE") == "true") {
                         grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
                     }
                 }
             }
 
-            if (environmentVariables.get("text_mode") == "true") {
+            if (environmentVariables.get("TEXT_MODE") == "true") {
                 addGridToTerminal();
             } else {
                 addCanvasGrid();
@@ -640,13 +687,13 @@
                 for (let j = 0; j < height; j++) {
                     gridState[i].push(Math.random());
 
-                    if (environmentVariables.get("text_mode") == "true") {
+                    if (environmentVariables.get("TEXT_MODE") == "true") {
                         grid[i].push("■ ");
                     }
                 }
             }
 
-            if (environmentVariables.get("text_mode") == "true") {
+            if (environmentVariables.get("TEXT_MODE") == "true") {
                 addGridToTerminal();
                 updateGridOnTerminal();
             } else {
@@ -756,6 +803,7 @@
                 "<span style='color:#0ff;'>about</span>",
                 "<span style='color:#0ff;'>contact</span>",
                 "<span style='color:#0ff;'>skibidisigmafile</span>",
+                "<span style='color:#0ff;'>.env</span>",
                 // "<span style='color:#f00;'>decrypt</span>",
             ];
         },
@@ -837,6 +885,15 @@
                         terminalOutput = [...terminalOutput, cProgram];
                     }
                     break;
+
+                case ".env":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        ...Array.from(environmentVariables).map(
+                            ([key, value]) => `${key}=${value}`
+                        ),
+                    ];
+                    break;
                 case "":
                     terminalOutput = [
                         ...terminalOutput,
@@ -916,14 +973,14 @@
                 for (let j = 0; j < height; j++) {
                     gridState[i].push(0);
 
-                    if (environmentVariables.get("text_mode") == "true") {
+                    if (environmentVariables.get("TEXT_MODE") == "true") {
                         grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
                     }
                 }
             }
             antX = Math.floor(width / 2);
             antY = Math.floor(height / 2);
-            if (environmentVariables.get("text_mode") == "true") {
+            if (environmentVariables.get("TEXT_MODE") == "true") {
                 addGridToTerminal();
             } else {
                 addCanvasGrid();
@@ -1378,6 +1435,54 @@
             ];
         },
 
+        gridsize: (command) => {
+            if (command.length < 3) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: gridsize &lt;x&gt &lt;y&gt",
+                ];
+                return;
+            }
+
+            // pad the grid with empty cells if its bigger and if its smaller, remove cells
+            if (command[1] > grid.length) {
+                for (let i = grid.length; i < command[1]; i++) {
+                    grid.push([]);
+                    gridState.push([]);
+                    for (let j = 0; j < grid[0].length; j++) {
+                        grid[i].push("  ");
+                        gridState[i].push(0);
+                    }
+                }
+            } else if (command[1] < grid.length) {
+                grid = grid.slice(0, command[1]);
+                gridState = gridState.slice(0, command[1]);
+            }
+
+            if (command[2] > grid[0].length) {
+                for (let i = 0; i < grid.length; i++) {
+                    for (let j = grid[i].length; j < command[2]; j++) {
+                        grid[i].push("  ");
+                        gridState[i].push(0);
+                    }
+                }
+            } else if (command[2] < grid[0].length) {
+                for (let i = 0; i < grid.length; i++) {
+                    grid[i] = grid[i].slice(0, command[2]);
+                    gridState[i] = gridState[i].slice(0, command[2]);
+                }
+            }
+
+            fullUpdateGridNextFrame = true;
+
+            if (environmentVariables.get("TEXT_MODE") == "true") {
+                updateGridOnTerminal();
+            } else {
+                updateCanvasGrid();
+            }
+
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -1630,6 +1735,14 @@
                     ...terminalOutput,
                     "primordia - run Primordia",
                     "Usage: primordia",
+                ];
+                break;
+
+            case "gridsize":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "gridsize - set the size of the grid",
+                    "Usage: gridsize &lt;x&gt &lt;y&gt",
                 ];
                 break;
 
