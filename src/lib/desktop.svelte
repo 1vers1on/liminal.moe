@@ -542,8 +542,8 @@
         help: () => {
             terminalOutput = [
                 ...terminalOutput,
-                "\u001b[37Use man to get more information about a command.",
-                "\u001b[37Available commands:",
+                "\u001b[37mUse man to get more information about a command.",
+                "\u001b[37mAvailable commands:",
                 "\u001b[37msubscribeToPush",
                 "\u001b[37mhelp",
                 "\u001b[37mman",
