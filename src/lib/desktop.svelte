@@ -3,6 +3,8 @@
     import { goto } from "$app/navigation";
     import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
 
+    import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math.js"
+    
     let visitorCount;
 
     let refreshRate = 0;
@@ -117,7 +119,7 @@
     let currentDirectory = "~";
     let commandHistory = [];
     let historyIndex = -1;
-
+    
     let grid = [];
     let gridState = [];
     let gridLocation = 0;
@@ -127,7 +129,7 @@
     let activeGridCanvas;
     let gridCanvasContext;
 
-    let onlyUpdateChangedCells = true;
+    let onlyUpdateChangedCells = false;
     let changedCells = [];
 
     let conwayInterval;
@@ -151,6 +153,12 @@
     const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
     let primordiaStates = 12;
+
+    const mooreKernel = [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+    ];
 
     function clip(value, min, max) {
         return Math.min(Math.max(value, min), max);
@@ -214,33 +222,35 @@
         if (growthFuncFromEnv && growthFuncFromEnv !== "return 0 + ((n >= 0.2) && (n <= 0.25)) - ((n <= 0.18) || (n >= 0.33))") {
             primordiaGrowthFunc = new Function("n", growthFuncFromEnv);
         }
+
+        let neighborsGrid = convolve2DWithSavedKernel(gridState);
         
         for (let i = 0; i < gridState.length; i++) {
             newGridState.push([]);
             for (let j = 0; j < gridState[i].length; j++) {
-                let neighbors = 0;
-                for (let x = -1; x <= 1; x++) {
-                    for (let y = -1; y <= 1; y++) {
-                        if (x === 0 && y === 0) {
-                            continue;
-                        }
-                        let ni = i + x;
-                        let nj = j + y;
-                        if (ni < 0) {
-                            ni = gridState.length - 1;
-                        } else if (ni >= gridState.length) {
-                            ni = 0;
-                        }
-                        if (nj < 0) {
-                            nj = gridState[i].length - 1;
-                        } else if (nj >= gridState[i].length) {
-                            nj = 0;
-                        }
-                        neighbors += gridState[ni][nj] * (1 / 8);
-                    }
-                }
+                // let neighbors = 0;
+                // for (let x = -1; x <= 1; x++) {
+                //     for (let y = -1; y <= 1; y++) {
+                //         if (x === 0 && y === 0) {
+                //             continue;
+                //         }
+                //         let ni = i + x;
+                //         let nj = j + y;
+                //         if (ni < 0) {
+                //             ni = gridState.length - 1;
+                //         } else if (ni >= gridState.length) {
+                //             ni = 0;
+                //         }
+                //         if (nj < 0) {
+                //             nj = gridState[i].length - 1;
+                //         } else if (nj >= gridState[i].length) {
+                //             nj = 0;
+                //         }
+                //         neighbors += gridState[ni][nj] * (1 / 8);
+                //     }
+                // }
                 const updateFreq = environmentVariables.get("PRIMORDIA_UPDATE_FREQ") || 10;
-                newGridState[i].push(clip(gridState[i][j] + (1/updateFreq) * primordiaGrowthFunc(neighbors), 0, primordiaStates));
+                newGridState[i].push(clip(gridState[i][j] + (1/updateFreq) * primordiaGrowthFunc(neighborsGrid[i][j]), 0, 1));
 
                 if (gridState[i][j] !== newGridState[i][j]) {
                     changedCells.push([i, j]);
@@ -651,16 +661,18 @@
             clearInterval(conwayInterval);
             grid = [];
             gridState = [];
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 16; i++) {
                 grid.push([]);
                 gridState.push([]);
-                for (let j = 0; j < 30; j++) {
+                for (let j = 0; j < 16; j++) {
                     gridState[i].push(Math.random() < 0.5 ? 1 : 0);
                     if (environmentVariables.get("TEXT_MODE") == "true") {
                         grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
                     }
                 }
             }
+
+            setKernel(mooreKernel, 16, 16);
 
             if (environmentVariables.get("TEXT_MODE") == "true") {
                 addGridToTerminal();
@@ -679,8 +691,8 @@
             gridColors = equallySpacedTubroColormap(primordiaStates);
             grid = [];
             gridState = [];
-            let width = 60;
-            let height = 60;
+            let width = 32;
+            let height = 32;
             for (let i = 0; i < width; i++) {
                 grid.push([]);
                 gridState.push([]);
@@ -699,6 +711,16 @@
             } else {
                 addCanvasGrid();
             }
+
+            let kernelNormalized = [];
+            for (let x = 0; x < 3; x++) {
+                kernelNormalized.push([]);
+                for (let y = 0; y < 3; y++) {
+                    kernelNormalized[x][y] = mooreKernel[x][y] / 9;
+                }
+            }
+            
+            setKernel(kernelNormalized, width, height);
             
             clearInterval(conwayInterval);
             conwayInterval = setInterval(primordiaIntervalFunc, intervalSpeed);
@@ -1483,6 +1505,45 @@
 
         },
 
+        convtest: () => {
+            // const input = [
+            //     [1, 1, 1, 1, 1, 1, 1, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 0, 0, 0, 0, 0, 0, 1],
+            //     [1, 1, 1, 1, 1, 1, 1, 1]
+            // ];
+
+            // make a 16x16 grid of 1s around the edges
+            const input = [];
+            const size = 32;
+            for (let i = 0; i < size; i++) {
+                input.push([]);
+                for (let j = 0; j < size; j++) {
+                    if (i === 0 || i === size - 1 || j === 0 || j === size - 1) {
+                        input[i].push(1);
+                    } else {
+                        input[i].push(0);
+                    }
+                }
+            }
+
+            const kernel = [
+                [1, 1, 1],
+                [1, 0, 1],
+                [1, 1, 1],
+            ];
+
+            const output = convolve2D(input, kernel);
+
+            terminalOutput = [...terminalOutput, JSON.stringify(output, null, 2)];
+
+
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -1690,7 +1751,7 @@
                 ];
                 break;
 
-            case "updateMotd":
+            case "updatemotd":
                 terminalOutput = [
                     ...terminalOutput,
                     "updateMotd - update the message of the day",
@@ -2029,10 +2090,15 @@
                 `\u001b[31m${command[0]}: command not found\u001b[0m`,
             ];
         }
+        // try {
+        // setTimeout(() => {
+        //     terminalElement.scrollTop = terminalElement.scrollHeight;
+        // }, 0);
+        // } catch {}
 
-        setTimeout(() => {
+        if (terminalElement) {
             terminalElement.scrollTop = terminalElement.scrollHeight;
-        }, 0);
+        }
 
         if (transMode) {
             makeTransFlagColors();
