@@ -13,7 +13,5 @@ export async function isUserOwner(token) {
         },
     });
 
-    console.log('user:', user);
-
     return user.permission === 'owner';
 }

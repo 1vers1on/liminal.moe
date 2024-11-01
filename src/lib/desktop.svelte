@@ -1,10 +1,10 @@
 <script>
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
-    import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
 
+    import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
     import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math.js"
-    
+        
     let visitorCount;
 
     let refreshRate = 0;
@@ -626,6 +626,8 @@
                 "\u001b[37mlogin",
                 "\u001b[37mlogout",
                 "\u001b[37madminhelp",
+                "\u001b[37mpostMessage",
+                "\u001b[37mmessageBoard",
             ];
         },
 
@@ -649,7 +651,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "\u001b[37mAvailable admin commands:",
-                "\u001b[37mupdatemotd",
+                "\u001b[37mupdateMotd",
                 "\u001b[37mupdateuserdata",
                 "\u001b[37mgetuserdata",
                 "\u001b[37mnotify",
@@ -1560,8 +1562,81 @@
             const output = convolve2D(input, kernel);
 
             terminalOutput = [...terminalOutput, JSON.stringify(output, null, 2)];
+        },
+
+        postMessage: async (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: postMessage &lt;message&gt",
+                ];
+                return;
+            }
+
+            const response = await fetch("/api/addMessageToBoard", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ message: command.slice(1).join(" ") }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to post message",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [...terminalOutput, "Successfully posted message"];
+        },
+
+        messageBoard: async () => {
+            const response = await fetch("/api/getMessagesFromBoard", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                }, 
+                body: JSON.stringify({ Number: 50 }),
+            });
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to get messages",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            const data = await response.json();
+
+            // const date = new Date(response.createdAt);
+            // const dateString = date.toDateString();
+
+            data.forEach((message) => {
+                const date = new Date(message.createdAt);
+                const dateString = date.toDateString();
+
+                // use ansi escape codes to color it
+                if (message.username === "HoosierTransfer") {
+                    message.username = `\u001b[1337m${message.username}`;
+                }
+                terminalOutput = [
+                    ...terminalOutput,
+                    `\u001b[37m[\u001b[33m${dateString}\u001b[37m] \u001b[32m${message.username}\u001b[32m: \u001b[37m${message.message}`,
+                ];
+            });
+
+            // console.log(JSON.stringify(data, null, 2));
 
 
+            // terminalOutput = [
+            //     ...terminalOutput,
+            //     JSON.stringify(data.messages, null, 2),
+            // ];
         },
 
         trans: makeTransFlagColors,
@@ -1771,7 +1846,7 @@
                 ];
                 break;
 
-            case "updatemotd":
+            case "updateMotd":
                 terminalOutput = [
                     ...terminalOutput,
                     "updateMotd - update the message of the day",
@@ -1824,6 +1899,30 @@
                     ...terminalOutput,
                     "gridsize - set the size of the grid",
                     "Usage: gridsize &lt;x&gt &lt;y&gt",
+                ];
+                break;
+
+            case "convtest":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "convtest - test convolution",
+                    "Usage: convtest",
+                ];
+                break;
+
+            case "postMessage":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "postMessage - post a message to the message board",
+                    "Usage: postMessage &lt;message&gt",
+                ];
+                break;
+
+            case "messageBoard":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "messageBoard - get messages from the message board",
+                    "Usage: messageBoard",
                 ];
                 break;
 
