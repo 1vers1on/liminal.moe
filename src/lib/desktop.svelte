@@ -4,7 +4,8 @@
 
     import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
     import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math.js"
-        
+    import { fibonacci } from "$lib/bigfib.js";
+    
     let visitorCount;
 
     let refreshRate = 0;
@@ -12,6 +13,7 @@
     let displayWidth = 0;
     let platform = "web";
     let gpuVendor = "";
+    let terminalWidth = 80;
 
     let pageLoadTime = new Date();
 
@@ -519,6 +521,22 @@
         return `${f(0)}${f(8)}${f(4)}`;
     }
 
+    function addToOutput(text) {
+        const wrappedText = text
+            .split("\n")
+            .map((line) => {
+                let wrappedLine = "";
+                while (line.length > 0) {
+                    wrappedLine += line.slice(0, terminalWidth) + "\n";
+                    line = line.slice(terminalWidth);
+                }
+                return wrappedLine;
+            })
+            .join("\n");
+        
+        terminalOutput = [...terminalOutput, wrappedText];
+    }
+
     const antInterval = () => {
         const updatesPerFrameEnv = environmentVariables.get("UPDATES_PER_FRAME");
         let updatesPerFrame = 1;
@@ -628,6 +646,7 @@
                 "\u001b[37madminhelp",
                 "\u001b[37mpostMessage",
                 "\u001b[37mmessageBoard",
+                "\u001b[37mfibonacci",
             ];
         },
 
@@ -1620,7 +1639,6 @@
                 const date = new Date(message.createdAt);
                 const dateString = date.toDateString();
 
-                // use ansi escape codes to color it
                 if (message.username === "HoosierTransfer") {
                     message.username = `\u001b[1337m${message.username}`;
                 }
@@ -1629,14 +1647,26 @@
                     `\u001b[37m[\u001b[33m${dateString}\u001b[37m] \u001b[32m${message.username}\u001b[32m: \u001b[37m${message.message}`,
                 ];
             });
+        },
 
-            // console.log(JSON.stringify(data, null, 2));
+        fibonacci: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: fibonacci &lt;number&gt",
+                ];
+                return;
+            }
 
+            const n = parseInt(command[1]);
+            if (isNaN(n)) {
+                terminalOutput = [...terminalOutput, "Invalid number"];
+                return;
+            }
 
-            // terminalOutput = [
-            //     ...terminalOutput,
-            //     JSON.stringify(data.messages, null, 2),
-            // ];
+            const result = fibonacci(n);
+            // terminalOutput = [...terminalOutput, result];
+            addToOutput(result);
         },
 
         trans: makeTransFlagColors,
@@ -1923,6 +1953,14 @@
                     ...terminalOutput,
                     "messageBoard - get messages from the message board",
                     "Usage: messageBoard",
+                ];
+                break;
+
+            case "fibonacci":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "fibonacci - calculate the nth Fibonacci number really fast",
+                    "Usage: fibonacci &lt;number&gt",
                 ];
                 break;
 
@@ -2276,6 +2314,9 @@
         }
 
         window.requestAnimationFrame(estimateRefreshRate);
+
+        // get how long the terminal is in characters
+        terminalWidth = Math.floor(displayWidth / 10);
 
         return () => {
             window.removeEventListener("keydown", handleKeydown);
