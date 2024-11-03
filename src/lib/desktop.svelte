@@ -2,7 +2,6 @@
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
 
-    import { encryptedIsland, cProgram } from "$lib/mylittleisland";
     import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math"
     import { fibonacci } from "$lib/bigfib";
     
@@ -912,26 +911,6 @@
             }
         },
 
-        // "./decrypt": (command) => {
-        //     if (command.length !== 3) {
-        //         terminalOutput = [
-        //             ...terminalOutput,
-        //             "Usage: ./decrypt &ltkey&gt &ltfilename&gt",
-        //         ];
-        //         return;
-        //     }
-
-        //     if (command[2] !== "skibidisigmafile") {
-        //         terminalOutput = [...terminalOutput, "Error opening file"];
-        //         return;
-        //     }
-
-        //     terminalOutput = [
-        //         ...terminalOutput,
-        //         vigenereDecrypt(encryptedIsland, command[1]),
-        //     ];
-        // },
-
         cat: async (command: string[]) => {
             switch (command[1]) {
                 case "projects":
@@ -976,17 +955,6 @@
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
                         ];
-                    }
-                    break;
-                case "skibidisigmafile":
-                    if (currentDirectory === "~") {
-                        // append every line in encryptedIsland to terminalOutput
-                        terminalOutput = [...terminalOutput, encryptedIsland];
-                    }
-                    break;
-                case "decrypt":
-                    if (currentDirectory === "~") {
-                        terminalOutput = [...terminalOutput, cProgram];
                     }
                     break;
 
