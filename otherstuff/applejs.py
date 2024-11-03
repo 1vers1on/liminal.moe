@@ -56,4 +56,4 @@ def video_to_ascii(video_path, output_json="ascii_frames.json", width=100, fps=1
         json.dump(ascii_frames, json_file, indent=4)
 
 # Example usage
-video_to_ascii("badapple.mp4", output_json="ascii_frames.json", width=50, fps=20)
+video_to_ascii("badapple.mp4", output_json="ascii_frames.json", width=50, fps=10)

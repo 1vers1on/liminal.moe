@@ -1847,11 +1847,11 @@
                 if (badappleFrames) {
                     terminalOutput[badAppleLine] = badappleFrames["frame_" + i];
                 }
-                if (i >= 6571) {
+                if (i >= 2190) {
                     if (badAppleInterval) clearInterval(badAppleInterval);
                 }
                 i++;
-            }, 1000 / 20);
+            }, 1000 / 10);
         },
 
         trans: makeTransFlagColors,
