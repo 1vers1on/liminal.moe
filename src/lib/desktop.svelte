@@ -2066,6 +2066,14 @@
                 ];
                 break;
 
+            case "cd":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "cd - change the current directory",
+                    "Usage: cd &lt;directory&gt",
+                ];
+                break;
+
             default:
                 terminalOutput = [
                     ...terminalOutput,
