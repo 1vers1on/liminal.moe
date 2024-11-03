@@ -23,9 +23,7 @@ export async function POST({ request }) {
         },
     });
 
-    // add username and date and message to the response
-
-    messages = messages.map((message) => {
+    const messagesFiltered = messages.map((message) => {
         return {
             username: message.userRelation.name,
             message: message.message,
@@ -33,5 +31,5 @@ export async function POST({ request }) {
         };
     });
 
-    return json(messages);
+    return json(messagesFiltered);
 }

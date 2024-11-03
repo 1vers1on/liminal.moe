@@ -27,7 +27,7 @@ export async function POST({ request, cookies }) {
         }
     });
 
-    if (user.lastMessage && new Date() - user.lastMessage < 43200000) {
+    if (user.lastMessage && new Date().getTime() - new Date(user.lastMessage).getTime() < 43200000) {
         return json({ success: false, error: 'You can only send a message every 12 hours' });
     }
 

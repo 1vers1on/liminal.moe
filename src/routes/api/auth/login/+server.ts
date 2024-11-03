@@ -21,23 +21,17 @@ export async function POST({ request, cookies }) {
         });
 
         if (!user) {
-            return {
-                status: 404,
-                body: {
-                    error: 'User not found',
-                },
-            };
+            return json({
+                error: 'User not found',
+            }, { status: 404 });
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {
-            return {
-                status: 401,
-                body: {
-                    error: 'Invalid password',
-                },
-            };
+            return json({
+                error: 'Password incorrect',
+            }, { status: 401 });
         }
 
         const token = generateToken();

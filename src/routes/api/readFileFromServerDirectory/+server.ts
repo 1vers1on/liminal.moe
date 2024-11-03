@@ -16,7 +16,6 @@ export async function POST({ request }) {
         return json({ error: "File does not exist" });
     }
 
-    // check if its a directory
     if (fs.statSync(filePath).isDirectory()) {
         return json({ error: "File is a directory" });
     }

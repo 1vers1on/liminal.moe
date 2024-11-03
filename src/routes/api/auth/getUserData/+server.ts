@@ -16,12 +16,9 @@ export async function GET({ request, cookies }) {
         });
 
         if (!user) {
-            return {
-                status: 404,
-                body: {
-                    error: 'User not found',
-                },
-            };
+            return json({
+                error: 'User not found',
+            }, { status: 404 });
         }
 
         return json({
