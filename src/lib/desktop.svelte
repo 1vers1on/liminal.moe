@@ -621,7 +621,6 @@
                 "\u001b[37msubscribeToPush",
                 "\u001b[37mhelp",
                 "\u001b[37mman",
-                "\u001b[37mchat",
                 "\u001b[37mclear",
                 "\u001b[37mwhoami",
                 "\u001b[37mecho",
@@ -746,10 +745,6 @@
             clearInterval(conwayInterval);
             conwayInterval = setInterval(primordiaIntervalFunc, intervalSpeed);
             runningInterval = primordiaIntervalFunc;
-        },
-
-        chat: () => {
-            goto("/chat");
         },
 
         clear: () => {
@@ -1773,13 +1768,6 @@
                     ...terminalOutput,
                     "help - display available commands",
                     "Usage: help",
-                ];
-                break;
-            case "chat":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "chat - go to the chat page",
-                    "Usage: chat",
                 ];
                 break;
             case "clear":
