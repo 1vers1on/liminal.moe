@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
     import Mobile from "$lib/mobile.svelte";
     import Desktop from "$lib/desktop.svelte";
     let isMobile = false;
-    let w;
+    let w = 0;
     isMobile = isMobile || w < 768;
 </script>
+
 <svelte:window bind:innerWidth={w} />
 
 {#if isMobile}

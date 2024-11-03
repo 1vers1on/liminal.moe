@@ -1,12 +1,16 @@
 import FFT from "fft.js";
 
-let savedKernelFFT = null;
+type Complex = [number, number]; // [real, imaginary]
+type RealMatrix = number[][];
+type ComplexMatrix = Complex[][];
 
-export function fft2D(matrix) {
+let savedKernelFFT: ComplexMatrix | null = null;
+
+export function fft2D(matrix: RealMatrix): ComplexMatrix {
     const rows = matrix.length;
     const cols = matrix[0].length;
     const fft = new FFT(cols);
-    let transformed = new Array(rows);
+    let transformed: number[][] = new Array(rows);
 
     for (let i = 0; i < rows; i++) {
         const row = matrix[i];
@@ -22,7 +26,7 @@ export function fft2D(matrix) {
         transformed[i] = outputRow;
     }
 
-    const transposed = Array.from({ length: cols }, (_, i) =>
+    const transposed: ComplexMatrix = Array.from({ length: cols }, (_, i) =>
         transformed.map(row => [row[2 * i], row[2 * i + 1]])
     );
 
@@ -48,11 +52,11 @@ export function fft2D(matrix) {
     );
 }
 
-export function ifft2D(matrix) {
+export function ifft2D(matrix: ComplexMatrix): ComplexMatrix {
     const rows = matrix.length;
     const cols = matrix[0].length;
     const fft = new FFT(cols);
-    let transformed = new Array(rows);
+    let transformed: number[][] = new Array(rows);
 
     for (let i = 0; i < rows; i++) {
         const row = matrix[i];
@@ -68,7 +72,7 @@ export function ifft2D(matrix) {
         transformed[i] = outputRow;
     }
 
-    const transposed = Array.from({ length: cols }, (_, i) =>
+    const transposed: ComplexMatrix = Array.from({ length: cols }, (_, i) =>
         transformed.map(row => [row[2 * i], row[2 * i + 1]])
     );
 
@@ -98,8 +102,8 @@ export function ifft2D(matrix) {
     );
 }
 
-export function padKernel(kernel, rows, cols) {
-    const paddedKernel = Array.from({ length: rows }, () => Array(cols).fill(0));
+export function padKernel(kernel: RealMatrix, rows: number, cols: number): RealMatrix {
+    const paddedKernel: RealMatrix = Array.from({ length: rows }, () => Array(cols).fill(0));
     const kernelRows = kernel.length;
     const kernelCols = kernel[0].length;
 
@@ -115,11 +119,13 @@ export function padKernel(kernel, rows, cols) {
     return paddedKernel;
 }
 
-export function roll(grid, startRow, startCol) {
+export function roll(grid: RealMatrix | ComplexMatrix, startRow: number, startCol: number): RealMatrix | ComplexMatrix {
     const rows = grid.length;
     const cols = grid[0].length;
 
-    const newGrid = Array.from({ length: rows }, () => new Array(cols).fill(0));
+    const newGrid: (number | Complex)[][] = Array.from({ length: rows }, () =>
+        Array(cols).fill(0)
+    );
 
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
@@ -130,11 +136,10 @@ export function roll(grid, startRow, startCol) {
         }
     }
 
-    return newGrid;
+    return newGrid as RealMatrix | ComplexMatrix;
 }
 
-
-export function convolve2D(input, kernel) {
+export function convolve2D(input: RealMatrix, kernel: RealMatrix): RealMatrix {
     const rows = input.length;
     const cols = input[0].length;
 
@@ -143,7 +148,7 @@ export function convolve2D(input, kernel) {
     const inputFFT = fft2D(input);
     const kernelFFT = fft2D(paddedKernel);
 
-    const resultFFT = Array.from({ length: rows }, (_, i) =>
+    const resultFFT: ComplexMatrix = Array.from({ length: rows }, (_, i) =>
         Array.from({ length: cols }, (_, j) => {
             const [realA, imagA] = inputFFT[i][j];
             const [realB, imagB] = kernelFFT[i][j];
@@ -155,27 +160,32 @@ export function convolve2D(input, kernel) {
     );
 
     const result = ifft2D(resultFFT);
+    const realResult: RealMatrix = Array.from({ length: rows }, () => Array(cols).fill(0));
 
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
-            result[i][j] = result[i][j][0] * rows * cols;
+            realResult[i][j] = result[i][j][0] * rows * cols;
         }
     }
-    return roll(result, Math.floor(rows / 2) - 1, Math.floor(cols / 2) - 1);
+    return roll(realResult, Math.floor(rows / 2) - 1, Math.floor(cols / 2) - 1) as RealMatrix;
 }
 
-export function setKernel(kernel, rows, cols) {
+export function setKernel(kernel: RealMatrix, rows: number, cols: number): void {
     const paddedKernel = padKernel(kernel, rows, cols);
     savedKernelFFT = fft2D(paddedKernel);
 }
 
-export function convolve2DWithSavedKernel(input) {
+export function convolve2DWithSavedKernel(input: RealMatrix): RealMatrix {
+    if (!savedKernelFFT) {
+        throw new Error("Kernel has not been set. Call setKernel first.");
+    }
+
     const rows = input.length;
     const cols = input[0].length;
 
     const inputFFT = fft2D(input);
 
-    const resultFFT = Array.from({ length: rows }, (_, i) =>
+    const resultFFT: ComplexMatrix = Array.from({ length: rows }, (_, i) =>
         Array.from({ length: cols }, (_, j) => {
             const [realA, imagA] = inputFFT[i][j];
             const [realB, imagB] = savedKernelFFT[i][j];
@@ -187,13 +197,13 @@ export function convolve2DWithSavedKernel(input) {
     );
 
     const result = ifft2D(resultFFT);
+    const realResult: RealMatrix = Array.from({ length: rows }, () => Array(cols).fill(0));
 
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
-            result[i][j] = result[i][j][0] * rows * cols;
+            realResult[i][j] = result[i][j][0] * rows * cols;
         }
     }
 
-    return roll(result, Math.floor(rows / 2) - 1, Math.floor(cols / 2) - 1);
+    return roll(realResult, Math.floor(rows / 2) - 1, Math.floor(cols / 2) - 1) as RealMatrix;
 }
-    

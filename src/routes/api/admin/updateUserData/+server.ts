@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { json } from '@sveltejs/kit';
 
-import { isUserOwner } from '$lib/auth.js';
+import { isUserOwner } from '$lib/auth.ts';
 
 const prisma = new PrismaClient();
 

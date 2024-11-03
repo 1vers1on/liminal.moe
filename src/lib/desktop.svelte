@@ -2,9 +2,9 @@
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
 
-    import { encryptedIsland, cProgram } from "$lib/mylittleisland.js";
-    import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math.js"
-    import { fibonacci } from "$lib/bigfib.js";
+    import { encryptedIsland, cProgram } from "$lib/mylittleisland.ts";
+    import { convolve2DWithSavedKernel, setKernel, convolve2D } from "$lib/math.ts"
+    import { fibonacci } from "$lib/bigfib.ts";
     
     let visitorCount;
 
