@@ -630,7 +630,6 @@
                 "\u001b[37mturn_me_into_a_girl",
                 "\u001b[37mconway",
                 "\u001b[37mprimordia",
-                "\u001b[37mjavascript",
                 "\u001b[37mcowsay",
                 "\u001b[37mneofetch",
                 "\u001b[37mant",
@@ -1070,19 +1069,6 @@
                     terminalOutput = [...terminalOutput, data.error];
                 } else {
                     terminalOutput = [...terminalOutput, data.fileContents];
-                }
-            }
-        },
-        javascript: () => {
-            const code = inputValue.split(" ").slice(1).join(" ");
-            try {
-                const result = eval(code);
-                terminalOutput = [...terminalOutput, result];
-            } catch (e) {
-                if (e instanceof Error) {
-                    terminalOutput = [...terminalOutput, e.message];
-                } else {
-                    terminalOutput = [...terminalOutput, 'An unknown error occurred'];
                 }
             }
         },
@@ -1840,13 +1826,6 @@
                     ...terminalOutput,
                     "conway - run Conway's Game of Life",
                     "Usage: conway",
-                ];
-                break;
-            case "javascript":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "javascript - run JavaScript code",
-                    "Usage: javascript &lt;code&gt",
                 ];
                 break;
             case "cowsay":
