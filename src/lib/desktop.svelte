@@ -679,6 +679,7 @@
                 "\u001b[37mfibonacci",
                 "\u001b[37mping",
                 "\u001b[37mbadapple",
+                "\u001b[37mstarwars",
             ];
         },
 
@@ -1832,18 +1833,14 @@
 
         badapple: async () => {
             badAppleLine = terminalOutput.length;
-            if (!badappleFrames) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Bad Apple not loaded. Please wait...",
-                ];
-                const response = await fetch("/badapple.json");
-                badappleFrames = await response.json();
-            } else {
-                terminalOutput = [...terminalOutput, "starting bad apple..."];
-            }
+            terminalOutput = [
+                ...terminalOutput,
+                "Bad Apple not loaded. Please wait...",
+            ];
+            const response = await fetch("/badapple.json");
+            badappleFrames = await response.json();
 
-            let i = 0;
+            var i = 0;
             badAppleInterval = setInterval(() => {
                 if (badappleFrames) {
                     terminalOutput[badAppleLine] = badappleFrames["frame_" + i];
@@ -1853,6 +1850,44 @@
                 }
                 i++;
             }, 1000 / 10);
+        },
+
+        starwars: async () => {
+            badAppleLine = terminalOutput.length;
+            terminalOutput = [...terminalOutput, "Please wait..."];
+            const response = await fetch("/starwars.json");
+            badappleFrames = await response.json();
+
+            var i = 0;
+            var thisFrameShown = 0;
+            badAppleInterval = setInterval(() => {
+                if (badappleFrames) {
+                    const firstNewline =
+                        badappleFrames[i.toString()].indexOf("\n");
+                    const displayFor = badappleFrames[i.toString()].substring(
+                        0,
+                        firstNewline,
+                    );
+                    console.log(displayFor);
+                    terminalOutput[badAppleLine] = badappleFrames[
+                        i.toString()
+                    ].substring(firstNewline + 1);
+
+                    if (parseInt(displayFor) < thisFrameShown + 2) {
+                        i++;
+                        thisFrameShown = 0;
+                    } else {
+                        thisFrameShown++;
+                    }
+
+                    if (i >= 3410) {
+                        if (badAppleInterval) clearInterval(badAppleInterval);
+                    }
+                } else {
+                    terminalOutput[badAppleLine] = "Failed to load Star Wars";
+                    if (badAppleInterval) clearInterval(badAppleInterval);
+                }
+            }, 67);
         },
 
         trans: makeTransFlagColors,
@@ -2157,6 +2192,14 @@
                     ...terminalOutput,
                     "badapple - play the Bad Apple video",
                     "Usage: badapple",
+                ];
+                break;
+
+            case "starwars":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "starwars - play Star Wars ",
+                    "Usage: starwars",
                 ];
                 break;
 
