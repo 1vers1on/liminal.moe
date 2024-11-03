@@ -769,7 +769,7 @@
             terminalOutput = [
                 ...terminalOutput,
                 "<br>",
-                "I'm HoosierTransfer a c++ and rust developer with a passion for creating things.",
+                "I'm HoosierTransfer a c++ developer with a passion for creating things.",
                 "Some little things about me~",
                 "<br>",
                 "~ I go by she/her pronouns",
@@ -1665,7 +1665,6 @@
             }
 
             const result = fibonacci(n);
-            // terminalOutput = [...terminalOutput, result];
             addToOutput(result);
         },
 
