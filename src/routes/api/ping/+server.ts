@@ -1,3 +1,3 @@
 export async function GET() {
-    return new Response('pong');
+    return new Response("pong");
 }
