@@ -672,6 +672,7 @@
                 "\u001b[37mpostMessage",
                 "\u001b[37mmessageBoard",
                 "\u001b[37mfibonacci",
+                "\u001b[37mping",
             ];
         },
 
@@ -1803,6 +1804,26 @@
             addToOutput(result);
         },
 
+        ping: async () => {
+            const startTime = performance.now();
+            const response = await fetch("/api/ping");
+            const endTime = performance.now();
+
+            if (response.status !== 200) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Failed to ping server",
+                    await response.text(),
+                ];
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                `Pong! Response time: ${endTime - startTime}ms`,
+            ];
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2089,6 +2110,14 @@
                     ...terminalOutput,
                     "cd - change the current directory",
                     "Usage: cd &lt;directory&gt",
+                ];
+                break;
+
+            case "ping":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "ping - ping the server",
+                    "Usage: ping",
                 ];
                 break;
 
