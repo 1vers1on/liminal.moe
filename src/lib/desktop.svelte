@@ -627,6 +627,7 @@
                 "\u001b[37mexport",
                 "\u001b[37mmotd",
                 "\u001b[37mls",
+                "\u001b[37mcd",
                 "\u001b[37mcat",
                 "\u001b[37mturn_me_into_a_girl",
                 "\u001b[37mconway",
@@ -673,6 +674,31 @@
                 "\u001b[37mupdateuserdata",
                 "\u001b[37mgetuserdata",
                 "\u001b[37mnotify",
+            ];
+        },
+
+        cd: (command) => {
+            if (command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Usage: cd &lt;directory&gt;",
+                ];
+                return;
+            }
+
+            if (command[1] === ".." || command[1] === "../") {
+                currentDirectory = "~";
+                return;
+            }
+
+            if (command[1] === "what" || command[1] === "what/" || command[1] === "./what" || command[1] === "./what/") {
+                currentDirectory = "~/what";
+                return;
+            }
+
+            terminalOutput = [
+                ...terminalOutput,
+                `cd: ${command[1]}: No such directory`,
             ];
         },
 
@@ -834,17 +860,59 @@
             terminalOutput = [...terminalOutput, "meow"];
         },
 
-        ls: () => {
-            terminalOutput = [
-                ...terminalOutput,
-                "<span style='color:#0ff;'>projects</span>",
-                "<span style='color:#0ff;'>about</span>",
-                "<span style='color:#0ff;'>contact</span>",
-                "<span style='color:#0ff;'>skibidisigmafile</span>",
-                "<span style='color:#0ff;'>.env</span>",
-                "<span style='color:#0ff;'>publickey.asc</span>",
-                // "<span style='color:#f00;'>decrypt</span>",
-            ];
+        ls: async (command) => {
+            if (currentDirectory === "~" && command.length === 1) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "<span style='color:#0ff;'>projects</span>",
+                    "<span style='color:#0ff;'>about</span>",
+                    "<span style='color:#0ff;'>contact</span>",
+                    "<span style='color:#0ff;'>skibidisigmafile</span>",
+                    "<span style='color:#0ff;'>.env</span>",
+                    "<span style='color:#0ff;'>publickey.asc</span>",
+                    "<span style='color:#f0f;'>what</span>",
+                ];
+            } else if (currentDirectory === "~/what" && command.length === 1) {
+                const response = await fetch("/api/listFilesInServerDirectory",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ directory: "what" }),
+                    }
+                );
+
+                const data = await response.json();
+                for (let file of data.files) {
+                    if (file.isDirectory) {
+                        terminalOutput = [...terminalOutput, `<span style='color:#f0f;'>${file.name}</span>`];
+                    } else {
+                        terminalOutput = [...terminalOutput, `<span style='color:#0ff;'>${file.name}</span>`];
+                    }
+                }
+            } else if (currentDirectory === "~" && command.length === 2) {
+                if (command[1] === "what") {
+                    const response = await fetch("/api/listFilesInServerDirectory",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ directory: "what" }),
+                        }
+                    );
+
+                    const data = await response.json();
+                    for (let file of data.files) {
+                        if (file.isDirectory) {
+                            terminalOutput = [...terminalOutput, `<span style='color:#f0f;'>${file.name}</span>`];
+                        } else {
+                            terminalOutput = [...terminalOutput, `<span style='color:#0ff;'>${file.name}</span>`];
+                        }
+                    }
+                }
+            }
         },
 
         // "./decrypt": (command) => {
@@ -867,7 +935,7 @@
         //     ];
         // },
 
-        cat: (command) => {
+        cat: async (command) => {
             switch (command[1]) {
                 case "projects":
                     if (currentDirectory === "~") {
@@ -952,12 +1020,59 @@
                         "-----END PGP PUBLIC KEY BLOCK-----",
                     ];
                     break;
+                case "what":
+                    terminalOutput = [
+                        ...terminalOutput,
+                        "what is a directory"
+                    ];
+                    break;
                 case "":
                     terminalOutput = [
                         ...terminalOutput,
                         "cat: missing file operand",
                     ];
                     break;
+            }
+
+            if (currentDirectory === "~/what") {
+                if (command.length === 2) {
+                    const response = await fetch("/api/readFileFromServerDirectory",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({ file: "what/" + command[1] }),
+                        }
+                    );
+
+                    const data = await response.json();
+                    if (data.error) {
+                        terminalOutput = [...terminalOutput, data.error];
+                    } else {
+                        terminalOutput = [...terminalOutput, data.fileContents];
+                    }
+                }
+            }
+
+            // check if it starts with /what
+            if (command[1].startsWith("what/") || command[1].startsWith("./what")) {
+                const response = await fetch("/api/readFileFromServerDirectory",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ file: command[1] }),
+                    }
+                );
+
+                const data = await response.json();
+                if (data.error) {
+                    terminalOutput = [...terminalOutput, data.error];
+                } else {
+                    terminalOutput = [...terminalOutput, data.fileContents];
+                }
             }
         },
         javascript: () => {
@@ -2222,23 +2337,19 @@
             ...terminalOutput,
             `${currentDirectory} $ ${command}`,
         ];
-        command = command.split(" ");
 
-        if (command[0] in commands) {
-            commands[command[0]](command);
-        } else if ((command[0] = "")) {
+        const args = command.match(/(?:[^\s"]+|"[^"]*")+/g).map(arg => arg.replace(/(^"|"$)/g, '')); 
+
+        if (args[0] in commands) {
+            commands[args[0]](args);
+        } else if (args[0] === "") {
             terminalOutput = [...terminalOutput, ""];
         } else {
             terminalOutput = [
                 ...terminalOutput,
-                `\u001b[31m${command[0]}: command not found\u001b[0m`,
+                `\u001b[31m${args[0]}: command not found\u001b[0m`,
             ];
         }
-        // try {
-        // setTimeout(() => {
-        //     terminalElement.scrollTop = terminalElement.scrollHeight;
-        // }, 0);
-        // } catch {}
 
         if (terminalElement) {
             terminalElement.scrollTop = terminalElement.scrollHeight;
@@ -2249,12 +2360,12 @@
         }
     }
 
+
     onMount(async () => {
         const response = await fetch("/api/visitorCount");
         const data = await response.json();
         visitorCount = data.count;
 
-        // replace {visitors} with the visitor count
         motd[2] = motd[2].replace("{visitors}", visitorCount);
 
         terminalOutput = motd;
