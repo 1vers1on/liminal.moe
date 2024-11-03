@@ -11,6 +11,8 @@
 
     import { turboLookup } from "$lib/turboLookup";
 
+    let badappleFrames: Record<string, string> | null = null;
+
     let visitorCount = 0;
 
     let refreshRate = 0;
@@ -143,6 +145,7 @@
     let changedCells: number[][] = [];
 
     let conwayInterval: ReturnType<typeof setInterval> | null = null;
+    let badAppleInterval: ReturnType<typeof setInterval> | null = null;
 
     let antX = 0;
     let antY = 0;
@@ -164,6 +167,8 @@
     const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
     let primordiaStates = 12;
+
+    let badAppleLine = 0;
 
     const mooreKernel = [
         [1, 1, 1],
@@ -1822,6 +1827,31 @@
                 ...terminalOutput,
                 `Pong! Response time: ${endTime - startTime}ms`,
             ];
+        },
+
+        badapple: async () => {
+            badAppleLine = terminalOutput.length;
+            if (!badappleFrames) {
+                terminalOutput = [
+                    ...terminalOutput,
+                    "Bad Apple not loaded. Please wait...",
+                ];
+                const response = await fetch("/badapple.json");
+                badappleFrames = await response.json();
+            } else {
+                terminalOutput = [...terminalOutput, "starting bad apple..."];
+            }
+
+            let i = 0;
+            badAppleInterval = setInterval(() => {
+                if (badappleFrames) {
+                    terminalOutput[badAppleLine] = badappleFrames["frame_" + i];
+                }
+                if (i >= 6571) {
+                    if (badAppleInterval) clearInterval(badAppleInterval);
+                }
+                i++;
+            }, 1000 / 20);
         },
 
         trans: makeTransFlagColors,
