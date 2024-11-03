@@ -45,6 +45,18 @@ export async function POST({ request, cookies }) {
             },
         });
 
+        if (!user) {
+            return json({
+                error: 'Error updating user',
+            }, { status: 500 });
+        }
+
+        if (!user.token) {
+            return json({
+                error: 'Error updating token',
+            }, { status: 500 });
+        }
+
         cookies.set('token', user.token, {
             httpOnly: true,
             maxAge: 60 * 60 * 24 * 7,
@@ -56,7 +68,7 @@ export async function POST({ request, cookies }) {
         }, { status: 200 });
     } catch (error) {
         return json({
-            error: error.message,
+            error: (error as Error).message,
         }, { status: 500 });
     }
 }

@@ -1,7 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { json } from '@sveltejs/kit';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -29,7 +27,7 @@ export async function GET({ request, cookies }) {
         }, { status: 200 });
     } catch (error) {
         return json({
-            error: error.message,
+            error: (error as Error).message,
         }, { status: 500 });
     }
 }

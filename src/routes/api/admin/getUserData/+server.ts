@@ -1,13 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { json } from '@sveltejs/kit';
 
-import { isUserOwner } from '$lib/auth.ts';
+import { isUserOwner } from '$lib/auth';
 
 const prisma = new PrismaClient();
 
 export async function POST( {request, cookies} ) {
   try {
-    if (!(await isUserOwner(cookies.get('token')))) {
+    const token = cookies.get('token');
+    if (!token || !(await isUserOwner(token))) {
       return json({ error: 'Unauthorized' }, { status: 401 });
     }
 

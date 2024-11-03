@@ -13,5 +13,5 @@ export async function isUserOwner(token: string) {
         },
     });
 
-    return user.permission === 'owner';
+    return user && user.permission === 'owner';
 }

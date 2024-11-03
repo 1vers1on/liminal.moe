@@ -188,7 +188,7 @@ export function convolve2DWithSavedKernel(input: RealMatrix): RealMatrix {
     const resultFFT: ComplexMatrix = Array.from({ length: rows }, (_, i) =>
         Array.from({ length: cols }, (_, j) => {
             const [realA, imagA] = inputFFT[i][j];
-            const [realB, imagB] = savedKernelFFT[i][j];
+            const [realB, imagB] = savedKernelFFT![i][j];
             return [
                 realA * realB - imagA * imagB,
                 realA * imagB + imagA * realB
