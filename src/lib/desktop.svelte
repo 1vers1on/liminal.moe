@@ -678,6 +678,7 @@
                 "\u001b[37mmessageBoard",
                 "\u001b[37mfibonacci",
                 "\u001b[37mping",
+                "\u001b[37mbadapple",
             ];
         },
 
@@ -2148,6 +2149,14 @@
                     ...terminalOutput,
                     "ping - ping the server",
                     "Usage: ping",
+                ];
+                break;
+
+            case "badapple":
+                terminalOutput = [
+                    ...terminalOutput,
+                    "badapple - play the Bad Apple video",
+                    "Usage: badapple",
                 ];
                 break;
 
