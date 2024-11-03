@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { json } from '@sveltejs/kit';
+import { PrismaClient } from "@prisma/client";
+import { json } from "@sveltejs/kit";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,7 @@ export async function POST({ request }) {
     let messages = await prisma.messageBoard.findMany({
         take: number,
         orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
         },
         include: {
             userRelation: {

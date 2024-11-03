@@ -1,12 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import { json } from '@sveltejs/kit';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+import { PrismaClient } from "@prisma/client";
+import { json } from "@sveltejs/kit";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
 function generateToken() {
-    return crypto.randomBytes(64).toString('hex');
+    return crypto.randomBytes(64).toString("hex");
 }
 
 export async function POST({ request, cookies }) {
@@ -28,29 +28,41 @@ export async function POST({ request, cookies }) {
         });
 
         if (!user) {
-            return json({
-                error: 'Error creating user',
-            }, { status: 500 });
+            return json(
+                {
+                    error: "Error creating user",
+                },
+                { status: 500 },
+            );
         }
 
         if (!user.token) {
-            return json({
-                error: 'Error creating token',
-            }, { status: 500 });
+            return json(
+                {
+                    error: "Error creating token",
+                },
+                { status: 500 },
+            );
         }
 
-        cookies.set('token', user.token, {
+        cookies.set("token", user.token, {
             httpOnly: true,
             maxAge: 60 * 60 * 24 * 7,
-            path: '/',
+            path: "/",
         });
 
-        return json({
-            token: user.token,
-        }, { status: 201 });
+        return json(
+            {
+                token: user.token,
+            },
+            { status: 201 },
+        );
     } catch (error) {
-        return json({
-            error: (error as Error).message,
-        }, { status: 500 });
+        return json(
+            {
+                error: (error as Error).message,
+            },
+            { status: 500 },
+        );
     }
 }

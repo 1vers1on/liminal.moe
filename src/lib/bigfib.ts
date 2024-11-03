@@ -10,10 +10,7 @@ class Zrt5 {
     multiply(x: Zrt5): Zrt5 {
         let bb = this.b * x.b;
         bb = (bb << 2n) + bb;
-        return new Zrt5(
-            this.a * x.a + bb,
-            this.a * x.b + this.b * x.a
-        );
+        return new Zrt5(this.a * x.a + bb, this.a * x.b + this.b * x.a);
     }
 
     multiplyAssign(x: Zrt5): this {
@@ -32,7 +29,7 @@ class Zrt5 {
 
 export function fibonacci(n: number): string {
     if (n === 0) {
-        return '0';
+        return "0";
     }
 
     let step = new Zrt5(1n, 1n);

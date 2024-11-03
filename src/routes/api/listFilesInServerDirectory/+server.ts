@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { json } from '@sveltejs/kit';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from "@prisma/client";
+import { json } from "@sveltejs/kit";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -10,13 +10,17 @@ export async function POST({ request }) {
 
     const { directory } = data;
 
-    const directoryPath = path.join("/home/hoosiertransfer/hoosiertransfer.net/serverDirectory", directory);
-    const files = fs.readdirSync(directoryPath).map(file => {
+    const directoryPath = path.join(
+        "/home/hoosiertransfer/hoosiertransfer.net/serverDirectory",
+        directory,
+    );
+    const files = fs.readdirSync(directoryPath).map((file) => {
         return {
             name: file,
-            isDirectory: fs.statSync(path.join
-                (directoryPath, file)).isDirectory()
-        }
+            isDirectory: fs
+                .statSync(path.join(directoryPath, file))
+                .isDirectory(),
+        };
     });
 
     return json({ files });

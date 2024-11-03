@@ -1,16 +1,19 @@
-import { PrismaClient } from '@prisma/client';
-import { json } from '@sveltejs/kit';
+import { PrismaClient } from "@prisma/client";
+import { json } from "@sveltejs/kit";
 
 const prisma = new PrismaClient();
 
 export async function POST({ request, cookies }) {
     try {
-        const token = cookies.get('token');
+        const token = cookies.get("token");
 
         if (!token) {
-            return json({
-                error: 'Not authorized',
-            }, { status: 401 });
+            return json(
+                {
+                    error: "Not authorized",
+                },
+                { status: 401 },
+            );
         }
 
         const user = await prisma.users.findFirst({
@@ -20,9 +23,12 @@ export async function POST({ request, cookies }) {
         });
 
         if (!user) {
-            return json({
-                error: 'User not found',
-            }, { status: 404 });
+            return json(
+                {
+                    error: "User not found",
+                },
+                { status: 404 },
+            );
         }
 
         await prisma.users.update({
@@ -34,18 +40,24 @@ export async function POST({ request, cookies }) {
             },
         });
 
-        cookies.set('token', '', {
+        cookies.set("token", "", {
             httpOnly: true,
             maxAge: 0,
-            path: '/',
+            path: "/",
         });
 
-        return json({
-            message: 'Logged out',
-        }, { status: 200 });
+        return json(
+            {
+                message: "Logged out",
+            },
+            { status: 200 },
+        );
     } catch (error) {
-        return json({
-            error: (error as Error).message,
-        }, { status: 500 });
+        return json(
+            {
+                error: (error as Error).message,
+            },
+            { status: 500 },
+        );
     }
 }

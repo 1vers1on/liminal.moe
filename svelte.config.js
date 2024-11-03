@@ -1,10 +1,10 @@
-import adapter from '@sveltejs/adapter-node';
-import { sveltePreprocess } from 'svelte-preprocess';
+import adapter from "@sveltejs/adapter-node";
+import { sveltePreprocess } from "svelte-preprocess";
 
 export default {
-	preprocess: sveltePreprocess(),
+    preprocess: sveltePreprocess(),
 
-	kit: {
-		adapter: adapter()
-	}
+    kit: {
+        adapter: adapter(),
+    },
 };

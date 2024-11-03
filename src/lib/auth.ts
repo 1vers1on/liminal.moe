@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -13,5 +13,5 @@ export async function isUserOwner(token: string) {
         },
     });
 
-    return user && user.permission === 'owner';
+    return user && user.permission === "owner";
 }
