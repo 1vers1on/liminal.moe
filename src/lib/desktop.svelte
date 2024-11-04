@@ -960,13 +960,9 @@
                 const data = await response.json();
                 for (let file of data.files) {
                     if (file.isDirectory) {
-                        writeToOutput(
-                            `\u001b[95m${file.name}`,
-                        );
+                        writeToOutput(`\u001b[95m${file.name}`);
                     } else {
-                        writeToOutput(
-                            `\u001b[96m${file.name}`,
-                        );
+                        writeToOutput(`\u001b[96m${file.name}`);
                     }
                 }
             } else if (currentDirectory === "~" && command.length === 2) {
@@ -985,13 +981,9 @@
                     const data = await response.json();
                     for (let file of data.files) {
                         if (file.isDirectory) {
-                            writeToOutput(
-                                `<\u001b[95m${file.name}`,
-                            );
+                            writeToOutput(`<\u001b[95m${file.name}`);
                         } else {
-                            writeToOutput(
-                                `\u001b[96m${file.name}`,
-                            );
+                            writeToOutput(`\u001b[96m${file.name}`);
                         }
                     }
                 }
