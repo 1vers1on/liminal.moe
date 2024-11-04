@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, tick } from "svelte";
+    import { onMount, tick, afterUpdate } from "svelte";
     import { goto } from "$app/navigation";
 
     import {
@@ -76,6 +76,12 @@
         "106": "#29b8db",
         "107": "#ffffff",
     };
+
+    function scrollToBottom() {
+        if (terminalElement) {
+            terminalElement.scrollTop = terminalElement.scrollHeight;
+        }
+    }
 
     async function getMotd(): Promise<string> {
         const response = await fetch("/api/motd");
@@ -853,6 +859,7 @@
             grid = [];
             gridState = [];
             if (conwayInterval) clearInterval(conwayInterval);
+            if (badAppleInterval) clearInterval(badAppleInterval);
             clearOutput();
 
             gridCanvases.forEach((canvas) => {
@@ -2410,14 +2417,14 @@
             }
         }
 
-        if (terminalElement) {
-            terminalElement.scrollTop = terminalElement.scrollHeight;
-        }
-
         if (transMode) {
             makeTransFlagColors();
         }
     }
+
+    afterUpdate(() => {
+        scrollToBottom();
+    });
 
     onMount(() => {
         (async () => {
