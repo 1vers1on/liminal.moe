@@ -10,6 +10,8 @@
     import { fibonacci } from "$lib/bigfib";
 
     import { turboLookup } from "$lib/turboLookup";
+    import Page from "../routes/+page.svelte";
+    import { get } from "svelte/store";
 
     let badappleFrames: Record<string, string> | null = null;
 
@@ -124,6 +126,8 @@
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
     ];
 
+    let pipeOutput: string[] = [];
+
     let terminalOutput: any[] = [];
     let inputValue = "";
     let cursorPosition = 0;
@@ -170,11 +174,55 @@
 
     let badAppleLine = 0;
 
+    let activeOutput = "terminal";
+
     const mooreKernel = [
         [1, 1, 1],
         [1, 0, 1],
         [1, 1, 1],
     ];
+
+    function writeToOutput(...text: string[]) {
+        if (activeOutput === "terminal") {
+            terminalOutput = [...terminalOutput, ...text];
+        } else if (activeOutput === "pipe") {
+            pipeOutput = [...pipeOutput, ...text];
+        }
+    }
+
+    function setLineInOutput(text: string, line: number) {
+        if (activeOutput === "terminal") {
+            terminalOutput[line] = text;
+        } else if (activeOutput === "pipe") {
+            pipeOutput[line] = text;
+        }
+    }
+
+    function appendToLineInOutput(text: string, line: number) {
+        if (activeOutput === "terminal") {
+            terminalOutput[line] += text;
+        } else if (activeOutput === "pipe") {
+            pipeOutput[line] += text;
+        }
+    }
+
+    function getOutputLength() {
+        if (activeOutput === "terminal") {
+            return terminalOutput.length;
+        } else if (activeOutput === "pipe") {
+            return pipeOutput.length;
+        }
+
+        return 0;
+    }
+
+    function clearOutput() {
+        if (activeOutput === "terminal") {
+            terminalOutput = [];
+        } else if (activeOutput === "pipe") {
+            pipeOutput = [];
+        }
+    }
 
     function clip(value: number, min: number, max: number): number {
         return Math.min(Math.max(value, min), max);
@@ -296,10 +344,10 @@
     }
 
     function addGridToTerminal() {
-        gridLocation = terminalOutput.length + 1;
-        terminalOutput.push("<br>");
+        gridLocation = getOutputLength() + 1;
+        writeToOutput("<br>");
         for (let i = 0; i < grid.length; i++) {
-            terminalOutput.push(grid[i].join(""));
+            writeToOutput(grid[i].join(""));
         }
     }
 
@@ -321,13 +369,13 @@
         }
 
         for (let i = 0; i < grid.length; i++) {
-            terminalOutput[gridLocation + i] = grid[i].join("");
+            setLineInOutput(grid[i].join(""), gridLocation + i);
         }
     }
 
     function updateGridDirect() {
         for (let i = 0; i < grid.length; i++) {
-            terminalOutput[gridLocation + i] = grid[i].join("");
+            setLineInOutput(grid[i].join(""), gridLocation + i);
         }
     }
 
@@ -356,7 +404,6 @@
         if (!onlyUpdateChangedCells && !fullUpdateGridNextFrame) {
             gridCanvasContext.clearRect(0, 0, 300, 300);
 
-            // fill with turbo color 0
             gridCanvasContext.fillStyle = turboColormapRgb(0);
             gridCanvasContext.fillRect(0, 0, 300, 300);
         }
@@ -442,9 +489,9 @@
 
     function printTypewriter(text: string, delay = 2) {
         return new Promise(async (resolve) => {
-            let line = terminalOutput.length;
+            let line = getOutputLength();
             for (let i = 0; i < text.length; i++) {
-                terminalOutput[line] = (terminalOutput[line] || "") + text[i];
+                appendToLineInOutput(text[i], line);
                 await new Promise((resolve) => setTimeout(resolve, delay));
             }
             resolve(undefined);
@@ -549,7 +596,7 @@
         return `${f(0)}${f(8)}${f(4)}`;
     }
 
-    function addToOutput(text: string) {
+    function addToOutputWrapped(text: string) {
         const wrappedText = text
             .split("\n")
             .map((line) => {
@@ -562,7 +609,7 @@
             })
             .join("\n");
 
-        terminalOutput = [...terminalOutput, wrappedText];
+        writeToOutput(wrappedText);
     }
 
     const antInterval = () => {
@@ -645,8 +692,7 @@
 
     const commands: Record<string, (command: string[]) => void> = {
         help: () => {
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 "\u001b[37mUse man to get more information about a command.",
                 "\u001b[37mAvailable commands:",
                 "\u001b[37msubscribeToPush",
@@ -680,7 +726,7 @@
                 "\u001b[37mping",
                 "\u001b[37mbadapple",
                 "\u001b[37mstarwars",
-            ];
+            );
         },
 
         adminhelp: async () => {
@@ -693,29 +739,24 @@
                     data.user.permission === "owner"
                 )
             ) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "\u001b[37mYou do not have permission to use this command.",
-                ];
+                );
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 "\u001b[37mAvailable admin commands:",
                 "\u001b[37mupdateMotd",
                 "\u001b[37mupdateuserdata",
                 "\u001b[37mgetuserdata",
                 "\u001b[37mnotify",
-            ];
+            );
         },
 
         cd: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: cd &lt;directory&gt;",
-                ];
+                writeToOutput("Usage: cd &lt;directory&gt;");
                 return;
             }
 
@@ -734,10 +775,7 @@
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                `cd: ${command[1]}: No such directory`,
-            ];
+            writeToOutput(`cd: ${command[1]}: No such directory`);
         },
 
         conway: () => {
@@ -815,7 +853,7 @@
             grid = [];
             gridState = [];
             if (conwayInterval) clearInterval(conwayInterval);
-            terminalOutput = [];
+            clearOutput();
 
             gridCanvases.forEach((canvas) => {
                 if (canvas) {
@@ -825,8 +863,7 @@
         },
 
         whoami: () => {
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 "<br>",
                 "I'm HoosierTransfer a c++ developer with a passion for creating things.",
                 "Some little things about me~",
@@ -838,15 +875,12 @@
                 "~ Liminal space and backrooms enthusiast",
                 "   - I also like the dreamcore and weirdcore aesthetics",
                 `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
-            ];
+            );
         },
 
         export: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: export &lt;variable&gt=&lt;value&gt",
-                ];
+                writeToOutput("Usage: export &lt;variable&gt=&lt;value&gt");
                 return;
             }
 
@@ -868,7 +902,7 @@
 
         echo: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [...terminalOutput, "<br>"];
+                writeToOutput("<br>");
                 return;
             }
 
@@ -889,21 +923,20 @@
                 i++;
             }
 
-            terminalOutput = [...terminalOutput, output];
+            writeToOutput(output);
         },
 
         motd: () => {
-            terminalOutput = [...terminalOutput, ...motd];
+            writeToOutput(...motd);
         },
 
         ":3": () => {
-            terminalOutput = [...terminalOutput, "meow"];
+            writeToOutput("meow");
         },
 
         ls: async (command: string[]) => {
             if (currentDirectory === "~" && command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "<span style='color:#0ff;'>projects</span>",
                     "<span style='color:#0ff;'>about</span>",
                     "<span style='color:#0ff;'>contact</span>",
@@ -911,7 +944,7 @@
                     "<span style='color:#0ff;'>.env</span>",
                     "<span style='color:#0ff;'>publickey.asc</span>",
                     "<span style='color:#f0f;'>what</span>",
-                ];
+                );
             } else if (currentDirectory === "~/what" && command.length === 1) {
                 const response = await fetch(
                     "/api/listFilesInServerDirectory",
@@ -927,15 +960,13 @@
                 const data = await response.json();
                 for (let file of data.files) {
                     if (file.isDirectory) {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             `<span style='color:#f0f;'>${file.name}</span>`,
-                        ];
+                        );
                     } else {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             `<span style='color:#0ff;'>${file.name}</span>`,
-                        ];
+                        );
                     }
                 }
             } else if (currentDirectory === "~" && command.length === 2) {
@@ -954,15 +985,13 @@
                     const data = await response.json();
                     for (let file of data.files) {
                         if (file.isDirectory) {
-                            terminalOutput = [
-                                ...terminalOutput,
+                            writeToOutput(
                                 `<span style='color:#f0f;'>${file.name}</span>`,
-                            ];
+                            );
                         } else {
-                            terminalOutput = [
-                                ...terminalOutput,
+                            writeToOutput(
                                 `<span style='color:#0ff;'>${file.name}</span>`,
-                            ];
+                            );
                         }
                     }
                 }
@@ -973,8 +1002,7 @@
             switch (command[1]) {
                 case "projects":
                     if (currentDirectory === "~") {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             "<br>",
                             "┏━━━━━Projects━━━━━┓",
                             "┃ <span style='color:#0ff;'>Eagler Lambda</span>    ┃",
@@ -984,13 +1012,12 @@
                             "┃ <span style='color:#0ff;'>Yee Engine</span>       ┃",
                             "┗━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
-                        ];
+                        );
                     }
                     break;
                 case "about":
                     if (currentDirectory === "~") {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             "<br>",
                             "┏━━━━━━━━━━About━━━━━━━━━━━┓",
                             "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
@@ -1000,33 +1027,30 @@
                             "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
-                        ];
+                        );
                     }
                     break;
                 case "contact":
                     if (currentDirectory === "~") {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             "<br>",
                             "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
                             "┃ <span style='color:#0ff;'>Discord: 1vers1on</span>         ┃",
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
-                        ];
+                        );
                     }
                     break;
 
                 case ".env":
-                    terminalOutput = [
-                        ...terminalOutput,
+                    writeToOutput(
                         ...Array.from(environmentVariables).map(
                             ([key, value]) => `${key}=${value}`,
                         ),
-                    ];
+                    );
                     break;
                 case "publickey.asc":
-                    terminalOutput = [
-                        ...terminalOutput,
+                    writeToOutput(
                         "-----BEGIN PGP PUBLIC KEY BLOCK-----",
                         "",
                         "mDMEZyPB6BYJKwYBBAHaRw8BAQdADcSzbGQAJvjBRl7P9aiYvovY53xKivABs58q",
@@ -1041,16 +1065,13 @@
                         "MB3ulBqapiRFLQE=",
                         "=eAXd",
                         "-----END PGP PUBLIC KEY BLOCK-----",
-                    ];
+                    );
                     break;
                 case "what":
-                    terminalOutput = [...terminalOutput, "what is a directory"];
+                    writeToOutput("what is a directory");
                     break;
                 case "":
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "cat: missing file operand",
-                    ];
+                    writeToOutput("cat: missing file operand");
                     break;
             }
 
@@ -1071,9 +1092,9 @@
 
                     const data = await response.json();
                     if (data.error) {
-                        terminalOutput = [...terminalOutput, data.error];
+                        writeToOutput(data.error);
                     } else {
-                        terminalOutput = [...terminalOutput, data.fileContents];
+                        writeToOutput(data.fileContents);
                     }
                 }
             }
@@ -1096,25 +1117,21 @@
 
                 const data = await response.json();
                 if (data.error) {
-                    terminalOutput = [...terminalOutput, data.error];
+                    writeToOutput(data.error);
                 } else {
-                    terminalOutput = [...terminalOutput, data.fileContents];
+                    writeToOutput(data.fileContents);
                 }
             }
         },
         cowsay: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: cowsay &lt;message&gt",
-                ];
+                writeToOutput("Usage: cowsay &lt;message&gt");
                 return;
             }
             const message = command.slice(1).join(" ");
             let underscoreTop = "_".repeat(message.length + 2);
             let underscoreBottom = "-".repeat(message.length + 2);
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 " " + underscoreTop,
                 `< ${message} >`,
                 " " + underscoreBottom,
@@ -1123,7 +1140,7 @@
                 "            (__)\\       )\\/\\",
                 "                ||----w |",
                 "                ||     ||",
-            ];
+            );
         },
 
         neofetch: (command: string[]) => {
@@ -1143,10 +1160,9 @@
                 command[1] = command[1].toUpperCase();
                 for (let i = 0; i < command[1].length; i++) {
                     if (command[1][i] !== "R" && command[1][i] !== "L") {
-                        terminalOutput = [
-                            ...terminalOutput,
+                        writeToOutput(
                             "\u001b[31mInvalid rule. Must be a string of R's and L's",
-                        ];
+                        );
                         return;
                     }
                 }
@@ -1183,15 +1199,12 @@
 
         setspeed: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: setspeed &lt;speed&gt",
-                ];
+                writeToOutput("Usage: setspeed &lt;speed&gt");
                 return;
             }
             const newSpeed = parseInt(command[1]);
             if (isNaN(newSpeed)) {
-                terminalOutput = [...terminalOutput, "Invalid speed"];
+                writeToOutput("Invalid speed");
                 return;
             }
             intervalSpeed = newSpeed;
@@ -1203,16 +1216,13 @@
 
         colortest: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: colorTest &lt;number&gt",
-                ];
+                writeToOutput("Usage: colorTest &lt;number&gt");
                 return;
             }
 
             let nOfColors = parseInt(command[1]);
             if (isNaN(nOfColors)) {
-                terminalOutput = [...terminalOutput, "Invalid number"];
+                writeToOutput("Invalid number");
                 return;
             }
 
@@ -1222,7 +1232,7 @@
                 colorString += `<span style="color:${colors[i]};">■</span> <br>`;
             }
 
-            terminalOutput = [...terminalOutput, colorString];
+            writeToOutput(colorString);
         },
 
         canvastest: async () => {
@@ -1252,26 +1262,21 @@
         },
 
         turn_me_into_a_girl: async () => {
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.",
                 "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl.",
-            ];
+            );
             commandInputCallback = async (command) => {
                 if (
                     command.toLowerCase() === "y" ||
                     command.toLowerCase() === "yes"
                 ) {
-                    terminalOutput = [
-                        ...terminalOutput,
+                    writeToOutput(
                         "\u001b[35mOkay then! As you wish.",
                         "\u001b[35mPlease wait warmly... (Press c to cancel)",
-                    ];
-                    let timerLine = terminalOutput.length;
-                    terminalOutput = [
-                        ...terminalOutput,
-                        "\u001b[37m[--------------------] 0%",
-                    ];
+                    );
+                    let timerLine = getOutputLength();
+                    writeToOutput("\u001b[37m[--------------------] 0%");
                     const totalTime = 20000;
                     const startTime = new Date();
                     let lastTime = startTime;
@@ -1283,11 +1288,10 @@
                     timerCountingDown = true;
                     while (progress < 1) {
                         if (!timerCountingDown) {
-                            terminalOutput = [
-                                ...terminalOutput,
+                            writeToOutput(
                                 "\u001b[37mThat's totally fine. Don't worry about it.",
                                 "\u001b[37mYou're a good person.",
-                            ];
+                            );
                             return;
                         }
                         currentTime = new Date();
@@ -1310,14 +1314,16 @@
                             "\u001b[37m] " +
                             Math.floor(easing(progress) * 100) +
                             "%";
-                        terminalOutput[timerLine] = bar;
+                        setLineInOutput(bar, timerLine);
                         await delay(1000 / 60);
                     }
                     timerCountingDown = false;
-                    terminalOutput[timerLine] =
-                        "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%";
-                    const line = terminalOutput.length;
-                    terminalOutput[line] = "\u001b[95m";
+                    setLineInOutput(
+                        "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%",
+                        timerLine,
+                    );
+                    const line = getOutputLength();
+                    setLineInOutput("\u001b[95m", line);
                     const string1 =
                         "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
                     for (let i = 0; i < string1.length; i++) {
@@ -1327,32 +1333,30 @@
                             string1.charAt(i + 2) == "r" &&
                             string1.charAt(i + 3) == ">"
                         ) {
-                            terminalOutput[line] += "<br>";
+                            setLineInOutput("<br>", line);
                             i += 3;
                             await delay(20);
                             continue;
                         }
-                        terminalOutput[line] += string1.charAt(i);
+                        appendToLineInOutput(string1.charAt(i), line);
                         await delay(20);
                     }
                 } else if (
                     command.toLowerCase() === "n" ||
                     command.toLowerCase() === "no"
                 ) {
-                    terminalOutput = [
-                        ...terminalOutput,
+                    writeToOutput(
                         "\u001b[37mThat's totally fine. Don't worry about it.",
                         "\u001b[37mYou're a good person.",
-                    ];
+                    );
                 }
             };
         },
 
         notification: () => {
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 "\u001b[37mPlease enter the message you would like to send.",
-            ];
+            );
             commandInputCallback = (command) => {
                 if (Notification.permission !== "granted") {
                     Notification.requestPermission().then((permission) => {
@@ -1393,15 +1397,14 @@
                 body: JSON.stringify(subscription),
             });
 
-            terminalOutput = [...terminalOutput, "Subscribed to notifications"];
+            writeToOutput("Subscribed to notifications");
         },
 
         register: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "Usage: register &lt;username&gt &lt;password&gt",
-                ];
+                );
                 return;
             }
 
@@ -1409,18 +1412,12 @@
             let password = command[2];
 
             if (username.length < 3) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Username must be at least 3 characters long",
-                ];
+                writeToOutput("Username must be at least 3 characters long");
                 return;
             }
 
             if (password.length < 6) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Password must be at least 6 characters long",
-                ];
+                writeToOutput("Password must be at least 6 characters long");
                 return;
             }
 
@@ -1433,26 +1430,16 @@
             });
 
             if (response.status !== 201) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to register",
-                    await response.text(),
-                ];
+                writeToOutput(await response.text());
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully registered and logged in",
-            ];
+            writeToOutput("Successfully registered and logged in");
         },
 
         login: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: login &lt;username&gt &lt;password&gt",
-                ];
+                writeToOutput("Usage: login &lt;username&gt &lt;password&gt");
                 return;
             }
 
@@ -1468,15 +1455,11 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to login",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to login", await response.text());
                 return;
             }
 
-            terminalOutput = [...terminalOutput, "Successfully logged in"];
+            writeToOutput("Successfully logged in");
         },
 
         logout: async () => {
@@ -1485,23 +1468,16 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to logout",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to logout", await response.text());
                 return;
             }
 
-            terminalOutput = [...terminalOutput, "Successfully logged out"];
+            writeToOutput("Successfully logged out");
         },
 
         updateMotd: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: updateMotd &lt;message&gt",
-                ];
+                writeToOutput("Usage: updateMotd &lt;message&gt");
                 return;
             }
 
@@ -1514,26 +1490,21 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "Failed to update message of the day",
                     await response.text(),
-                ];
+                );
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully updated message of the day",
-            ];
+            writeToOutput("Successfully updated message of the day");
         },
 
         updateuserdata: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
-                ];
+                );
                 return;
             }
 
@@ -1550,26 +1521,19 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "Failed to update user data",
                     await response.text(),
-                ];
+                );
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully updated user data",
-            ];
+            writeToOutput("Successfully updated user data");
         },
 
         getuserdata: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: getuserdata &lt;username&gt",
-                ];
+                writeToOutput("Usage: getuserdata &lt;username&gt");
                 return;
             }
 
@@ -1582,28 +1546,18 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to get user data",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to get user data", await response.text());
                 return;
             }
 
             const data = await response.json();
 
-            terminalOutput = [
-                ...terminalOutput,
-                JSON.stringify(data.user, null, 2),
-            ];
+            writeToOutput(JSON.stringify(data.user, null, 2));
         },
 
         notify: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: notify &lt;message&gt",
-                ];
+                writeToOutput("Usage: notify &lt;message&gt");
                 return;
             }
 
@@ -1619,26 +1573,19 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "Failed to send notification",
                     await response.text(),
-                ];
+                );
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "Successfully sent notification",
-            ];
+            writeToOutput("Successfully sent notification");
         },
 
         gridsize: (command: string[]) => {
             if (command.length < 3) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: gridsize &lt;x&gt &lt;y&gt",
-                ];
+                writeToOutput("Usage: gridsize &lt;x&gt &lt;y&gt");
                 return;
             }
 
@@ -1722,18 +1669,12 @@
 
             const output = convolve2D(input, kernel);
 
-            terminalOutput = [
-                ...terminalOutput,
-                JSON.stringify(output, null, 2),
-            ];
+            writeToOutput(JSON.stringify(output, null, 2));
         },
 
         postMessage: async (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: postMessage &lt;message&gt",
-                ];
+                writeToOutput("Usage: postMessage &lt;message&gt");
                 return;
             }
 
@@ -1746,15 +1687,11 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to post message",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to post message", await response.text());
                 return;
             }
 
-            terminalOutput = [...terminalOutput, "Successfully posted message"];
+            writeToOutput("Successfully posted message");
         },
 
         messageBoard: async () => {
@@ -1767,11 +1704,7 @@
             });
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to get messages",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to get messages", await response.text());
                 return;
             }
 
@@ -1787,30 +1720,26 @@
                 if (message.username === "HoosierTransfer") {
                     message.username = `\u001b[1337m${message.username}`;
                 }
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     `\u001b[37m[\u001b[33m${dateString}\u001b[37m] \u001b[32m${message.username}\u001b[32m: \u001b[37m${message.message}`,
-                ];
+                );
             });
         },
 
         fibonacci: (command: string[]) => {
             if (command.length === 1) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Usage: fibonacci &lt;number&gt",
-                ];
+                writeToOutput("Usage: fibonacci &lt;number&gt");
                 return;
             }
 
             const n = parseInt(command[1]);
             if (isNaN(n)) {
-                terminalOutput = [...terminalOutput, "Invalid number"];
+                writeToOutput("Invalid number");
                 return;
             }
 
             const result = fibonacci(n);
-            addToOutput(result);
+            addToOutputWrapped(result);
         },
 
         ping: async () => {
@@ -1819,33 +1748,23 @@
             const endTime = performance.now();
 
             if (response.status !== 200) {
-                terminalOutput = [
-                    ...terminalOutput,
-                    "Failed to ping server",
-                    await response.text(),
-                ];
+                writeToOutput("Failed to ping server", await response.text());
                 return;
             }
 
-            terminalOutput = [
-                ...terminalOutput,
-                `Pong! Response time: ${endTime - startTime}ms`,
-            ];
+            writeToOutput(`Pong! Response time: ${endTime - startTime}ms`);
         },
 
         badapple: async () => {
-            badAppleLine = terminalOutput.length;
-            terminalOutput = [
-                ...terminalOutput,
-                "Bad Apple not loaded. Please wait...",
-            ];
+            badAppleLine = getOutputLength();
+            writeToOutput("Bad Apple not loaded. Please wait...");
             const response = await fetch("/badapple.json");
             badappleFrames = await response.json();
 
             var i = 0;
             badAppleInterval = setInterval(() => {
                 if (badappleFrames) {
-                    terminalOutput[badAppleLine] = badappleFrames["frame_" + i];
+                    setLineInOutput(badappleFrames["frame_" + i], badAppleLine);
                 }
                 if (i >= 2190) {
                     if (badAppleInterval) clearInterval(badAppleInterval);
@@ -1855,8 +1774,8 @@
         },
 
         starwars: async () => {
-            badAppleLine = terminalOutput.length;
-            terminalOutput = [...terminalOutput, "Please wait..."];
+            badAppleLine = getOutputLength();
+            writeToOutput("Please wait...");
             const response = await fetch("/starwars.json");
             badappleFrames = await response.json();
 
@@ -1870,10 +1789,12 @@
                         0,
                         firstNewline,
                     );
-                    console.log(displayFor);
-                    terminalOutput[badAppleLine] = badappleFrames[
-                        i.toString()
-                    ].substring(firstNewline + 1);
+                    setLineInOutput(
+                        badappleFrames[i.toString()].substring(
+                            firstNewline + 1,
+                        ),
+                        badAppleLine,
+                    );
 
                     if (parseInt(displayFor) < thisFrameShown + 2) {
                         i++;
@@ -1886,10 +1807,27 @@
                         if (badAppleInterval) clearInterval(badAppleInterval);
                     }
                 } else {
-                    terminalOutput[badAppleLine] = "Failed to load Star Wars";
+                    setLineInOutput("Failed to load Star Wars", badAppleLine);
                     if (badAppleInterval) clearInterval(badAppleInterval);
                 }
             }, 67);
+        },
+
+        download: async (command: string[]) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: download &lt;filename&gt &lt;content&gt");
+                return;
+            }
+            const fileContent = command.slice(2).join(" ");
+            const blob = new Blob([fileContent], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = command[1];
+            a.click();
+
+            URL.revokeObjectURL(url);
         },
 
         trans: makeTransFlagColors,
@@ -1924,292 +1862,242 @@
 
     function manual(command: string[]) {
         if (command.length === 1) {
-            terminalOutput = [...terminalOutput, "Usage: man &ltcommand&gt"];
+            writeToOutput("Usage: man &ltcommand&gt");
             return;
         }
 
         switch (command[1]) {
             case "ls":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "ls - list directory contents",
-                    "Usage: ls",
-                ];
+                writeToOutput("ls - list directory contents", "Usage: ls");
                 break;
             case "cat":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "cat - print file on the standard output",
                     "Usage: cat &lt;filename&gt",
-                ];
+                );
                 break;
             case "conway":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "conway - run Conway's Game of Life",
                     "Usage: conway",
-                ];
+                );
                 break;
             case "cowsay":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "cowsay - generate an ASCII cow",
                     "Usage: cowsay &lt;message&gt",
-                ];
+                );
                 break;
             case "neofetch":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "neofetch - print system information",
                     "Usage: neofetch",
-                ];
+                );
                 break;
             case "ant":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "ant - run Langton's Ant",
                     "Usage: ant &lt;rule&gt",
-                ];
+                );
                 break;
             case "setspeed":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "setspeed - set the delay between frrames in the simulation",
                     "Usage: setspeed &lt;speed&gt",
-                ];
+                );
                 break;
             case "colortest":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "colortest - generate a list of colors",
                     "Usage: colortest &lt;number&gt",
-                ];
+                );
                 break;
             case "help":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "help - display available commands",
                     "Usage: help",
-                ];
+                );
                 break;
             case "clear":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "clear - clear the terminal",
-                    "Usage: clear",
-                ];
+                writeToOutput("clear - clear the terminal", "Usage: clear");
                 break;
             case "whoami":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "whoami - print information about me",
                     "Usage: whoami",
-                ];
+                );
                 break;
             case "echo":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "echo - print arguments to the terminal",
                     "Usage: echo &lt;message&gt",
-                ];
+                );
                 break;
             case "motd":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "motd - print the message of the day",
                     "Usage: motd",
-                ];
+                );
                 break;
 
             case "canvastest":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "canvastest - test canvas rendering",
                     "Usage: canvastest",
-                ];
+                );
                 break;
 
             case "export":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "export - set an environment variable",
                     "Usage: export &lt;variable&gt=&lt;value&gt",
-                ];
+                );
                 break;
 
             case "turn_me_into_a_girl":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "turn_me_into_a_girl - Turns you into a cute and silly girl :3",
                     "Usage: turn_me_into_a_girl",
-                ];
+                );
                 break;
 
             case "trans":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "trans - Makes your terminal trans flag colors",
                     "Usage: trans",
-                ];
+                );
                 break;
 
             case "notification":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "notification - send a notification",
                     "Usage: notification &lt;message&gt",
-                ];
+                );
                 break;
 
             case "register":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "register - register a new account",
                     "Usage: register &lt;username&gt &lt;password&gt",
-                ];
+                );
                 break;
 
             case "login":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "login - log in to an existing account",
                     "Usage: login &lt;username&gt &lt;password&gt",
-                ];
+                );
                 break;
 
             case "logout":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "logout - log out of the current account",
                     "Usage: logout",
-                ];
+                );
                 break;
 
             case "updateMotd":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "updateMotd - update the message of the day",
                     "Usage: updateMotd &lt;message&gt",
-                ];
+                );
                 break;
 
             case "updateuserdata":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "updateuserdata - update user data",
                     "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
-                ];
+                );
                 break;
 
             case "getuserdata":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "getuserdata - get user data",
                     "Usage: getuserdata &lt;username&gt",
-                ];
+                );
                 break;
 
             case "notify":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "notify - send a notification to all users",
                     "Usage: notify &lt;message&gt",
-                ];
+                );
                 break;
 
             case "subscribeToPush":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "subscribeToPush - subscribe to push notifications",
                     "Usage: subscribeToPush",
-                ];
+                );
                 break;
 
             case "primordia":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "primordia - run Primordia",
-                    "Usage: primordia",
-                ];
+                writeToOutput("primordia - run Primordia", "Usage: primordia");
                 break;
 
             case "gridsize":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "gridsize - set the size of the grid",
                     "Usage: gridsize &lt;x&gt &lt;y&gt",
-                ];
+                );
                 break;
 
             case "convtest":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "convtest - test convolution",
-                    "Usage: convtest",
-                ];
+                writeToOutput("convtest - test convolution", "Usage: convtest");
                 break;
 
             case "postMessage":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "postMessage - post a message to the message board",
                     "Usage: postMessage &lt;message&gt",
-                ];
+                );
                 break;
 
             case "messageBoard":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "messageBoard - get messages from the message board",
                     "Usage: messageBoard",
-                ];
+                );
                 break;
 
             case "fibonacci":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "fibonacci - calculate the nth Fibonacci number really fast",
                     "Usage: fibonacci &lt;number&gt",
-                ];
+                );
                 break;
 
             case "cd":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "cd - change the current directory",
                     "Usage: cd &lt;directory&gt",
-                ];
+                );
                 break;
 
             case "ping":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "ping - ping the server",
-                    "Usage: ping",
-                ];
+                writeToOutput("ping - ping the server", "Usage: ping");
                 break;
 
             case "badapple":
-                terminalOutput = [
-                    ...terminalOutput,
+                writeToOutput(
                     "badapple - play the Bad Apple video",
                     "Usage: badapple",
-                ];
+                );
                 break;
 
             case "starwars":
-                terminalOutput = [
-                    ...terminalOutput,
-                    "starwars - play Star Wars ",
-                    "Usage: starwars",
-                ];
+                writeToOutput("starwars - play Star Wars ", "Usage: starwars");
+                break;
+
+            case "download":
+                writeToOutput(
+                    "download - download to a file",
+                    "Usage: download &lt;filename&gt &lt;content&gt",
+                );
                 break;
 
             default:
-                terminalOutput = [
-                    ...terminalOutput,
-                    "No manual entry for " + command[1],
-                ];
+                writeToOutput("No manual entry for " + command[1]);
         }
     }
 
@@ -2312,7 +2200,7 @@
             "hoosiertransfer\u001b[37m@\u001b[96mnet",
             "\u001b[37m-------------------",
             "OS\u001b[37m: " + platform,
-            "Host\u001b[37m: Github Pages",
+            "Host\u001b[37m: archpcmain",
             "Uptime\u001b[37m: " +
                 Math.floor(
                     (new Date().getTime() - pageLoadTime.getTime()) / 1000,
@@ -2349,7 +2237,7 @@
             output[i] += stats[i];
         }
 
-        terminalOutput = [...terminalOutput, ...output];
+        writeToOutput(...output);
     }
 
     function processAnsiColors(text: string) {
@@ -2454,31 +2342,84 @@
         event.preventDefault();
     }
 
+    function splitByUnquotedPipe(command: string) {
+        const regex = /(?:[^\s|"]+|"[^"]*")+|[|]/g;
+        let segments = [];
+        let currentSegment = "";
+
+        let matches = command.match(regex);
+        if (matches) {
+            matches.forEach((match) => {
+                if (match === "|") {
+                    segments.push(currentSegment.trim());
+                    currentSegment = "";
+                } else {
+                    currentSegment += match + " ";
+                }
+            });
+        }
+        if (currentSegment) segments.push(currentSegment.trim());
+        return segments;
+    }
+
     function processCommand(command: string) {
         if (commandInputCallback) {
             commandInputCallback(command);
             commandInputCallback = null;
             return;
         }
-        terminalOutput = [
-            ...terminalOutput,
-            `${currentDirectory} $ ${command}`,
-        ];
+        writeToOutput(`${currentDirectory} $ ${command}`);
+
+        const commandSegments = splitByUnquotedPipe(command);
+
+        if (commandSegments.length > 2) {
+            writeToOutput(
+                `\u001b[31mOnly one pipe is supported\u001b[0m`,
+            );
+            return;
+        }
+
+        if (commandSegments.length > 1) {
+            activeOutput = "pipe";
+        }
 
         const args =
-            command
+            commandSegments[0]
                 .match(/(?:[^\s"]+|"[^"]*")+/g)
                 ?.map((arg) => arg.replace(/(^"|"$)/g, "")) || [];
+
+        args.forEach((arg, i) => {
+            if (arg.includes(" ")) {
+                args[i] = `"${arg}"`;
+            }
+        });
 
         if (args[0] in commands) {
             commands[args[0]](args);
         } else if (args[0] === "") {
-            terminalOutput = [...terminalOutput, ""];
+            writeToOutput("");
         } else {
-            terminalOutput = [
-                ...terminalOutput,
+            writeToOutput(
                 `\u001b[31m${args[0]}: command not found\u001b[0m`,
-            ];
+            );
+        }
+
+        if (commandSegments.length > 1) {
+            activeOutput = "terminal";
+            let pipeArgs =
+                commandSegments[1]
+                    .match(/(?:[^\s"]+|"[^"]*")+/g)
+                    ?.map((arg) => arg.replace(/(^"|"$)/g, "")) || [];
+
+            pipeArgs = [...pipeArgs, ...pipeOutput];
+
+            if (pipeArgs[0] in commands) {
+                commands[pipeArgs[0]](pipeArgs);
+            } else {
+                writeToOutput(
+                    `\u001b[31m${pipeArgs[0]}: command not found\u001b[0m`,
+                );
+            }
         }
 
         if (terminalElement) {
@@ -2498,10 +2439,11 @@
 
             motd[2] = motd[2].replace("{visitors}", visitorCount.toString());
 
-            terminalOutput = motd;
+            writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
-                terminalOutput[1] = message;
+                // terminalOutput[1] = message;
+                setLineInOutput(message, 1);
                 motd[1] = message;
             });
 
@@ -2549,7 +2491,6 @@
 
             window.requestAnimationFrame(estimateRefreshRate);
 
-            // get how long the terminal is in characters
             terminalWidth = Math.floor(displayWidth / 10);
 
             return () => {
