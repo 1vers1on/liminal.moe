@@ -6,6 +6,7 @@
         convolve2DWithSavedKernel,
         setKernel,
         convolve2D,
+        isPrime,
     } from "$lib/math";
     import { fibonacci } from "$lib/bigfib";
 
@@ -732,6 +733,8 @@
                 "\u001b[37mping",
                 "\u001b[37mbadapple",
                 "\u001b[37mstarwars",
+                "\u001b[37mdownload",
+                "\u001b[37misPrime",
             );
         },
 
@@ -1829,6 +1832,26 @@
             URL.revokeObjectURL(url);
         },
 
+        isPrime: (command: string[]) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: isPrime &lt;number&gt");
+                return;
+            }
+
+            const n = parseInt(command[1]);
+            if (isNaN(n)) {
+                writeToOutput("Invalid number");
+                return;
+            }
+
+            const result = isPrime(n);
+            if (result) {
+                writeToOutput(`\u001b[32m${n} is prime`);
+            } else {
+                writeToOutput(`\u001b[31m${n} is not prime`);
+            }
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2092,6 +2115,13 @@
                 writeToOutput(
                     "download - download to a file",
                     "Usage: download &lt;filename&gt &lt;content&gt",
+                );
+                break;
+
+            case "isPrime":
+                writeToOutput(
+                    "isPrime - check if a number is prime",
+                    "Usage: isPrime &lt;number&gt",
                 );
                 break;
 
