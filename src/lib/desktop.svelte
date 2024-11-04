@@ -112,13 +112,13 @@
 
     let motd = [
         "Hello there! Welcome to my website.",
-        "<span style='color:#f0f;'>Fetching message of the day...</span>",
+        "\u001b[95mFetching message of the day...",
         "{visitors} Visitors so far!",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-        '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow" style="color:#0ff;">Github</a>                                         ┃',
+        '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
         "┃                                                 ┃",
-        "┃  <span style='color:#0ff;'>Discord: 1vers1on</span>                              ┃",
+        "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
@@ -937,13 +937,13 @@
         ls: async (command: string[]) => {
             if (currentDirectory === "~" && command.length === 1) {
                 writeToOutput(
-                    "<span style='color:#0ff;'>projects</span>",
-                    "<span style='color:#0ff;'>about</span>",
-                    "<span style='color:#0ff;'>contact</span>",
-                    "<span style='color:#0ff;'>skibidisigmafile</span>",
-                    "<span style='color:#0ff;'>.env</span>",
-                    "<span style='color:#0ff;'>publickey.asc</span>",
-                    "<span style='color:#f0f;'>what</span>",
+                    "\u001b[96mprojects",
+                    "\u001b[96mabout",
+                    "\u001b[96mcontact",
+                    "\u001b[96mskibidisigmafile",
+                    "\u001b[96m.env",
+                    "\u001b[96mpublickey.asc",
+                    "\u001b[95mwhat",
                 );
             } else if (currentDirectory === "~/what" && command.length === 1) {
                 const response = await fetch(
@@ -961,11 +961,11 @@
                 for (let file of data.files) {
                     if (file.isDirectory) {
                         writeToOutput(
-                            `<span style='color:#f0f;'>${file.name}</span>`,
+                            `\u001b[95m${file.name}`,
                         );
                     } else {
                         writeToOutput(
-                            `<span style='color:#0ff;'>${file.name}</span>`,
+                            `\u001b[96m${file.name}`,
                         );
                     }
                 }
@@ -986,11 +986,11 @@
                     for (let file of data.files) {
                         if (file.isDirectory) {
                             writeToOutput(
-                                `<span style='color:#f0f;'>${file.name}</span>`,
+                                `<\u001b[95m${file.name}`,
                             );
                         } else {
                             writeToOutput(
-                                `<span style='color:#0ff;'>${file.name}</span>`,
+                                `\u001b[96m${file.name}`,
                             );
                         }
                     }
@@ -1005,11 +1005,11 @@
                         writeToOutput(
                             "<br>",
                             "┏━━━━━Projects━━━━━┓",
-                            "┃ <span style='color:#0ff;'>Eagler Lambda</span>    ┃",
-                            "┃ <span style='color:#0ff;'>Science Help</span>     ┃",
-                            "┃ <span style='color:#0ff;'>Spork Viewer</span>     ┃",
-                            "┃ <span style='color:#0ff;'>Sussy OS</span>         ┃",
-                            "┃ <span style='color:#0ff;'>Yee Engine</span>       ┃",
+                            "┃ \u001b[96mEagler Lambda\u001b[0m    ┃",
+                            "┃ \u001b[96mScience Help\u001b[0m     ┃",
+                            "┃ \u001b[96mSpork Viewer\u001b[0m     ┃",
+                            "┃ \u001b[96mSussy OS\u001b[0m         ┃",
+                            "┃ \u001b[96mYee Engine\u001b[0m       ┃",
                             "┗━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
                         );
@@ -1020,11 +1020,11 @@
                         writeToOutput(
                             "<br>",
                             "┏━━━━━━━━━━About━━━━━━━━━━━┓",
-                            "┃ <span style='color:#0ff;'>Name: HoosierTransfer</span>    ┃",
-                            `┃ <span style='color:#0ff;'>Age: ${yearsAgo("2009-08-07")}</span>                  ┃`,
-                            "┃ <span style='color:#0ff;'>Pronouns: she/her</span>            ┃",
-                            "┃ <span style='color:#0ff;'>Languages: C++, Java</span>     ┃",
-                            "┃ <span style='color:#0ff;'>OS: Arch Linux / Windows</span> ┃",
+                            "┃ \u001b[96mName: HoosierTransfer\u001b[0m    ┃",
+                            `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
+                            "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
+                            "┃ \u001b[96mLanguages: C++, Java\u001b[0m     ┃",
+                            "┃ \u001b[96mOS: Arch Linux / Windows\u001b[0m ┃",
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
                         );
@@ -1035,7 +1035,7 @@
                         writeToOutput(
                             "<br>",
                             "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
-                            "┃ <span style='color:#0ff;'>Discord: 1vers1on</span>         ┃",
+                            "┃ \u001b[96mDiscord: 1vers1on\u001b[0m         ┃",
                             "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                             "<br>",
                         );
