@@ -2517,7 +2517,7 @@
 <style>
     .terminal {
         background-color: #000;
-        color: #0f0;
+        color: #23d18b;
         padding: 10px;
         height: calc(100vh - 20px);
         overflow-y: auto;
