@@ -2373,9 +2373,7 @@
         const commandSegments = splitByUnquotedPipe(command);
 
         if (commandSegments.length > 2) {
-            writeToOutput(
-                `\u001b[31mOnly one pipe is supported\u001b[0m`,
-            );
+            writeToOutput(`\u001b[31mOnly one pipe is supported\u001b[0m`);
             return;
         }
 
@@ -2399,9 +2397,7 @@
         } else if (args[0] === "") {
             writeToOutput("");
         } else {
-            writeToOutput(
-                `\u001b[31m${args[0]}: command not found\u001b[0m`,
-            );
+            writeToOutput(`\u001b[31m${args[0]}: command not found\u001b[0m`);
         }
 
         if (commandSegments.length > 1) {
