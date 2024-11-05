@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, tick, afterUpdate } from "svelte";
     import { goto } from "$app/navigation";
+    import { io } from "socket.io-client";
 
     import {
         convolve2DWithSavedKernel,
@@ -13,6 +14,8 @@
     import { turboLookup } from "$lib/turboLookup";
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
+
+    let socket;
 
     let badappleFrames: Record<string, string> | null = null;
 
@@ -2458,6 +2461,8 @@
 
     onMount(() => {
         (async () => {
+            socket = io({ path: "/wss/" });
+
             const response = await fetch("/api/visitorCount");
             const data = await response.json();
             visitorCount = data.count;
