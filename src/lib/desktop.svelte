@@ -2472,7 +2472,6 @@
             writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
-                // terminalOutput[1] = message;
                 setLineInOutput(message, 1);
                 motd[1] = message;
             });
