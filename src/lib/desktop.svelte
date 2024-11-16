@@ -1957,7 +1957,10 @@
 
         switch (command[1]) {
             case "ls":
-                writeToOutput("\u001b[37mls - list directory contents", "\u001b[37mUsage: ls");
+                writeToOutput(
+                    "\u001b[37mls - list directory contents",
+                    "\u001b[37mUsage: ls",
+                );
                 break;
             case "cat":
                 writeToOutput(
@@ -2009,7 +2012,10 @@
                 );
                 break;
             case "clear":
-                writeToOutput("\u001b[37mclear - clear the terminal", "\u001b[37mUsage: clear");
+                writeToOutput(
+                    "\u001b[37mclear - clear the terminal",
+                    "\u001b[37mUsage: clear",
+                );
                 break;
             case "whoami":
                 writeToOutput(
@@ -2122,7 +2128,10 @@
                 break;
 
             case "primordia":
-                writeToOutput("\u001b[37mprimordia - run Primordia", "\u001b[37mUsage: primordia");
+                writeToOutput(
+                    "\u001b[37mprimordia - run Primordia",
+                    "\u001b[37mUsage: primordia",
+                );
                 break;
 
             case "gridsize":
@@ -2133,7 +2142,10 @@
                 break;
 
             case "convtest":
-                writeToOutput("\u001b[37mconvtest - test convolution", "\u001b[37mUsage: convtest");
+                writeToOutput(
+                    "\u001b[37mconvtest - test convolution",
+                    "\u001b[37mUsage: convtest",
+                );
                 break;
 
             case "postMessage":
@@ -2165,7 +2177,10 @@
                 break;
 
             case "ping":
-                writeToOutput("\u001b[37mping - ping the server", "\u001b[37mUsage: ping");
+                writeToOutput(
+                    "\u001b[37mping - ping the server",
+                    "\u001b[37mUsage: ping",
+                );
                 break;
 
             case "badapple":
@@ -2176,7 +2191,10 @@
                 break;
 
             case "starwars":
-                writeToOutput("\u001b[37mstarwars - play Star Wars ", "\u001b[37mUsage: starwars");
+                writeToOutput(
+                    "\u001b[37mstarwars - play Star Wars ",
+                    "\u001b[37mUsage: starwars",
+                );
                 break;
 
             case "download":
