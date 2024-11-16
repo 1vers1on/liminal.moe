@@ -24,5 +24,5 @@ export async function POST({ request }) {
 
     const base64 = Buffer.from(fileContents).toString("base64");
 
-    return json({ "base64": `data:image/png;base64,${base64}` });
+    return json({ base64: `data:image/png;base64,${base64}` });
 }

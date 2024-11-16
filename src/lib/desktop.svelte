@@ -1139,16 +1139,13 @@
                 command[1].startsWith("what/") ||
                 command[1].startsWith("./what")
             ) {
-                const response = await fetch(
-                    "/api/getImageB64",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ file: command[1] }),
+                const response = await fetch("/api/getImageB64", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
                     },
-                );
+                    body: JSON.stringify({ file: command[1] }),
+                });
 
                 if (response.status === 404) {
                     writeToOutput("\u001b[31mError: File not found");
@@ -1159,7 +1156,7 @@
                     writeToOutput("\u001b[31mError: Failed to get image");
                     return;
                 }
-                
+
                 const data = await response.json();
 
                 writeToOutput(
@@ -1168,16 +1165,13 @@
             }
 
             if (currentDirectory === "~/what") {
-                const response = await fetch(
-                    "/api/getImageB64",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ file: "what/" + command[1] }),
+                const response = await fetch("/api/getImageB64", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
                     },
-                );
+                    body: JSON.stringify({ file: "what/" + command[1] }),
+                });
 
                 if (response.status === 404) {
                     writeToOutput("\u001b[31mError: File not found");
@@ -1198,7 +1192,6 @@
                 writeToOutput("\u001b[31mError: File not found");
             }
         },
-        
 
         cowsay: (command: string[]) => {
             if (command.length === 1) {
