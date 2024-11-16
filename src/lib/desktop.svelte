@@ -1128,6 +1128,78 @@
                 }
             }
         },
+
+        view_image: async (command: string[]) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: view_image &lt;filename&gt");
+                return;
+            }
+
+            if (
+                command[1].startsWith("what/") ||
+                command[1].startsWith("./what")
+            ) {
+                const response = await fetch(
+                    "/api/getImageB64",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ file: command[1] }),
+                    },
+                );
+
+                if (response.status === 404) {
+                    writeToOutput("\u001b[31mError: File not found");
+                    return;
+                }
+
+                if (response.status !== 200) {
+                    writeToOutput("\u001b[31mError: Failed to get image");
+                    return;
+                }
+                
+                const data = await response.json();
+
+                writeToOutput(
+                    `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
+                );
+            }
+
+            if (currentDirectory === "~/what") {
+                const response = await fetch(
+                    "/api/getImageB64",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ file: "what/" + command[1] }),
+                    },
+                );
+
+                if (response.status === 404) {
+                    writeToOutput("\u001b[31mError: File not found");
+                    return;
+                }
+
+                if (response.status !== 200) {
+                    writeToOutput("\u001b[31mError: Failed to get image");
+                    return;
+                }
+
+                const data = await response.json();
+
+                writeToOutput(
+                    `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
+                );
+            } else {
+                writeToOutput("\u001b[31mError: File not found");
+            }
+        },
+        
+
         cowsay: (command: string[]) => {
             if (command.length === 1) {
                 writeToOutput("Usage: cowsay &lt;message&gt");
@@ -2125,6 +2197,13 @@
                 writeToOutput(
                     "isPrime - check if a number is prime",
                     "Usage: isPrime &lt;number&gt",
+                );
+                break;
+
+            case "view_image":
+                writeToOutput(
+                    "view_image - view an image",
+                    "Usage: view_image &lt;filename&gt",
                 );
                 break;
 
