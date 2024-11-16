@@ -738,6 +738,7 @@
                 "\u001b[37mstarwars",
                 "\u001b[37mdownload",
                 "\u001b[37misPrime",
+                "\u001b[37mview_image",
             );
         },
 
@@ -1162,9 +1163,7 @@
                 writeToOutput(
                     `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
                 );
-            }
-
-            if (currentDirectory === "~/what") {
+            } else if (currentDirectory === "~/what") {
                 const response = await fetch("/api/getImageB64", {
                     method: "POST",
                     headers: {
@@ -1958,250 +1957,251 @@
 
         switch (command[1]) {
             case "ls":
-                writeToOutput("ls - list directory contents", "Usage: ls");
+                writeToOutput("\u001b[37mls - list directory contents", "\u001b[37mUsage: ls");
                 break;
             case "cat":
                 writeToOutput(
-                    "cat - print file on the standard output",
-                    "Usage: cat &lt;filename&gt",
+                    "\u001b[37mcat - print file on the standard output",
+                    "\u001b[37mUsage: cat &lt;filename&gt",
                 );
                 break;
             case "conway":
                 writeToOutput(
-                    "conway - run Conway's Game of Life",
-                    "Usage: conway",
+                    "\u001b[37mconway - run Conway's Game of Life",
+                    "\u001b[37mUsage: conway",
                 );
                 break;
             case "cowsay":
                 writeToOutput(
-                    "cowsay - generate an ASCII cow",
-                    "Usage: cowsay &lt;message&gt",
+                    "\u001b[37mcowsay - generate an ASCII cow",
+                    "\u001b[37mUsage: cowsay &lt;message&gt",
                 );
                 break;
+            case "fastfetch":
             case "neofetch":
                 writeToOutput(
-                    "neofetch - print system information",
-                    "Usage: neofetch",
+                    "\u001b[37mneofetch - print system information",
+                    "\u001b[37mUsage: neofetch",
                 );
                 break;
             case "ant":
                 writeToOutput(
-                    "ant - run Langton's Ant",
-                    "Usage: ant &lt;rule&gt",
+                    "\u001b[37mant - run Langton's Ant",
+                    "\u001b[37mUsage: ant &lt;rule&gt",
                 );
                 break;
             case "setspeed":
                 writeToOutput(
-                    "setspeed - set the delay between frrames in the simulation",
-                    "Usage: setspeed &lt;speed&gt",
+                    "\u001b[37msetspeed - set the delay between frrames in the simulation",
+                    "\u001b[37mUsage: setspeed &lt;speed&gt",
                 );
                 break;
             case "colortest":
                 writeToOutput(
-                    "colortest - generate a list of colors",
-                    "Usage: colortest &lt;number&gt",
+                    "\u001b[37mcolortest - generate a list of colors",
+                    "\u001b[37mUsage: colortest &lt;number&gt",
                 );
                 break;
             case "help":
                 writeToOutput(
-                    "help - display available commands",
-                    "Usage: help",
+                    "\u001b[37mhelp - display available commands",
+                    "\u001b[37mUsage: help",
                 );
                 break;
             case "clear":
-                writeToOutput("clear - clear the terminal", "Usage: clear");
+                writeToOutput("\u001b[37mclear - clear the terminal", "\u001b[37mUsage: clear");
                 break;
             case "whoami":
                 writeToOutput(
-                    "whoami - print information about me",
-                    "Usage: whoami",
+                    "\u001b[37mwhoami - print information about me",
+                    "\u001b[37mUsage: whoami",
                 );
                 break;
             case "echo":
                 writeToOutput(
-                    "echo - print arguments to the terminal",
-                    "Usage: echo &lt;message&gt",
+                    "\u001b[37mecho - print arguments to the terminal",
+                    "\u001b[37mUsage: echo &lt;message&gt",
                 );
                 break;
             case "motd":
                 writeToOutput(
-                    "motd - print the message of the day",
-                    "Usage: motd",
+                    "\u001b[37mmotd - print the message of the day",
+                    "\u001b[37mUsage: motd",
                 );
                 break;
 
             case "canvastest":
                 writeToOutput(
-                    "canvastest - test canvas rendering",
-                    "Usage: canvastest",
+                    "\u001b[37mcanvastest - test canvas rendering",
+                    "\u001b[37mUsage: canvastest",
                 );
                 break;
 
             case "export":
                 writeToOutput(
-                    "export - set an environment variable",
-                    "Usage: export &lt;variable&gt=&lt;value&gt",
+                    "\u001b[37mexport - set an environment variable",
+                    "\u001b[37mUsage: export &lt;variable&gt=&lt;value&gt",
                 );
                 break;
 
             case "turn_me_into_a_girl":
                 writeToOutput(
-                    "turn_me_into_a_girl - Turns you into a cute and silly girl :3",
-                    "Usage: turn_me_into_a_girl",
+                    "\u001b[37mturn_me_into_a_girl - Turns you into a cute and silly girl :3",
+                    "\u001b[37mUsage: turn_me_into_a_girl",
                 );
                 break;
 
             case "trans":
                 writeToOutput(
-                    "trans - Makes your terminal trans flag colors",
-                    "Usage: trans",
+                    "\u001b[37mtrans - Makes your terminal trans flag colors",
+                    "\u001b[37mUsage: trans",
                 );
                 break;
 
             case "notification":
                 writeToOutput(
-                    "notification - send a notification",
-                    "Usage: notification &lt;message&gt",
+                    "\u001b[37mnotification - send a notification",
+                    "\u001b[37mUsage: notification &lt;message&gt",
                 );
                 break;
 
             case "register":
                 writeToOutput(
-                    "register - register a new account",
-                    "Usage: register &lt;username&gt &lt;password&gt",
+                    "\u001b[37mregister - register a new account",
+                    "\u001b[37mUsage: register &lt;username&gt &lt;password&gt",
                 );
                 break;
 
             case "login":
                 writeToOutput(
-                    "login - log in to an existing account",
-                    "Usage: login &lt;username&gt &lt;password&gt",
+                    "\u001b[37mlogin - log in to an existing account",
+                    "\u001b[37mUsage: login &lt;username&gt &lt;password&gt",
                 );
                 break;
 
             case "logout":
                 writeToOutput(
-                    "logout - log out of the current account",
-                    "Usage: logout",
+                    "\u001b[37mlogout - log out of the current account",
+                    "\u001b[37mUsage: logout",
                 );
                 break;
 
             case "updateMotd":
                 writeToOutput(
-                    "updateMotd - update the message of the day",
-                    "Usage: updateMotd &lt;message&gt",
+                    "\u001b[37mupdateMotd - update the message of the day",
+                    "\u001b[37mUsage: updateMotd &lt;message&gt",
                 );
                 break;
 
             case "updateuserdata":
                 writeToOutput(
-                    "updateuserdata - update user data",
-                    "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
+                    "\u001b[37mupdateuserdata - update user data",
+                    "\u001b[37mUsage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
                 );
                 break;
 
             case "getuserdata":
                 writeToOutput(
-                    "getuserdata - get user data",
-                    "Usage: getuserdata &lt;username&gt",
+                    "\u001b[37mgetuserdata - get user data",
+                    "\u001b[37mUsage: getuserdata &lt;username&gt",
                 );
                 break;
 
             case "notify":
                 writeToOutput(
-                    "notify - send a notification to all users",
-                    "Usage: notify &lt;message&gt",
+                    "\u001b[37mnotify - send a notification to all users",
+                    "\u001b[37mUsage: notify &lt;message&gt",
                 );
                 break;
 
             case "subscribeToPush":
                 writeToOutput(
-                    "subscribeToPush - subscribe to push notifications",
-                    "Usage: subscribeToPush",
+                    "\u001b[37msubscribeToPush - subscribe to push notifications",
+                    "\u001b[37mUsage: subscribeToPush",
                 );
                 break;
 
             case "primordia":
-                writeToOutput("primordia - run Primordia", "Usage: primordia");
+                writeToOutput("\u001b[37mprimordia - run Primordia", "\u001b[37mUsage: primordia");
                 break;
 
             case "gridsize":
                 writeToOutput(
-                    "gridsize - set the size of the grid",
-                    "Usage: gridsize &lt;x&gt &lt;y&gt",
+                    "\u001b[37mgridsize - set the size of the grid",
+                    "\u001b[37mUsage: gridsize &lt;x&gt &lt;y&gt",
                 );
                 break;
 
             case "convtest":
-                writeToOutput("convtest - test convolution", "Usage: convtest");
+                writeToOutput("\u001b[37mconvtest - test convolution", "\u001b[37mUsage: convtest");
                 break;
 
             case "postMessage":
                 writeToOutput(
-                    "postMessage - post a message to the message board",
-                    "Usage: postMessage &lt;message&gt",
+                    "\u001b[37mpostMessage - post a message to the message board",
+                    "\u001b[37mUsage: postMessage &lt;message&gt",
                 );
                 break;
 
             case "messageBoard":
                 writeToOutput(
-                    "messageBoard - get messages from the message board",
-                    "Usage: messageBoard",
+                    "\u001b[37mmessageBoard - get messages from the message board",
+                    "\u001b[37mUsage: messageBoard",
                 );
                 break;
 
             case "fibonacci":
                 writeToOutput(
-                    "fibonacci - calculate the nth Fibonacci number really fast",
-                    "Usage: fibonacci &lt;number&gt",
+                    "\u001b[37mfibonacci - calculate the nth Fibonacci number really fast",
+                    "\u001b[37mUsage: fibonacci &lt;number&gt",
                 );
                 break;
 
             case "cd":
                 writeToOutput(
-                    "cd - change the current directory",
-                    "Usage: cd &lt;directory&gt",
+                    "\u001b[37mcd - change the current directory",
+                    "\u001b[37mUsage: cd &lt;directory&gt",
                 );
                 break;
 
             case "ping":
-                writeToOutput("ping - ping the server", "Usage: ping");
+                writeToOutput("\u001b[37mping - ping the server", "\u001b[37mUsage: ping");
                 break;
 
             case "badapple":
                 writeToOutput(
-                    "badapple - play the Bad Apple video",
-                    "Usage: badapple",
+                    "\u001b[37mbadapple - play the Bad Apple video",
+                    "\u001b[37mUsage: badapple",
                 );
                 break;
 
             case "starwars":
-                writeToOutput("starwars - play Star Wars ", "Usage: starwars");
+                writeToOutput("\u001b[37mstarwars - play Star Wars ", "\u001b[37mUsage: starwars");
                 break;
 
             case "download":
                 writeToOutput(
-                    "download - download to a file",
-                    "Usage: download &lt;filename&gt &lt;content&gt",
+                    "\u001b[37mdownload - download to a file",
+                    "\u001b[37mUsage: download &lt;filename&gt &lt;content&gt",
                 );
                 break;
 
             case "isPrime":
                 writeToOutput(
-                    "isPrime - check if a number is prime",
-                    "Usage: isPrime &lt;number&gt",
+                    "\u001b[37misPrime - check if a number is prime",
+                    "\u001b[37mUsage: isPrime &lt;number&gt",
                 );
                 break;
 
             case "view_image":
                 writeToOutput(
-                    "view_image - view an image",
-                    "Usage: view_image &lt;filename&gt",
+                    "\u001b[37mview_image - view an image",
+                    "\u001b[37mUsage: view_image &lt;filename&gt",
                 );
                 break;
 
             default:
-                writeToOutput("No manual entry for " + command[1]);
+                writeToOutput("\u001b[31mNo manual entry for " + command[1]);
         }
     }
 
