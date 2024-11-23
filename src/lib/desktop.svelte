@@ -3,6 +3,8 @@
     import { goto } from "$app/navigation";
     import { io } from "socket.io-client";
 
+    import pako from "pako";
+
     import {
         convolve2DWithSavedKernel,
         setKernel,
@@ -14,6 +16,16 @@
     import { turboLookup } from "$lib/turboLookup";
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
+
+    const noises = [
+        "meow",
+        "nya",
+        "mrrp",
+        "mew",
+        "purr",
+        "mrow",
+        "mewp"
+    ];
 
     let socket;
 
@@ -80,6 +92,50 @@
         "106": "#29b8db",
         "107": "#ffffff",
     };
+
+    function compressDataToCatNoises(data: string): string {
+        try {
+            const compressedData = pako.deflate(data);
+            let catNoise = "";
+            
+            for (let byte of compressedData) {
+                const num = byte.toString(7).padStart(3, '0');
+                for (let digit of num) {
+                    catNoise += noises[parseInt(digit)] + " ";
+                }
+            }
+            return catNoise.trim();
+        } catch (e) {
+            addToOutputWrapped("Error converting data");
+            return "";
+        }
+    }
+
+    function decompressCatNoisesToData(catNoises: string): string {
+        try {
+            const catNoiseArray = catNoises.split(" ");
+            let compressedData: number[] = [];
+            let currentNumber = "";
+            
+            for (let i = 0; i < catNoiseArray.length; i++) {
+                const noise = catNoiseArray[i];
+                const index = noises.indexOf(noise);
+                if (index !== -1) {
+                    currentNumber += index;
+                }
+                if (currentNumber.length === 3) {
+                    compressedData.push(parseInt(currentNumber, 7));
+                    currentNumber = "";
+                }
+            }
+            
+            const decompressedData = pako.inflate(new Uint8Array(compressedData));
+            return new TextDecoder().decode(decompressedData);
+        } catch (e) {
+            addToOutputWrapped("Error converting data");
+            return "";
+        }
+    }
 
     function scrollToBottom() {
         if (terminalElement) {
@@ -607,20 +663,34 @@
     }
 
     function addToOutputWrapped(text: string) {
-        const wrappedText = text
-            .split("\n")
-            .map((line) => {
-                let wrappedLine = "";
-                while (line.length > 0) {
-                    wrappedLine += line.slice(0, terminalWidth) + "\n";
-                    line = line.slice(terminalWidth);
-                }
-                return wrappedLine;
-            })
-            .join("\n");
+    const wrappedText = text
+        .split("\n")
+        .map((line) => {
+            let wrappedLine = "";
+            let words = line.split(" ");
+            let currentLine = "";
 
-        writeToOutput(wrappedText);
-    }
+            words.forEach((word) => {
+                // Check if adding next word exceeds terminal width
+                if ((currentLine + word).length >= terminalWidth) {
+                    wrappedLine += currentLine.trim() + "\n";
+                    currentLine = word + " ";
+                } else {
+                    currentLine += word + " ";
+                }
+            });
+
+            // Add remaining text
+            if (currentLine) {
+                wrappedLine += currentLine.trim();
+            }
+
+            return wrappedLine;
+        })
+        .join("\n");
+
+    writeToOutput(wrappedText);
+}
 
     const antInterval = () => {
         const updatesPerFrameEnv =
@@ -739,6 +809,8 @@
                 "\u001b[37mdownload",
                 "\u001b[37misPrime",
                 "\u001b[37mview_image",
+                "\u001b[37mto_cat_noises",
+                "\u001b[37mfrom_cat_noises",
             );
         },
 
@@ -1919,6 +1991,59 @@
             }
         },
 
+        meow: () => {
+            writeToOutput(
+                "  /\\_/\\",
+                " ( o.o )",
+                "  > ^ <",
+                "Meow!",
+            );
+        },
+
+        silly_cat: (command) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: silly_cat &lt;number&gt");
+                return;
+            }
+
+            const n = parseInt(command[1]);
+            if (isNaN(n)) {
+                writeToOutput("Invalid number");
+                return;
+            }
+
+
+            let output = "";
+
+            for (let i = 0; i < n; i++) {
+                output += noises[Math.floor(Math.random() * noises.length)] + " ";
+            }
+
+            addToOutputWrapped(output);
+        },
+
+        to_cat_noises: (command) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: to_cat_noises &lt;input&gt");
+                return;
+            }
+
+            const input = command.slice(1).join(" ");
+
+            addToOutputWrapped(compressDataToCatNoises(input));
+        },
+
+        from_cat_noises: (command) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: from_cat_noises &lt;input&gt");
+                return;
+            }
+
+            const input = command.slice(1).join(" ");
+
+            addToOutputWrapped(decompressCatNoisesToData(input));
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2218,6 +2343,34 @@
                 );
                 break;
 
+            case "meow":
+                writeToOutput(
+                    "\u001b[37mmeow - display a cute cat",
+                    "\u001b[37mUsage: meow",
+                );
+                break;
+
+            case "silly_cat":
+                writeToOutput(
+                    "\u001b[37msilly_cat - cat noises",
+                    "\u001b[37mUsage: silly_cat &lt;number&gt",
+                );
+                break;
+
+            case "to_cat_noises":
+                writeToOutput(
+                    "\u001b[37mto_cat_noises - convert text to cat noises",
+                    "\u001b[37mUsage: to_cat_noises &lt;input&gt",
+                );
+                break;
+
+            case "from_cat_noises":
+                writeToOutput(
+                    "\u001b[37mfrom_cat_noises - convert cat noises to text",
+                    "\u001b[37mUsage: from_cat_noises &lt;input&gt",
+                );
+                break;
+
             default:
                 writeToOutput("\u001b[31mNo manual entry for " + command[1]);
         }
@@ -2444,8 +2597,10 @@
                     inputValue.slice(cursorPosition);
                 cursorPosition += text.length;
             });
-        } else if (event.key === "c" && timerCountingDown) {
+        } else if (event.key === "c" && timerCountingDown && !event.ctrlKey) {
             timerCountingDown = false;
+        } else if (event.key === "c" && event.ctrlKey) {
+            return;
         } else if (event.key.length === 1) {
             inputValue =
                 inputValue.slice(0, cursorPosition) +
