@@ -17,15 +17,7 @@
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
 
-    const noises = [
-        "meow",
-        "nya",
-        "mrrp",
-        "mew",
-        "purr",
-        "mrow",
-        "mewp"
-    ];
+    const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
     let socket;
 
@@ -97,9 +89,9 @@
         try {
             const compressedData = pako.deflate(data);
             let catNoise = "";
-            
+
             for (let byte of compressedData) {
-                const num = byte.toString(7).padStart(3, '0');
+                const num = byte.toString(7).padStart(3, "0");
                 for (let digit of num) {
                     catNoise += noises[parseInt(digit)] + " ";
                 }
@@ -116,7 +108,7 @@
             const catNoiseArray = catNoises.split(" ");
             let compressedData: number[] = [];
             let currentNumber = "";
-            
+
             for (let i = 0; i < catNoiseArray.length; i++) {
                 const noise = catNoiseArray[i];
                 const index = noises.indexOf(noise);
@@ -128,8 +120,10 @@
                     currentNumber = "";
                 }
             }
-            
-            const decompressedData = pako.inflate(new Uint8Array(compressedData));
+
+            const decompressedData = pako.inflate(
+                new Uint8Array(compressedData),
+            );
             return new TextDecoder().decode(decompressedData);
         } catch (e) {
             addToOutputWrapped("Error converting data");
@@ -663,34 +657,34 @@
     }
 
     function addToOutputWrapped(text: string) {
-    const wrappedText = text
-        .split("\n")
-        .map((line) => {
-            let wrappedLine = "";
-            let words = line.split(" ");
-            let currentLine = "";
+        const wrappedText = text
+            .split("\n")
+            .map((line) => {
+                let wrappedLine = "";
+                let words = line.split(" ");
+                let currentLine = "";
 
-            words.forEach((word) => {
-                // Check if adding next word exceeds terminal width
-                if ((currentLine + word).length >= terminalWidth) {
-                    wrappedLine += currentLine.trim() + "\n";
-                    currentLine = word + " ";
-                } else {
-                    currentLine += word + " ";
+                words.forEach((word) => {
+                    // Check if adding next word exceeds terminal width
+                    if ((currentLine + word).length >= terminalWidth) {
+                        wrappedLine += currentLine.trim() + "\n";
+                        currentLine = word + " ";
+                    } else {
+                        currentLine += word + " ";
+                    }
+                });
+
+                // Add remaining text
+                if (currentLine) {
+                    wrappedLine += currentLine.trim();
                 }
-            });
 
-            // Add remaining text
-            if (currentLine) {
-                wrappedLine += currentLine.trim();
-            }
+                return wrappedLine;
+            })
+            .join("\n");
 
-            return wrappedLine;
-        })
-        .join("\n");
-
-    writeToOutput(wrappedText);
-}
+        writeToOutput(wrappedText);
+    }
 
     const antInterval = () => {
         const updatesPerFrameEnv =
@@ -1992,12 +1986,7 @@
         },
 
         meow: () => {
-            writeToOutput(
-                "  /\\_/\\",
-                " ( o.o )",
-                "  > ^ <",
-                "Meow!",
-            );
+            writeToOutput("  /\\_/\\", " ( o.o )", "  > ^ <", "Meow!");
         },
 
         silly_cat: (command) => {
@@ -2012,11 +2001,11 @@
                 return;
             }
 
-
             let output = "";
 
             for (let i = 0; i < n; i++) {
-                output += noises[Math.floor(Math.random() * noises.length)] + " ";
+                output +=
+                    noises[Math.floor(Math.random() * noises.length)] + " ";
             }
 
             addToOutputWrapped(output);
