@@ -16,10 +16,11 @@
     import { turboLookup } from "$lib/turboLookup";
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
+    import type { Socket } from "socket.io";
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
-    let socket;
+    let socket: ReturnType<typeof io>;
 
     let badappleFrames: Record<string, string> | null = null;
 
@@ -31,6 +32,7 @@
     let platform = "web";
     let gpuVendor = "";
     let terminalWidth = 80;
+    let terminalHeight = 24;
 
     let pageLoadTime = new Date();
 
@@ -209,7 +211,7 @@
     let onlyUpdateChangedCells = false;
     let changedCells: number[][] = [];
 
-    let conwayInterval: ReturnType<typeof setInterval> | null = null;
+    let intervalProcess: ReturnType<typeof setInterval> | null = null;
     let badAppleInterval: ReturnType<typeof setInterval> | null = null;
 
     let antX = 0;
@@ -862,7 +864,7 @@
 
         conway: () => {
             gridColors = [];
-            if (conwayInterval) clearInterval(conwayInterval);
+            if (intervalProcess) clearInterval(intervalProcess);
             grid = [];
             gridState = [];
             for (let i = 0; i < 16; i++) {
@@ -884,13 +886,13 @@
                 addCanvasGrid();
             }
 
-            if (conwayInterval) clearInterval(conwayInterval);
-            conwayInterval = setInterval(conwayIntervalFunc, intervalSpeed);
+            if (intervalProcess) clearInterval(intervalProcess);
+            intervalProcess = setInterval(conwayIntervalFunc, intervalSpeed);
             runningInterval = conwayIntervalFunc;
         },
 
         primordia: () => {
-            if (conwayInterval) clearInterval(conwayInterval);
+            if (intervalProcess) clearInterval(intervalProcess);
             smoothGrid = true;
             gridColors = equallySpacedTubroColormap(primordiaStates);
             grid = [];
@@ -926,15 +928,15 @@
 
             setKernel(kernelNormalized, width, height);
 
-            if (conwayInterval) clearInterval(conwayInterval);
-            conwayInterval = setInterval(primordiaIntervalFunc, intervalSpeed);
+            if (intervalProcess) clearInterval(intervalProcess);
+            intervalProcess = setInterval(primordiaIntervalFunc, intervalSpeed);
             runningInterval = primordiaIntervalFunc;
         },
 
         clear: () => {
             grid = [];
             gridState = [];
-            if (conwayInterval) clearInterval(conwayInterval);
+            if (intervalProcess) clearInterval(intervalProcess);
             if (badAppleInterval) clearInterval(badAppleInterval);
             clearOutput();
 
@@ -1290,7 +1292,7 @@
         },
 
         ant: (command: string[]) => {
-            if (conwayInterval) clearInterval(conwayInterval);
+            if (intervalProcess) clearInterval(intervalProcess);
             if (command.length === 1) {
                 antRule = "RL";
                 gridColors = [];
@@ -1330,8 +1332,8 @@
             } else {
                 addCanvasGrid();
             }
-            if (conwayInterval) clearInterval(conwayInterval);
-            conwayInterval = setInterval(antInterval, intervalSpeed);
+            if (intervalProcess) clearInterval(intervalProcess);
+            intervalProcess = setInterval(antInterval, intervalSpeed);
             runningInterval = antInterval;
         },
 
@@ -1346,9 +1348,9 @@
                 return;
             }
             intervalSpeed = newSpeed;
-            if (conwayInterval) {
-                clearInterval(conwayInterval);
-                conwayInterval = setInterval(runningInterval, intervalSpeed);
+            if (intervalProcess) {
+                clearInterval(intervalProcess);
+                intervalProcess = setInterval(runningInterval, intervalSpeed);
             }
         },
 
@@ -2052,6 +2054,12 @@
             window.location.href = "/unimash";
         },
 
+        blahaj: () => {
+            writeToOutput(
+                "<img src='blahaj.png' style='max-width: 400px; max-height: 400px;'>",
+            );
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2394,7 +2402,8 @@
                 break;
 
             default:
-                writeToOutput("\u001b[31mNo manual entry for " + command[1]);
+                socket.emit("manual", command[1]);
+                break;
         }
     }
 
@@ -2696,7 +2705,7 @@
         } else if (args[0] === "") {
             writeToOutput("");
         } else {
-            writeToOutput(`\u001b[31m${args[0]}: command not found\u001b[0m`);
+            socket.emit("command", args);
         }
 
         if (commandSegments.length > 1) {
@@ -2711,9 +2720,7 @@
             if (pipeArgs[0] in commands) {
                 commands[pipeArgs[0]](pipeArgs);
             } else {
-                writeToOutput(
-                    `\u001b[31m${pipeArgs[0]}: command not found\u001b[0m`,
-                );
+                socket.emit("command", pipeArgs);
             }
         }
 
@@ -2728,7 +2735,11 @@
 
     onMount(() => {
         (async () => {
-            // socket = io({ path: "/wss/" });
+            socket = io({ path: "/wss/" });
+
+            socket.on("output", (output: string[]) => {
+                writeToOutput(...output);
+            });
 
             const response = await fetch("/api/visitorCount");
             const data = await response.json();
@@ -2803,6 +2814,8 @@
             window.requestAnimationFrame(estimateRefreshRate);
 
             terminalWidth = Math.floor(displayWidth / 10);
+
+            terminalHeight = Math.floor(displayHeight / 25);
 
             return () => {
                 window.removeEventListener("keydown", handleKeydown);
