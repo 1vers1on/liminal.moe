@@ -1,0 +1,558 @@
+:root {
+    --bg-color: #121212;
+    --text-color: #ffffff;
+    --button-bg: #2c2c2c;
+    --button-text: #ffffff;
+    --button-border: #444444;
+    --button-hover: #3c3c3c;
+    --button-selected: #4caf50;
+    --header-bg: #1e5620;
+    --declined-color: #f44336;
+    --progress-bg: #2c2c2c;
+}
+
+body {
+    /* a very long list of font families hoping we cover everything */
+    font-family: "GNU Unifont", sans-serif;
+    font-family: "Noto Sans", sans-serif;
+    font-family: "Noto Sans Display", sans-serif;
+    font-family: "Noto Sans UI", sans-serif;
+    font-family: "Noto Sans Mono", monospace;
+    font-family: "Noto Sans Arabic", sans-serif;
+    font-family: "Noto Sans Armenian", sans-serif;
+    font-family: "Noto Sans Avestan", sans-serif;
+    font-family: "Noto Sans Balinese", sans-serif;
+    font-family: "Noto Sans Bamum", sans-serif;
+    font-family: "Noto Sans Batak", sans-serif;
+    font-family: "Noto Sans Bengali", sans-serif;
+    font-family: "Noto Sans Brahmi", sans-serif;
+    font-family: "Noto Sans Buginese", sans-serif;
+    font-family: "Noto Sans Buhid", sans-serif;
+    font-family: "Noto Sans Canadian Aboriginal", sans-serif;
+    font-family: "Noto Sans Carian", sans-serif;
+    font-family: "Noto Sans Caucasian Albanian", sans-serif;
+    font-family: "Noto Sans Chakma", sans-serif;
+    font-family: "Noto Sans Cham", sans-serif;
+    font-family: "Noto Sans Cherokee", sans-serif;
+    font-family: "Noto Sans Coptic", sans-serif;
+    font-family: "Noto Sans Cuneiform", sans-serif;
+    font-family: "Noto Sans Cypriot", sans-serif;
+    font-family: "Noto Sans Deseret", sans-serif;
+    font-family: "Noto Sans Devanagari", sans-serif;
+    font-family: "Noto Sans Duployan", sans-serif;
+    font-family: "Noto Sans Egyptian Hieroglyphs", sans-serif;
+    font-family: "Noto Sans Elbasan", sans-serif;
+    font-family: "Noto Sans Elymaic", sans-serif;
+    font-family: "Noto Sans Georgian", sans-serif;
+    font-family: "Noto Sans Glagolitic", sans-serif;
+    font-family: "Noto Sans Gothic", sans-serif;
+    font-family: "Noto Sans Grantha", sans-serif;
+    font-family: "Noto Sans Gujarati", sans-serif;
+    font-family: "Noto Sans Gurmukhi", sans-serif;
+    font-family: "Noto Sans Hanifi Rohingya", sans-serif;
+    font-family: "Noto Sans Hanunoo", sans-serif;
+    font-family: "Noto Sans Hebrew", sans-serif;
+    font-family: "Noto Sans Imperial Aramaic", sans-serif;
+    font-family: "Noto Sans Inscriptional Pahlavi", sans-serif;
+    font-family: "Noto Sans Inscriptional Parthian", sans-serif;
+    font-family: "Noto Sans Javanese", sans-serif;
+    font-family: "Noto Sans Kaithi", sans-serif;
+    font-family: "Noto Sans Kannada", sans-serif;
+    font-family: "Noto Sans Kayah Li", sans-serif;
+    font-family: "Noto Sans Kharoshthi", sans-serif;
+    font-family: "Noto Sans Khmer", sans-serif;
+    font-family: "Noto Sans Khojki", sans-serif;
+    font-family: "Noto Sans Khudawadi", sans-serif;
+    font-family: "Noto Sans Lao", sans-serif;
+    font-family: "Noto Sans Lepcha", sans-serif;
+    font-family: "Noto Sans Limbu", sans-serif;
+    font-family: "Noto Sans Linear A", sans-serif;
+    font-family: "Noto Sans Linear B", sans-serif;
+    font-family: "Noto Sans Lycian", sans-serif;
+    font-family: "Noto Sans Lydian", sans-serif;
+    font-family: "Noto Sans Mahajani", sans-serif;
+    font-family: "Noto Sans Malayalam", sans-serif;
+    font-family: "Noto Sans Mandaic", sans-serif;
+    font-family: "Noto Sans Manichaean", sans-serif;
+    font-family: "Noto Sans Marchen", sans-serif;
+    font-family: "Noto Sans Masaram Gondi", sans-serif;
+    font-family: "Noto Sans Math", sans-serif;
+    font-family: "Noto Sans Mayan Numerals", sans-serif;
+    font-family: "Noto Sans Medefaidrin", sans-serif;
+    font-family: "Noto Sans Meetei Mayek", sans-serif;
+    font-family: "Noto Sans Meroitic", sans-serif;
+    font-family: "Noto Sans Miao", sans-serif;
+    font-family: "Noto Sans Modi", sans-serif;
+    font-family: "Noto Sans Mongolian", sans-serif;
+    font-family: "Noto Sans Mro", sans-serif;
+    font-family: "Noto Sans Multani", sans-serif;
+    font-family: "Noto Sans Myanmar", sans-serif;
+    font-family: "Noto Sans N Ko", sans-serif;
+    font-family: "Noto Sans Nabataean", sans-serif;
+    font-family: "Noto Sans New Tai Lue", sans-serif;
+    font-family: "Noto Sans Newa", sans-serif;
+    font-family: "Noto Sans Nushu", sans-serif;
+    font-family: "Noto Sans Ogham", sans-serif;
+    font-family: "Noto Sans Ol Chiki", sans-serif;
+    font-family: "Noto Sans Old Hungarian", sans-serif;
+    font-family: "Noto Sans Old Italic", sans-serif;
+    font-family: "Noto Sans Old North Arabian", sans-serif;
+    font-family: "Noto Sans Old Permic", sans-serif;
+    font-family: "Noto Sans Old Persian", sans-serif;
+    font-family: "Noto Sans Old Sogdian", sans-serif;
+    font-family: "Noto Sans Old South Arabian", sans-serif;
+    font-family: "Noto Sans Old Turkic", sans-serif;
+    font-family: "Noto Sans Oriya", sans-serif;
+    font-family: "Noto Sans Osage", sans-serif;
+    font-family: "Noto Sans Osmanya", sans-serif;
+    font-family: "Noto Sans Pahawh Hmong", sans-serif;
+    font-family: "Noto Sans Palmyrene", sans-serif;
+    font-family: "Noto Sans Pau Cin Hau", sans-serif;
+    font-family: "Noto Sans Phags Pa", sans-serif;
+    font-family: "Noto Sans Phoenician", sans-serif;
+    font-family: "Noto Sans Psalter Pahlavi", sans-serif;
+    font-family: "Noto Sans Rejang", sans-serif;
+    font-family: "Noto Sans Runic", sans-serif;
+    font-family: "Noto Sans Samaritan", sans-serif;
+    font-family: "Noto Sans Saurashtra", sans-serif;
+    font-family: "Noto Sans Sharada", sans-serif;
+    font-family: "Noto Sans Shavian", sans-serif;
+    font-family: "Noto Sans Siddham", sans-serif;
+    font-family: "Noto Sans Sinhala", sans-serif;
+    font-family: "Noto Sans Sogdian", sans-serif;
+    font-family: "Noto Sans Sora Sompeng", sans-serif;
+    font-family: "Noto Sans Soyombo", sans-serif;
+    font-family: "Noto Sans Sundanese", sans-serif;
+    font-family: "Noto Sans Syloti Nagri", sans-serif;
+    font-family: "Noto Sans Syriac", sans-serif;
+    font-family: "Noto Sans Tagalog", sans-serif;
+    font-family: "Noto Sans Tagbanwa", sans-serif;
+    font-family: "Noto Sans Tai Le", sans-serif;
+    font-family: "Noto Sans Tai Tham", sans-serif;
+    font-family: "Noto Sans Tai Viet", sans-serif;
+    font-family: "Noto Sans Takri", sans-serif;
+    font-family: "Noto Sans Tamil", sans-serif;
+    font-family: "Noto Sans Tamil Supplement", sans-serif;
+    font-family: "Noto Sans Telugu", sans-serif;
+    font-family: "Noto Sans Thaana", sans-serif;
+    font-family: "Noto Sans Thai", sans-serif;
+    font-family: "Noto Sans Tibetan", sans-serif;
+    font-family: "Noto Sans Tifinagh", sans-serif;
+    font-family: "Noto Sans Tirhuta", sans-serif;
+    font-family: "Noto Sans Ugaritic", sans-serif;
+    font-family: "Noto Sans Vai", sans-serif;
+    font-family: "Noto Sans Wancho", sans-serif;
+    font-family: "Noto Sans Warang Citi", sans-serif;
+    font-family: "Noto Sans Yi", sans-serif;
+    font-family: "Noto Sans Zanabazar Square", sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    padding-top: 30px;
+    height: 100vh;
+    overflow: hidden;
+    transition:
+        background-color 0.3s,
+        color 0.3s;
+}
+
+body.light-mode {
+    --bg-color: #f0f0f0;
+    --text-color: #333333;
+    --button-bg: #e0e0e0;
+    --button-text: #333333;
+    --button-border: #cccccc;
+    --button-hover: #d0d0d0;
+    --header-bg: #4caf50;
+    --progress-bg: #e0e0e0;
+}
+
+.container {
+    max-width: 800px;
+    max-height: 100vh;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Change from auto to hidden */
+}
+
+header {
+    background-color: var(--header-bg);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1,
+h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.progress-container {
+    position: relative;
+    width: 100%;
+    height: 20px;
+    background-color: var(--progress-bg);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.progress-percentage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--text-color);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 1) 0%,
+        rgba(255, 154, 0, 1) 10%,
+        rgba(208, 222, 33, 1) 20%,
+        rgba(79, 220, 74, 1) 30%,
+        rgba(63, 218, 216, 1) 40%,
+        rgba(47, 201, 226, 1) 50%,
+        rgba(28, 127, 238, 1) 60%,
+        rgba(95, 21, 242, 1) 70%,
+        rgba(186, 12, 248, 1) 80%,
+        rgba(251, 7, 217, 1) 90%,
+        rgba(255, 0, 0, 1) 100%
+    );
+    background-size: 200% 100%;
+    animation: rainbow 5s linear infinite;
+}
+
+@keyframes rainbow {
+    0% {
+        background-position: 0% 50%;
+    }
+    100% {
+        background-position: 200% 50%;
+    }
+}
+
+#votingMode {
+    height: 55vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#bigCharacter {
+    font-size: 15rem;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#characterName {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.voting-buttons {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.vote-button {
+    padding: 12px 24px;
+    font-size: 18px;
+    color: var(--button-text);
+    background-color: var(--button-bg);
+    border: 2px solid var(--button-border);
+    border-radius: 50px;
+    cursor: pointer;
+    transition:
+        background-color 0.3s,
+        transform 0.1s,
+        box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.vote-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#votePositive {
+    background-color: var(--button-selected);
+    color: white;
+}
+
+#votePositive:hover {
+    background-color: #45a049;
+}
+
+#voteNegative {
+    background-color: var(--declined-color);
+    color: white;
+}
+
+#voteNegative:hover {
+    background-color: #da190b;
+}
+
+.clear-button {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    padding: 8px 16px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        background-color 0.3s,
+        transform 0.1s;
+}
+
+.clear-button:hover {
+    background-color: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.character-lists {
+    display: flex;
+    gap: 20px;
+    overflow-y: auto;
+    flex-shrink: 0;
+    max-height: calc(100vh - 320px);
+    margin-top: 20px;
+}
+
+#selectedCharacters,
+#declinedCharacters {
+    flex: 1;
+    background-color: var(--button-bg);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.character-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pagination button {
+    padding: 6px 12px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        background-color 0.3s,
+        transform 0.1s;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.selected-char,
+.declined-char {
+    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition:
+        transform 0.1s,
+        box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selected-char:hover,
+.declined-char:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.selected-char {
+    background-color: var(--button-selected);
+    color: white;
+}
+
+.declined-char {
+    background-color: var(--declined-color);
+    color: white;
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #2196f3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.character-list-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.list-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: var(--button-text);
+    background-color: var(--button-bg);
+    border: 2px solid var(--button-border);
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        background-color 0.3s,
+        transform 0.1s;
+}
+
+.list-button:hover {
+    background-color: var(--button-hover);
+    transform: scale(1.05);
+}
+
+.character-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.popup-content {
+    background-color: var(--bg-color);
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 80%;
+    max-height: 80%;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 5px 10px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.close-popup:hover {
+    background-color: var(--button-hover);
+}
+
+@media (max-width: 600px) {
+    .character-list-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .popup-content {
+        max-width: 95%;
+        margin: 5% auto;
+    }
+}

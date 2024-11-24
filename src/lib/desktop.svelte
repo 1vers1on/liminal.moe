@@ -770,6 +770,7 @@
             writeToOutput(
                 "\u001b[37mUse man to get more information about a command.",
                 "\u001b[37mAvailable commands:",
+                "\u001b[37munimash",
                 "\u001b[37mproxy",
                 "\u001b[37mhelp",
                 "\u001b[37mman",
@@ -2047,6 +2048,10 @@
             )}`;
         },
 
+        unimash: () => {
+            window.location.href = "/unimash";
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2378,6 +2383,13 @@
                 writeToOutput(
                     "\u001b[37mproxy - proxy a website",
                     "\u001b[37mUsage: proxy &lt;url&gt",
+                );
+                break;
+
+            case "unimash":
+                writeToOutput(
+                    "\u001b[37munimash - play unicode smash or pass",
+                    "\u001b[37mUsage: unimash",
                 );
                 break;
 
