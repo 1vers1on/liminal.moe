@@ -11,9 +11,17 @@ export async function GET() {
         const lastArtist = data.recenttracks.track[0].artist["#text"];
         const lastTrack = data.recenttracks.track[0].name;
 
-        const currentlyPlaying = data.recenttracks.track[0]["@attr"].nowplaying;
+        const currentlyPlaying = data.recenttracks.track[0]["@attr"];
 
-        return json({ lastArtist, lastTrack, currentlyPlaying });
+        return json({
+            lastArtist,
+            lastTrack,
+            currentlyPlaying: currentlyPlaying
+                ? currentlyPlaying.nowplaying
+                    ? true
+                    : false
+                : false,
+        });
     } catch (error) {
         return json({ error: (error as Error).message }, { status: 500 });
     }

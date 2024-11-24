@@ -2793,7 +2793,7 @@
                 if (lastfmData.currentlyPlaying) {
                     lastfmString = `\u001b[37mCurrently listening to: ${lastfmData.lastArtist} - ${lastfmData.lastTrack}`;
                 } else {
-                    lastfmString = `\u001b[37mLast listened to: ${lastfmData.lastArtist} - ${lastfmData.lastTrack}`;
+                    lastfmString = `\u001b[37mNot currently listening to anything`;
                 }
             }
             motd[2] = lastfmString;
