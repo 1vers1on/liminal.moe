@@ -20,6 +20,9 @@
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
+    const TEST_FILE_SIZE = 1000000;
+    const UPLOAD_TEST_SIZE = 10000000;
+
     let fileInput: HTMLInputElement;
 
     let socket: ReturnType<typeof io>;
@@ -769,6 +772,41 @@
         }
     };
 
+    async function measureDownloadSpeed() {
+        const start = performance.now();
+        try {
+            const response = await fetch(
+                `/api/speedtest/download?size=${TEST_FILE_SIZE}`,
+            );
+            const data = await response.blob();
+            const end = performance.now();
+            const durationInSeconds = (end - start) / 1000;
+            const bitsLoaded = TEST_FILE_SIZE * 8;
+            return (bitsLoaded / durationInSeconds / 1024 / 1024).toFixed(2); // Mbps
+        } catch (error) {
+            console.error("Download test failed:", error);
+            return 0;
+        }
+    }
+
+    async function measureUploadSpeed() {
+        const testData = new Blob([new ArrayBuffer(UPLOAD_TEST_SIZE)]);
+        const start = performance.now();
+        try {
+            await fetch("/api/speedtest/upload", {
+                method: "POST",
+                body: testData,
+            });
+            const end = performance.now();
+            const durationInSeconds = (end - start) / 1000;
+            const bitsLoaded = UPLOAD_TEST_SIZE * 8;
+            return (bitsLoaded / durationInSeconds / 1024 / 1024).toFixed(2); // Mbps
+        } catch (error) {
+            console.error("Upload test failed:", error);
+            return 0;
+        }
+    }
+
     const commands: Record<string, (command: string[]) => void> = {
         help: () => {
             writeToOutput(
@@ -812,6 +850,7 @@
                 "\u001b[37mview_image",
                 "\u001b[37mto_cat_noises",
                 "\u001b[37mfrom_cat_noises",
+                "\u001b[37mspeedtest",
             );
         },
 
@@ -2067,6 +2106,27 @@
             fileInput.click();
         },
 
+        speedtest: async () => {
+            writeToOutput("\u001b[33Running speed test...");
+            const startTime = performance.now();
+            const responsePing = await fetch("/api/ping");
+            const endTime = performance.now();
+
+            if (responsePing.status !== 200) {
+                writeToOutput("Failed to ping server");
+                return;
+            }
+
+            const downloadSpeed = await measureDownloadSpeed();
+            const uploadSpeed = await measureUploadSpeed();
+
+            writeToOutput(
+                `\u001b[37mPing: ${endTime - startTime}ms`,
+                `\u001b[37mDownload speed: ${downloadSpeed} Mbps`,
+                `\u001b[37mUpload speed: ${uploadSpeed} Mbps`,
+            );
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2435,6 +2495,13 @@
                 writeToOutput(
                     "\u001b[37mupload - upload a file",
                     "\u001b[37mUsage: upload",
+                );
+                break;
+
+            case "speedtest":
+                writeToOutput(
+                    "\u001b[37mspeedtest - test your connection speed",
+                    "\u001b[37mUsage: speedtest",
                 );
                 break;
 
