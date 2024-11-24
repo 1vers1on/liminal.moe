@@ -2832,12 +2832,15 @@
             terminalWidth = Math.floor(displayWidth / 10);
 
             terminalHeight = Math.floor(displayHeight / 25);
-            
+
             fetch("/api/visitorCount")
                 .then((response) => response.json())
                 .then((data) => {
                     visitorCount = data.count;
-                    motd[3] = motd[3].replace("{visitors}", visitorCount.toString());
+                    motd[3] = motd[3].replace(
+                        "{visitors}",
+                        visitorCount.toString(),
+                    );
                     setLineInOutput(motd[3], 3);
                     console.log(visitorCount);
                 });
@@ -2857,7 +2860,7 @@
                     setLineInOutput(lastfmString, 2);
                 })
                 .catch((error) => {
-                    const errorString = `\u001b[31mFailed to get last.fm status${error ? ': ' + error : ''}`;
+                    const errorString = `\u001b[31mFailed to get last.fm status${error ? ": " + error : ""}`;
                     motd[2] = errorString;
                     setLineInOutput(errorString, 2);
                 });
