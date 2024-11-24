@@ -173,6 +173,7 @@
     let motd = [
         "Hello there! Welcome to my website.",
         "\u001b[95mFetching message of the day...",
+        "\u001b[95mFetching last.fm status...",
         "{visitors} Visitors so far!",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
@@ -769,7 +770,7 @@
             writeToOutput(
                 "\u001b[37mUse man to get more information about a command.",
                 "\u001b[37mAvailable commands:",
-                "\u001b[37msubscribeToPush",
+                "\u001b[37mproxy",
                 "\u001b[37mhelp",
                 "\u001b[37mman",
                 "\u001b[37mclear",
@@ -780,6 +781,7 @@
                 "\u001b[37mls",
                 "\u001b[37mcd",
                 "\u001b[37mcat",
+                "\u001b[37msubscribeToPush",
                 "\u001b[37mturn_me_into_a_girl",
                 "\u001b[37mconway",
                 "\u001b[37mprimordia",
@@ -2033,6 +2035,18 @@
             addToOutputWrapped(decompressCatNoisesToData(input));
         },
 
+        proxy: async (command) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: proxy &lt;url&gt");
+                return;
+            }
+
+            const search = command.slice(1).join(" ");
+            window.location.href = `https://sh.hoosiertransfer.net/proxy?url=${encodeURIComponent(
+                search,
+            )}`;
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
@@ -2357,6 +2371,13 @@
                 writeToOutput(
                     "\u001b[37mfrom_cat_noises - convert cat noises to text",
                     "\u001b[37mUsage: from_cat_noises &lt;input&gt",
+                );
+                break;
+
+            case "proxy":
+                writeToOutput(
+                    "\u001b[37mproxy - proxy a website",
+                    "\u001b[37mUsage: proxy &lt;url&gt",
                 );
                 break;
 
@@ -2695,13 +2716,28 @@
 
     onMount(() => {
         (async () => {
-            socket = io({ path: "/wss/" });
+            // socket = io({ path: "/wss/" });
 
             const response = await fetch("/api/visitorCount");
             const data = await response.json();
             visitorCount = data.count;
 
-            motd[2] = motd[2].replace("{visitors}", visitorCount.toString());
+            const lastfmResponse = await fetch("/api/getLastFmStatus");
+            const lastfmData = await lastfmResponse.json();
+            let lastfmString: string;
+            if (lastfmResponse.status === 500) {
+                lastfmString = `\u001b[31mFailed to get last.fm status: ${lastfmData.error}`;
+            } else if (lastfmResponse.status !== 200) {
+                lastfmString = `\u001b[31mFailed to get last.fm status`;
+            } else {
+                if (lastfmData.currentlyPlaying) {
+                    lastfmString = `\u001b[37mCurrently listening to: ${lastfmData.lastArtist} - ${lastfmData.lastTrack}`;
+                } else {
+                    lastfmString = `\u001b[37mLast listened to: ${lastfmData.lastArtist} - ${lastfmData.lastTrack}`;
+                }
+            }
+            motd[2] = lastfmString;
+            motd[3] = motd[3].replace("{visitors}", visitorCount.toString());
 
             writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
