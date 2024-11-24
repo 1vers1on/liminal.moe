@@ -20,6 +20,8 @@
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
+    let fileInput: HTMLInputElement;
+
     let socket: ReturnType<typeof io>;
 
     let badappleFrames: Record<string, string> | null = null;
@@ -835,6 +837,7 @@
                 "\u001b[37mupdateuserdata",
                 "\u001b[37mgetuserdata",
                 "\u001b[37mnotify",
+                "\u001b[37mupload",
             );
         },
 
@@ -2060,11 +2063,38 @@
             );
         },
 
+        upload: async () => {
+            fileInput.click();
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
         woman: manual,
     };
+
+    async function uploadFile(event: any) {
+        const file = event.target.files[0];
+        if (!file) return; // No file selected
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/admin/upload", {
+            method: "POST",
+            body: formData,
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            writeToOutput(
+                "\u001b[37mUploded file to:",
+                window.location.origin + data.filePath,
+            );
+        } else {
+            writeToOutput("\u001b[31mFailed to upload file");
+        }
+    }
 
     function makeTransFlagColors() {
         for (let i = 0; i < terminalOutput.length; i++) {
@@ -2398,6 +2428,13 @@
                 writeToOutput(
                     "\u001b[37munimash - play unicode smash or pass",
                     "\u001b[37mUsage: unimash",
+                );
+                break;
+
+            case "upload":
+                writeToOutput(
+                    "\u001b[37mupload - upload a file",
+                    "\u001b[37mUsage: upload",
                 );
                 break;
 
@@ -2849,6 +2886,13 @@
         </span>
     </div>
 </div>
+
+<input
+    type="file"
+    bind:this={fileInput}
+    on:change={uploadFile}
+    style="display: none;"
+/>
 
 <style>
     .terminal {
