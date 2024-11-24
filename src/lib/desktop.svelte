@@ -2512,7 +2512,7 @@
                 " @ " +
                 refreshRate +
                 "Hz",
-            "Terminal Font\u001b[37m: Consolas",
+            "Terminal Font\u001b[37m: Jetbrains Mono",
             "User Agent\u001b[37m: " + navigator.userAgent,
             "CPU\u001b[37m: " + navigator.hardwareConcurrency + " thread(s)",
             "GPU Vendor\u001b[37m: " + gpuVendor,
