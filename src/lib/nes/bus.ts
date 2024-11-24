@@ -4,7 +4,7 @@ export class Bus {
 
     constructor() {
         this.cpuMemory = new Uint8Array(2048);
-        this.prgMemory = new Uint8Array(0xFFFF-0x8000);
+        this.prgMemory = new Uint8Array(0xffff - 0x8000);
     }
 
     zero() {
@@ -13,9 +13,9 @@ export class Bus {
     }
 
     read(address: number): number {
-        if (address < 0x1FFFF) {
-            return this.cpuMemory[address & 0x7FF];
-        } else if (address >= 0x8000 && address < 0xFFFF) {
+        if (address < 0x1ffff) {
+            return this.cpuMemory[address & 0x7ff];
+        } else if (address >= 0x8000 && address < 0xffff) {
             return this.prgMemory[address - 0x8000];
         } else {
             console.error("Bus read out of range: " + address.toString(16));
@@ -27,12 +27,12 @@ export class Bus {
     readWord(address: number): number {
         return this.read(address) | (this.read(address + 1) << 8);
     }
-    
+
     write(address: number, data: number) {
-        data &= 0xFF;
-        if (address < 0x1FFFF) {
-            this.cpuMemory[address & 0x7FF] = data;
-        } else if (address >= 0x8000 && address < 0xFFFF) {
+        data &= 0xff;
+        if (address < 0x1ffff) {
+            this.cpuMemory[address & 0x7ff] = data;
+        } else if (address >= 0x8000 && address < 0xffff) {
             console.error("Write to PRG ROM: " + address.toString(16));
         } else {
             console.error("Bus write out of range: " + address.toString(16));
@@ -40,8 +40,8 @@ export class Bus {
     }
 
     writeWord(address: number, data: number) {
-        data &= 0xFFFF;
-        this.write(address, data & 0xFF);
+        data &= 0xffff;
+        this.write(address, data & 0xff);
         this.write(address + 1, data >> 8);
     }
 }
