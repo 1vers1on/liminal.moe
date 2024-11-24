@@ -11,7 +11,7 @@ export async function POST({ request }) {
     const { directory } = data;
 
     const directoryPath = path.join(
-        "/home/hoosiertransfer/hoosiertransfer.net/serverDirectory",
+        "/home/hoosiertransfer/hoosiertransfernet/serverDirectory",
         directory,
     );
     const files = fs.readdirSync(directoryPath).map((file) => {

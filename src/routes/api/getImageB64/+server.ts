@@ -8,7 +8,7 @@ export async function POST({ request }) {
     const { file } = data;
 
     const filePath = path.join(
-        "/home/hoosiertransfer/hoosiertransfer.net/serverDirectory",
+        "/home/hoosiertransfer/hoosiertransfernet/serverDirectory",
         file,
     );
 

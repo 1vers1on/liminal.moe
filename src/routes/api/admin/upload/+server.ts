@@ -22,7 +22,7 @@ export async function POST({ request, cookies }) {
 
     const randomString = Math.random().toString(36).substring(2, 15);
     const uploadDir = path.resolve(
-        "/home/hoosiertransfer/hoosiertransfer.net/uploads/" + randomString,
+        "/home/hoosiertransfer/hoosiertransfernet/uploads/" + randomString,
     );
     await fs.mkdir(uploadDir, { recursive: true });
 
