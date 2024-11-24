@@ -7,11 +7,64 @@ export async function isUserOwner(token: string) {
         return false;
     }
 
-    const user = await prisma.users.findFirst({
+    deleteOldTokens(token);
+
+    const tokenRecord = await prisma.tokens.findFirst({
         where: {
             token,
         },
+        include: {
+            user: true,
+        },
     });
 
-    return user && user.permission === "owner";
+    return tokenRecord?.user?.permission === "owner";
+}
+
+export async function deleteOldTokens(
+    userToken: string,
+    ageLimitMs: number = 2592000000,
+) {
+    try {
+        const tokenRecord = await prisma.tokens.findFirst({
+            where: { token: userToken },
+            include: { user: true },
+        });
+
+        if (!tokenRecord) {
+            throw new Error("Token not found");
+        }
+
+        const userId = tokenRecord.user.id;
+
+        const allTokens = await prisma.tokens.findMany({
+            where: { userId },
+        });
+
+        const currentTime = new Date().getTime();
+
+        const expiredTokens = allTokens.filter((token) => {
+            const tokenAge = currentTime - new Date(token.createdAt).getTime();
+            return tokenAge > ageLimitMs;
+        });
+
+        const recentToken = allTokens.reduce((recent, token) => {
+            return new Date(token.createdAt).getTime() >
+                new Date(recent.createdAt).getTime()
+                ? token
+                : recent;
+        });
+
+        for (const expiredToken of expiredTokens) {
+            if (expiredToken.id !== recentToken.id) {
+                await prisma.tokens.delete({
+                    where: { id: expiredToken.id },
+                });
+            }
+        }
+
+        return { success: true, message: "Old tokens deleted successfully" };
+    } catch (error) {
+        return { success: false, error: (error as Error).message };
+    }
 }

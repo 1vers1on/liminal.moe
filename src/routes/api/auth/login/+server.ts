@@ -14,7 +14,7 @@ export async function POST({ request, cookies }) {
         const data = await request.json();
         const { username, password } = data;
 
-        let user = await prisma.users.findFirst({
+        const user = await prisma.users.findFirst({
             where: {
                 name: username,
             },
@@ -30,7 +30,6 @@ export async function POST({ request, cookies }) {
         }
 
         const passwordMatch = await bcrypt.compare(password, user.password);
-
         if (!passwordMatch) {
             return json(
                 {
@@ -42,42 +41,31 @@ export async function POST({ request, cookies }) {
 
         const token = generateToken();
 
-        user = await prisma.users.update({
-            where: {
-                id: user.id,
-            },
+        const tokenRecord = await prisma.tokens.create({
             data: {
                 token,
+                userId: user.id,
             },
         });
 
-        if (!user) {
+        if (!tokenRecord) {
             return json(
                 {
-                    error: "Error updating user",
+                    error: "Error creating token",
                 },
                 { status: 500 },
             );
         }
 
-        if (!user.token) {
-            return json(
-                {
-                    error: "Error updating token",
-                },
-                { status: 500 },
-            );
-        }
-
-        cookies.set("token", user.token, {
+        cookies.set("token", tokenRecord.token, {
             httpOnly: true,
-            maxAge: 60 * 60 * 24 * 7,
+            maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
 
         return json(
             {
-                token: user.token,
+                token: tokenRecord.token,
             },
             { status: 200 },
         );

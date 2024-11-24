@@ -1,6 +1,8 @@
 import { useServer } from "vite-sveltekit-node-ws";
 import { Server } from "socket.io";
 
+import { deleteOldTokens } from "$lib/auth";
+
 export const websocketServer = () =>
     useServer(
         (server) => {

@@ -7,20 +7,35 @@ export async function GET({ request, cookies }) {
     try {
         const token = cookies.get("token");
 
-        let user = await prisma.users.findFirst({
+        if (!token) {
+            return json(
+                {
+                    error: "Not authorized",
+                },
+                { status: 401 },
+            );
+        }
+
+        const tokenRecord = await prisma.tokens.findFirst({
             where: {
                 token,
             },
+            include: {
+                user: true,
+            },
         });
 
-        if (!user) {
+        if (!tokenRecord) {
             return json(
                 {
-                    error: "User not found",
+                    error: "Token not found",
                 },
                 { status: 404 },
             );
         }
+
+        // Return  info
+        const user = tokenRecord.user;
 
         return json(
             {

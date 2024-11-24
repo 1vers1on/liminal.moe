@@ -7,15 +7,20 @@ const prisma = new PrismaClient();
 export async function POST({ request, cookies }) {
     const token = cookies.get("token");
 
-    let user = await prisma.users.findFirst({
+    const tokenRecord = await prisma.tokens.findFirst({
         where: {
             token,
         },
+        include: {
+            user: true, // Include the associated user data
+        },
     });
 
-    if (!user) {
+    if (!tokenRecord) {
         return json({ success: false, error: "Invalid token" });
     }
+
+    const user = tokenRecord.user;
 
     const data = await request.json();
     let { message } = data;

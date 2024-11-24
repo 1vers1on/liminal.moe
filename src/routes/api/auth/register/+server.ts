@@ -16,13 +16,10 @@ export async function POST({ request, cookies }) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const token = generateToken();
-
         const user = await prisma.users.create({
             data: {
                 name: username,
                 password: hashedPassword,
-                token,
                 permission: "user",
             },
         });
@@ -36,7 +33,16 @@ export async function POST({ request, cookies }) {
             );
         }
 
-        if (!user.token) {
+        const token = generateToken();
+
+        const tokenRecord = await prisma.tokens.create({
+            data: {
+                token,
+                userId: user.id,
+            },
+        });
+
+        if (!tokenRecord) {
             return json(
                 {
                     error: "Error creating token",
@@ -45,15 +51,15 @@ export async function POST({ request, cookies }) {
             );
         }
 
-        cookies.set("token", user.token, {
+        cookies.set("token", tokenRecord.token, {
             httpOnly: true,
-            maxAge: 60 * 60 * 24 * 7,
+            maxAge: 60 * 60 * 24 * 7, // 7 days
             path: "/",
         });
 
         return json(
             {
-                token: user.token,
+                token: tokenRecord.token,
             },
             { status: 201 },
         );

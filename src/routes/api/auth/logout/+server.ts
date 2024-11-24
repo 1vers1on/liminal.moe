@@ -16,27 +16,24 @@ export async function POST({ request, cookies }) {
             );
         }
 
-        const user = await prisma.users.findFirst({
+        const tokenRecord = await prisma.tokens.findFirst({
             where: {
                 token,
             },
         });
 
-        if (!user) {
+        if (!tokenRecord) {
             return json(
                 {
-                    error: "User not found",
+                    error: "Token not found",
                 },
                 { status: 404 },
             );
         }
 
-        await prisma.users.update({
+        await prisma.tokens.delete({
             where: {
-                id: user.id,
-            },
-            data: {
-                token: null,
+                id: tokenRecord.id,
             },
         });
 
@@ -48,7 +45,7 @@ export async function POST({ request, cookies }) {
 
         return json(
             {
-                message: "Logged out",
+                message: "Logged out successfully",
             },
             { status: 200 },
         );
