@@ -2778,27 +2778,6 @@
                 writeToOutput(...output);
             });
 
-            const response = await fetch("/api/visitorCount");
-            const data = await response.json();
-            visitorCount = data.count;
-
-            const lastfmResponse = await fetch("/api/getLastFmStatus");
-            const lastfmData = await lastfmResponse.json();
-            let lastfmString: string;
-            if (lastfmResponse.status === 500) {
-                lastfmString = `\u001b[31mFailed to get last.fm status: ${lastfmData.error}`;
-            } else if (lastfmResponse.status !== 200) {
-                lastfmString = `\u001b[31mFailed to get last.fm status`;
-            } else {
-                if (lastfmData.currentlyPlaying) {
-                    lastfmString = `\u001b[37mCurrently listening to: ${lastfmData.lastArtist} - ${lastfmData.lastTrack}`;
-                } else {
-                    lastfmString = `\u001b[37mNot currently listening to anything`;
-                }
-            }
-            motd[2] = lastfmString;
-            motd[3] = motd[3].replace("{visitors}", visitorCount.toString());
-
             writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
@@ -2853,7 +2832,35 @@
             terminalWidth = Math.floor(displayWidth / 10);
 
             terminalHeight = Math.floor(displayHeight / 25);
+            
+            fetch("/api/visitorCount")
+                .then((response) => response.json())
+                .then((data) => {
+                    visitorCount = data.count;
+                    motd[3] = motd[3].replace("{visitors}", visitorCount.toString());
+                    setLineInOutput(motd[3], 3);
+                    console.log(visitorCount);
+                });
 
+            fetch("/api/getLastFmStatus")
+                .then((response) => {
+                    if (response.status === 500) {
+                        throw new Error("Server error");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    const lastfmString = data.currentlyPlaying
+                        ? `\u001b[37mCurrently listening to: ${data.lastArtist} - ${data.lastTrack}`
+                        : `\u001b[37mNot currently listening to anything`;
+                    motd[2] = lastfmString;
+                    setLineInOutput(lastfmString, 2);
+                })
+                .catch((error) => {
+                    const errorString = `\u001b[31mFailed to get last.fm status${error ? ': ' + error : ''}`;
+                    motd[2] = errorString;
+                    setLineInOutput(errorString, 2);
+                });
             return () => {
                 window.removeEventListener("keydown", handleKeydown);
             };

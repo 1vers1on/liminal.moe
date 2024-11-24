@@ -21,6 +21,25 @@ export async function isUserOwner(token: string) {
     return tokenRecord?.user?.permission === "owner";
 }
 
+export async function getUsername(token: string) {
+    if (!token) {
+        return null;
+    }
+
+    deleteOldTokens(token);
+
+    const tokenRecord = await prisma.tokens.findFirst({
+        where: {
+            token,
+        },
+        include: {
+            user: true,
+        },
+    });
+
+    return tokenRecord?.user?.name;
+}
+
 export async function deleteOldTokens(
     userToken: string,
     ageLimitMs: number = 2592000000,
