@@ -2088,7 +2088,7 @@
             }
 
             const search = command.slice(1).join(" ");
-            window.location.href = `https://sh.hoosiertransfer.net/proxy?url=${encodeURIComponent(
+            window.location.href = `https://proxy.hoosiertransfer.net/proxy?url=${encodeURIComponent(
                 search,
             )}`;
         },
