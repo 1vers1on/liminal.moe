@@ -12,7 +12,7 @@
 
 <div class="theme-toggle">
     <label class="switch">
-        <input type="checkbox" checked={!$isDarkMode} on:change={toggleTheme} />
+        <input type="checkbox" checked={!$isDarkMode} onchange={toggleTheme} />
         <span class="slider round"></span>
     </label>
     <span>{$isDarkMode ? "Light Mode" : "Dark Mode"}</span>

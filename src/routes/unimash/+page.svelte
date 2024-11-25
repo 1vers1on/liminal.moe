@@ -18,8 +18,8 @@
     import VotingSection from "$lib/unimash/VotingSection.svelte";
     import CharacterList from "$lib/unimash/CharacterList.svelte";
 
-    let selectedPopupVisible = false;
-    let declinedPopupVisible = false;
+    let selectedPopupVisible = $state(false);
+    let declinedPopupVisible = $state(false);
 
     onMount(async () => {
         const response = await fetch("/unicode-characters.json");
@@ -87,7 +87,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleKeyPress} />
+<svelte:window onkeydown={handleKeyPress} />
 
 <h1>Unicode Smash or Pass</h1>
 
@@ -102,15 +102,15 @@
 <VotingSection character={$currentChar} onVote={handleVote} />
 
 <div class="character-list-buttons">
-    <button class="list-button" on:click={() => (selectedPopupVisible = true)}>
+    <button class="list-button" onclick={() => (selectedPopupVisible = true)}>
         Show Smashed Characters
     </button>
-    <button class="list-button" on:click={() => (declinedPopupVisible = true)}>
+    <button class="list-button" onclick={() => (declinedPopupVisible = true)}>
         Show Passed Characters
     </button>
 </div>
 
-<button class="clear-button" on:click={clearAllSelections}>
+<button class="clear-button" onclick={clearAllSelections}>
     Clear All Selections
 </button>
 

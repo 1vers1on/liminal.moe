@@ -1,8 +1,12 @@
 <script lang="ts">
     import type { UnicodeCharacter } from "$lib/unimash/types";
 
-    export let character: UnicodeCharacter | null;
-    export let onVote: (isPositive: boolean) => void;
+    interface Props {
+        character: UnicodeCharacter | null;
+        onVote: (isPositive: boolean) => void;
+    }
+
+    let { character, onVote }: Props = $props();
 </script>
 
 <div id="votingMode">
@@ -20,14 +24,14 @@
         <button
             class="vote-button"
             id="votePositive"
-            on:click={() => onVote(true)}
+            onclick={() => onVote(true)}
         >
             👍 Smash
         </button>
         <button
             class="vote-button"
             id="voteNegative"
-            on:click={() => onVote(false)}
+            onclick={() => onVote(false)}
         >
             👎 Pass
         </button>

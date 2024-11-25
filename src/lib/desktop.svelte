@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, tick, afterUpdate } from "svelte";
+    import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
     import { io } from "socket.io-client";
 
@@ -2833,7 +2833,7 @@
         }
     }
 
-    afterUpdate(() => {
+    $effect(() => {
         scrollToBottom();
     });
 
@@ -2967,7 +2967,7 @@
 <input
     type="file"
     bind:this={fileInput}
-    on:change={uploadFile}
+    onchange={uploadFile}
     style="display: none;"
 />
 

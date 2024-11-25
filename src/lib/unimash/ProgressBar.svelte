@@ -1,11 +1,15 @@
 <script lang="ts">
     import { calculateProgress } from "$lib/unimash/utils";
 
-    export let total: number;
-    export let coolChars: Set<string>;
-    export let declinedChars: Set<string>;
+    interface Props {
+        total: number;
+        coolChars: Set<string>;
+        declinedChars: Set<string>;
+    }
 
-    $: progress = calculateProgress(total, coolChars, declinedChars);
+    let { total, coolChars, declinedChars }: Props = $props();
+
+    let progress = $derived(calculateProgress(total, coolChars, declinedChars));
 </script>
 
 <div class="progress-container">
