@@ -196,11 +196,12 @@
 
     let pipeOutput: string[] = [];
 
-    let terminalOutput: any[] = [];
-    let inputValue = "";
-    let cursorPosition = 0;
+    // let terminalOutput: any[] = [];
+    let terminalOutput: string[] = $state([]);
+    let inputValue = $state("");
+    let cursorPosition = $state(0);
     let terminalElement: HTMLElement;
-    let currentDirectory = "~";
+    let currentDirectory = $state("~");
     let commandHistory: string[] = [];
     let historyIndex = -1;
 
@@ -209,7 +210,7 @@
     let gridLocation = 0;
     let gridColors: string[] = [];
 
-    let gridCanvases: HTMLCanvasElement[] = [];
+    let gridCanvases: HTMLCanvasElement[] = $state([]);
     let activeGridCanvas: HTMLCanvasElement;
     let gridCanvasContext: CanvasRenderingContext2D;
 
@@ -448,7 +449,7 @@
     }
 
     async function addCanvasGrid() {
-        terminalOutput.push({ type: "canvas" });
+        terminalOutput.push("cAnVas");
         await tick();
         for (let i = gridCanvases.length - 1; i >= 0; i--) {
             if (gridCanvases[i]) {
@@ -1418,7 +1419,7 @@
         },
 
         canvastest: async () => {
-            terminalOutput = [...terminalOutput, { type: "canvas" }];
+            terminalOutput = [...terminalOutput, "cAnVas"];
             gridCanvases = [];
             await tick();
             for (let i = 0; i < gridCanvases.length; i++) {
@@ -2940,7 +2941,7 @@
 
 <div class="terminal" bind:this={terminalElement}>
     {#each terminalOutput as line, i}
-        {#if line.type === "canvas"}
+        {#if line === "cAnVas"}
             <canvas width="300" height="300" bind:this={gridCanvases[i]}
             ></canvas>
         {:else}
