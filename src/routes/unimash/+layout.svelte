@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { run } from 'svelte/legacy';
+    import { run } from "svelte/legacy";
 
     import "$lib/unimash/app.css";
     import { onMount } from "svelte";
     import { isDarkMode } from "$lib/unimash/stores";
     interface Props {
-        children?: import('svelte').Snippet;
+        children?: import("svelte").Snippet;
     }
 
     let { children }: Props = $props();

@@ -2108,7 +2108,7 @@
         },
 
         speedtest: async () => {
-            writeToOutput("\u001b[33Running speed test...");
+            writeToOutput("\u001b[33mRunning speed test...");
             const startTime = performance.now();
             const responsePing = await fetch("/api/ping");
             const endTime = performance.now();
@@ -2145,13 +2145,14 @@
             method: "POST",
             body: formData,
         });
-
         if (res.ok) {
             const data = await res.json();
             writeToOutput(
                 "\u001b[37mUploded file to:",
                 window.location.origin + data.filePath,
             );
+        } else if (res.status === 401) {
+            writeToOutput("\u001b[31mUnauthorized");
         } else {
             writeToOutput("\u001b[31mFailed to upload file");
         }

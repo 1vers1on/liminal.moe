@@ -8,21 +8,18 @@
         onRemove: (char: string) => void;
     }
 
-    let {
-        title,
-        characters,
-        onClose,
-        onRemove
-    }: Props = $props();
+    let { title, characters, onClose, onRemove }: Props = $props();
 
     let currentPage = $state(1);
 
     let sortedChars = $derived([...characters].sort());
     let totalPages = $derived(Math.ceil(characters.length / CHARS_PER_PAGE));
-    let pageChars = $derived(sortedChars.slice(
-        (currentPage - 1) * CHARS_PER_PAGE,
-        currentPage * CHARS_PER_PAGE,
-    ));
+    let pageChars = $derived(
+        sortedChars.slice(
+            (currentPage - 1) * CHARS_PER_PAGE,
+            currentPage * CHARS_PER_PAGE,
+        ),
+    );
 
     function prevPage() {
         if (currentPage > 1) currentPage--;
