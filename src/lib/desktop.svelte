@@ -2696,6 +2696,8 @@
     }
 
     function handleKeydown(event: KeyboardEvent) {
+        scrollToBottom();
+
         if (event.key === "Enter") {
             processCommand(inputValue);
             commandHistory.push(inputValue);
@@ -2836,6 +2838,7 @@
     }
 
     $effect(() => {
+        terminalOutput; // this is so that the effect runs whenever terminalOutput changes
         scrollToBottom();
     });
 
@@ -2987,7 +2990,7 @@
     }
 
     .terminal-line {
-        word-break: break-word;
+        word-break: break-all;
         white-space: pre;
     }
 
