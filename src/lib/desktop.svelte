@@ -18,10 +18,14 @@
     import { get } from "svelte/store";
     import type { Socket } from "socket.io";
 
+    import { estrogenStore, spiroStore, bicaStore, cyrpoStore, progesteroneStore, estrogenGelStore, estrogenPillsStore, estrogenPatchesStore, estrogenInjectionsStore } from "$lib/stores";
+
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
     const TEST_FILE_SIZE = 1000000;
     const UPLOAD_TEST_SIZE = 10000000;
+
+    let estrogenClickerGameActive: boolean = $state(false);
 
     let fileInput: HTMLInputElement;
 
@@ -219,6 +223,8 @@
 
     let intervalProcess: ReturnType<typeof setInterval> | null = null;
     let badAppleInterval: ReturnType<typeof setInterval> | null = null;
+
+    let estrogenInterval: ReturnType<typeof setInterval> | null = null;
 
     let antX = 0;
     let antY = 0;
@@ -2128,11 +2134,181 @@
             );
         },
 
+        estrogen_clicker: () => {
+            estrogenClickerGameActive = true;
+
+            terminalOutput = [
+                ...terminalOutput,
+                "NR4nvDQUzDKMcQDSL9isYA",
+            ];
+
+            estrogenInterval = setInterval(() => {
+                let estrogenIncrease = estrogenGelStore.get() + estrogenPillsStore.get() * 10 + estrogenPatchesStore.get() * 20 + estrogenInjectionsStore.get() * 50;
+
+                estrogenStore.set(estrogenStore.get() + estrogenIncrease);
+            }, 1000);
+        },
+
+        buy_upgrade: (command) => {
+            if (command.length === 1) {
+                writeToOutput("Usage: buy_upgrade &lt;upgrade&gt");
+                return;
+            }
+
+            if (!estrogenClickerGameActive) {
+                writeToOutput("Estrogen clicker game is not active");
+                return;
+            }
+
+            const upgrade = command[1].toLowerCase();
+
+            if (!estrogenUpgrades[upgrade]) {
+                writeToOutput("Invalid upgrade");
+                return;
+            }
+
+            estrogenUpgrades[upgrade]();
+
+            if (estrogenStore.get() < 0) estrogenStore.set(0);
+        },
+
+        list_upgrades: () => {
+            if (!estrogenClickerGameActive) {
+                writeToOutput("Estrogen clicker game is not active");
+                return;
+            }
+
+            writeToOutput(
+                "Available upgrades:",
+                `Spiro: ${spiroStore.get()} - ${100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)} estrogen - gain 1 estrogen per click`,
+                `Bica: ${bicaStore.get()} - ${1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)} estrogen - gain 16 estrogen per click`,
+                `Cypro: ${cyrpoStore.get()} - ${500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)} estrogen - gain 8 estrogen per click`,
+                `Progesterone: ${progesteroneStore.get()} - ${10000 + progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5)} estrogen - multiplies click gain`,
+                "\n",
+                `Estrogen Gel: ${estrogenGelStore.get()} - ${1000 + estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1)} estrogen - gain 2 estrogen every second`,
+                `Estrogen Pill: ${estrogenPillsStore.get()} - ${5000 + estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1)} estrogen - gain 10 estrogen every second`,
+                `Estrogen Patch: ${estrogenPatchesStore.get()} - ${10000 + estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2)} estrogen - gain 20 estrogen every second`,
+                `Estrogen Injection: ${estrogenInjectionsStore.get()} - ${20000 + estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3)} estrogen - gain 50 estrogen every second`,
+            );   
+        },
+
+        reset_game: () => {
+            estrogenStore.set(0);
+            spiroStore.set(0);
+            bicaStore.set(0);
+            cyrpoStore.set(0);
+            writeToOutput("Game reset");
+        },
+
         trans: makeTransFlagColors,
 
         man: manual,
         woman: manual,
     };
+
+    let estrogenUpgrades: Record<string, () => void> = {
+        "spiro": () => {
+            if (estrogenStore.get() >= 100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)) {
+                estrogenStore.set(estrogenStore.get() - spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1));
+                spiroStore.set(spiroStore.get() + 1);
+
+                writeToOutput("Bought Spironolactone");
+            } else {
+                writeToOutput("Not enough estrogen to buy Spironolactone");
+            }
+        },
+
+        "bica": () => {
+            if (estrogenStore.get() >= 1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)) {
+                estrogenStore.set(estrogenStore.get() - bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2));
+                if (Math.random() < 0.05) {
+                    writeToOutput("Womp womp liver failure :(");
+                    estrogenStore.set(estrogenStore.get() - 10000);
+                    return;
+                }
+                bicaStore.set(bicaStore.get() + 1);
+
+                writeToOutput("Bought Bicalutamide");
+            } else {
+                writeToOutput("Not enough estrogen to buy Bicalutamide");
+            }
+        },
+
+        "cypro": () => {
+            if (estrogenStore.get() >= 500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)) {
+                estrogenStore.set(estrogenStore.get() - cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15));
+                cyrpoStore.set(cyrpoStore.get() + 1);
+
+                writeToOutput("Bought Cyproterone");
+            } else {
+                writeToOutput("Not enough estrogen to buy Cyproterone");
+            } 
+        },
+
+        "progesterone": () => {
+            if (estrogenStore.get() >= 10000 + progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5)) {
+                estrogenStore.set(estrogenStore.get() - progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5));
+                progesteroneStore.set(progesteroneStore.get() + 1);
+
+                writeToOutput("Bought Progesterone");
+            } else {
+                writeToOutput("Not enough estrogen to buy Progesterone");
+            }
+        },
+
+        "estrogen_gel": () => {
+            if (estrogenStore.get() >= 1000 + estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1)) {
+                estrogenStore.set(estrogenStore.get() - estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1));
+                estrogenGelStore.set(estrogenGelStore.get() + 1);
+
+                writeToOutput("Bought Estrogen Gel");
+            } else {
+                writeToOutput("Not enough estrogen to buy Estrogen Gel");
+            }
+        },
+
+        "estrogen_pill": () => {
+            if (estrogenStore.get() >= 5000 + estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1)) {
+                if (Math.random() < 0.01) {
+                    writeToOutput("Womp womp blood clot :(");
+                    estrogenStore.set(estrogenStore.get() - 10000);
+                    return;
+                }
+                estrogenStore.set(estrogenStore.get() - estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1));
+                estrogenPillsStore.set(estrogenPillsStore.get() + 1);
+
+                writeToOutput("Bought Estrogen Pill");
+            } else {
+                writeToOutput("Not enough estrogen to buy Estrogen Pill");
+            }
+        },
+
+        "estrogen_patch": () => {
+            if (estrogenStore.get() >= 10000 + estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2)) {
+                estrogenStore.set(estrogenStore.get() - estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2));
+                estrogenPatchesStore.set(estrogenPatchesStore.get() + 1);
+
+                writeToOutput("Bought Estrogen Patch");
+            } else {
+                writeToOutput("Not enough estrogen to buy Estrogen Patch");
+            }
+        },
+
+        "estrogen_injection": () => {
+            if (estrogenStore.get() >= 20000 + estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3)) {
+                estrogenStore.set(estrogenStore.get() - estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3));
+                estrogenInjectionsStore.set(estrogenInjectionsStore.get() + 1);
+
+                writeToOutput("Bought Estrogen Injection");
+            } else {
+                writeToOutput("Not enough estrogen to buy Estrogen Injection");
+            }
+        },
+    };
+
+    function clickEstrogen() {
+        estrogenStore.set(estrogenStore.get() + (spiroStore.get() + bicaStore.get() * 16 + cyrpoStore.get() * 8 + 1) * (progesteroneStore.get() + 1));
+    }
 
     async function uploadFile(event: any) {
         const file = event.target.files[0];
@@ -2838,7 +3014,7 @@
     }
 
     $effect(() => {
-        terminalOutput; // this is so that the effect runs whenever terminalOutput changes
+        terminalOutput;
         scrollToBottom();
     });
 
@@ -2948,6 +3124,10 @@
         {#if line === "cAnVas"}
             <canvas width="300" height="300" bind:this={gridCanvases[i]}
             ></canvas>
+        {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
+            <button onclick={clickEstrogen}>
+                <img src="estrogen.png" alt="Estrogen" style="max-width: 100px; max-height: 100px;" draggable="false" />
+            </button>
         {:else}
             <div class="terminal-line">{@html processAnsiColors(line)}</div>
         {/if}
@@ -2975,8 +3155,38 @@
     onchange={uploadFile}
     style="display: none;"
 />
+{#if estrogenClickerGameActive}
+    <span class="estrogen-count">{$estrogenStore} Estrogen</span>
+{/if}
 
 <style>
+    img {
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+
+    button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        transition: ease 0.1s;
+    }
+
+    button:active {
+        transform: scale(0.9);
+    }
+
+    .estrogen-count {
+        position: fixed;
+        top: 0;
+        right: 0;
+        background-color: #23d18b;
+        color: #000;
+        font-size: 2rem;
+    }
+
     .terminal {
         background-color: #000;
         color: #23d18b;
