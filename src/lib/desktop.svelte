@@ -2936,6 +2936,7 @@
 
         neko: {
             execute: (command: string[]) => {
+                oneko.style.display = "block";
                 let lastFrameTimestamp: number;
                 function animationFrame(timestamp: number) {
                     if (!oneko.isConnected) {
@@ -3769,7 +3770,7 @@
     <span class="estrogen-count">{$estrogenStore} Estrogen</span>
 {/if}
 
-<div id="oneko" bind:this={oneko}></div>
+<div id="oneko" bind:this={oneko} style="display: none;" draggable="false"></div>
 
 <style>
     img {
