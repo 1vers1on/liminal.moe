@@ -3855,7 +3855,7 @@
         height: 32px;
         position: fixed;
         pointer-events: none;
-        background-image: url("oneko.gif");
+        background-image: url("/oneko.gif");
         image-rendering: pixelated;
         left: 16px;
         top: 16px;
