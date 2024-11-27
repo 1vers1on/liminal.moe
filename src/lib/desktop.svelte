@@ -32,6 +32,11 @@
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
+    let keydownCallback: ((event: KeyboardEvent) => boolean) | null = null;
+
+    let hiddenInput = "";
+    let hiddenInputCallback: ((input: string) => void) | null = null;
+
     const TEST_FILE_SIZE = 1000000;
     const UPLOAD_TEST_SIZE = 10000000;
 
@@ -105,6 +110,264 @@
         "106": "#29b8db",
         "107": "#ffffff",
     };
+
+    let motd = [
+        "Hello there! Welcome to my website.",
+        "\u001b[95mFetching message of the day...",
+        "\u001b[95mFetching last.fm status...",
+        "{visitors} Visitors so far!",
+        "<br>",
+        "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
+        '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
+        "┃                                                 ┃",
+        "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+        "<br>",
+        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
+        "<br>",
+        isToday("08-07") ? "It's my birthday today!<br><br>" : "",
+    ];
+
+    let pipeOutput: string[] = [];
+
+    // let terminalOutput: any[] = [];
+    let terminalOutput: string[] = $state([]);
+    let inputValue = $state("");
+    let cursorPosition = $state(0);
+    let terminalElement: HTMLElement;
+    let currentDirectory = $state("~");
+    let commandHistory: string[] = [];
+    let historyIndex = -1;
+
+    let grid: string[][] = [];
+    let gridState: number[][] = [];
+    let gridLocation = 0;
+    let gridColors: string[] = [];
+
+    let gridCanvases: HTMLCanvasElement[] = $state([]);
+    let activeGridCanvas: HTMLCanvasElement;
+    let gridCanvasContext: CanvasRenderingContext2D;
+
+    let onlyUpdateChangedCells = false;
+    let changedCells: number[][] = [];
+
+    let intervalProcess: ReturnType<typeof setInterval> | null = null;
+    let badAppleInterval: ReturnType<typeof setInterval> | null = null;
+
+    let estrogenInterval: ReturnType<typeof setInterval> | null = null;
+
+    let antX = 0;
+    let antY = 0;
+    let antDirection = 0;
+    let antRule = "RL";
+
+    let runningInterval: () => void;
+    let intervalSpeed = 100;
+
+    let commandInputCallback: ((input: string) => void) | null;
+    let timerCountingDown = false;
+
+    let transMode = false;
+
+    let smoothGrid = false;
+
+    let fullUpdateGridNextFrame = false;
+
+    const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+    let primordiaStates = 12;
+
+    let badAppleLine = 0;
+
+    let activeOutput = "terminal";
+
+    const mooreKernel = [
+        [1, 1, 1],
+        [1, 0, 1],
+        [1, 1, 1],
+    ];
+
+    let mousePosX = 0;
+    let mousePosY = 0;
+
+    // credit to adryd for the oneko vencord plugin
+    let oneko: HTMLElement;
+
+    let nekoPosX = 32;
+    let nekoPosY = 32;
+
+    let nekoFrameCount = 0;
+    let nekoIdleTime = 0;
+    let nekoIdleAnimation: string | null = null;
+    let nekoIdleAnimationFrame = 0;
+    const nekoSpeed = 10;
+    const nekoSpriteSets: Record<string, number[][]> = {
+        idle: [[-3, -3]],
+        alert: [[-7, -3]],
+        scratchSelf: [
+            [-5, 0],
+            [-6, 0],
+            [-7, 0],
+        ],
+        scratchWallN: [
+            [0, 0],
+            [0, -1],
+        ],
+        scratchWallS: [
+            [-7, -1],
+            [-6, -2],
+        ],
+        scratchWallE: [
+            [-2, -2],
+            [-2, -3],
+        ],
+        scratchWallW: [
+            [-4, 0],
+            [-4, -1],
+        ],
+        tired: [[-3, -2]],
+        sleeping: [
+            [-2, 0],
+            [-2, -1],
+        ],
+        N: [
+            [-1, -2],
+            [-1, -3],
+        ],
+        NE: [
+            [0, -2],
+            [0, -3],
+        ],
+        E: [
+            [-3, 0],
+            [-3, -1],
+        ],
+        SE: [
+            [-5, -1],
+            [-5, -2],
+        ],
+        S: [
+            [-6, -3],
+            [-7, -2],
+        ],
+        SW: [
+            [-5, -3],
+            [-6, -1],
+        ],
+        W: [
+            [-4, -2],
+            [-4, -3],
+        ],
+        NW: [
+            [-1, 0],
+            [-1, -1],
+        ],
+    };
+
+    function setSprite(name: string, frame: number) {
+        const sprite =
+            nekoSpriteSets[name][frame % nekoSpriteSets[name].length];
+        oneko.style.backgroundPosition = `${sprite[0] * 32}px ${sprite[1] * 32}px`;
+    }
+
+    function resetIdleAnimation() {
+        nekoIdleAnimation = null;
+        nekoIdleAnimationFrame = 0;
+    }
+
+    function idle() {
+        nekoIdleTime += 1;
+
+        if (
+            nekoIdleTime > 10 &&
+            Math.floor(Math.random() * 200) == 0 &&
+            nekoIdleAnimation == null
+        ) {
+            let avalibleIdleAnimations = ["sleeping", "scratchSelf"];
+            if (nekoPosX < 32) {
+                avalibleIdleAnimations.push("scratchWallW");
+            }
+            if (nekoPosY < 32) {
+                avalibleIdleAnimations.push("scratchWallN");
+            }
+            if (nekoPosX > window.innerWidth - 32) {
+                avalibleIdleAnimations.push("scratchWallE");
+            }
+            if (nekoPosY > window.innerHeight - 32) {
+                avalibleIdleAnimations.push("scratchWallS");
+            }
+            nekoIdleAnimation =
+                avalibleIdleAnimations[
+                    Math.floor(Math.random() * avalibleIdleAnimations.length)
+                ];
+        }
+
+        switch (nekoIdleAnimation) {
+            case "sleeping":
+                if (nekoIdleAnimationFrame < 8) {
+                    setSprite("tired", 0);
+                    break;
+                }
+                setSprite("sleeping", Math.floor(nekoIdleAnimationFrame / 4));
+                if (nekoIdleAnimationFrame > 192) {
+                    resetIdleAnimation();
+                }
+                break;
+            case "scratchWallN":
+            case "scratchWallS":
+            case "scratchWallE":
+            case "scratchWallW":
+            case "scratchSelf":
+                setSprite(nekoIdleAnimation, nekoIdleAnimationFrame);
+                if (nekoIdleAnimationFrame > 9) {
+                    resetIdleAnimation();
+                }
+                break;
+            default:
+                setSprite("idle", 0);
+                return;
+        }
+        nekoIdleAnimationFrame += 1;
+    }
+
+    function frame() {
+        nekoFrameCount += 1;
+        const diffX = nekoPosX - mousePosX;
+        const diffY = nekoPosY - mousePosY;
+        const distance = Math.sqrt(diffX ** 2 + diffY ** 2);
+
+        if (distance < nekoSpeed || distance < 48) {
+            idle();
+            return;
+        }
+
+        nekoIdleAnimation = null;
+        nekoIdleAnimationFrame = 0;
+
+        if (nekoIdleTime > 1) {
+            setSprite("alert", 0);
+            // count down after being alerted before moving
+            nekoIdleTime = Math.min(nekoIdleTime, 7);
+            nekoIdleTime -= 1;
+            return;
+        }
+
+        let direction;
+        direction = diffY / distance > 0.5 ? "N" : "";
+        direction += diffY / distance < -0.5 ? "S" : "";
+        direction += diffX / distance > 0.5 ? "W" : "";
+        direction += diffX / distance < -0.5 ? "E" : "";
+        setSprite(direction, nekoFrameCount);
+
+        nekoPosX -= (diffX / distance) * nekoSpeed;
+        nekoPosY -= (diffY / distance) * nekoSpeed;
+
+        nekoPosX = Math.min(Math.max(16, nekoPosX), window.innerWidth - 16);
+        nekoPosY = Math.min(Math.max(16, nekoPosY), window.innerHeight - 16);
+
+        oneko.style.left = `${nekoPosX - 16}px`;
+        oneko.style.top = `${nekoPosY - 16}px`;
+    }
 
     function compressDataToCatNoises(data: string): string {
         try {
@@ -191,82 +454,6 @@
         return years;
     }
 
-    let motd = [
-        "Hello there! Welcome to my website.",
-        "\u001b[95mFetching message of the day...",
-        "\u001b[95mFetching last.fm status...",
-        "{visitors} Visitors so far!",
-        "<br>",
-        "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-        '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
-        "┃                                                 ┃",
-        "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
-        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
-        "<br>",
-        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
-        "<br>",
-        isToday("08-07") ? "It's my birthday today!<br><br>" : "",
-    ];
-
-    let pipeOutput: string[] = [];
-
-    // let terminalOutput: any[] = [];
-    let terminalOutput: string[] = $state([]);
-    let inputValue = $state("");
-    let cursorPosition = $state(0);
-    let terminalElement: HTMLElement;
-    let currentDirectory = $state("~");
-    let commandHistory: string[] = [];
-    let historyIndex = -1;
-
-    let grid: string[][] = [];
-    let gridState: number[][] = [];
-    let gridLocation = 0;
-    let gridColors: string[] = [];
-
-    let gridCanvases: HTMLCanvasElement[] = $state([]);
-    let activeGridCanvas: HTMLCanvasElement;
-    let gridCanvasContext: CanvasRenderingContext2D;
-
-    let onlyUpdateChangedCells = false;
-    let changedCells: number[][] = [];
-
-    let intervalProcess: ReturnType<typeof setInterval> | null = null;
-    let badAppleInterval: ReturnType<typeof setInterval> | null = null;
-
-    let estrogenInterval: ReturnType<typeof setInterval> | null = null;
-
-    let antX = 0;
-    let antY = 0;
-    let antDirection = 0;
-    let antRule = "RL";
-
-    let runningInterval: () => void;
-    let intervalSpeed = 100;
-
-    let commandInputCallback: ((input: string) => void) | null;
-    let timerCountingDown = false;
-
-    let transMode = false;
-
-    let smoothGrid = false;
-
-    let fullUpdateGridNextFrame = false;
-
-    const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-    let primordiaStates = 12;
-
-    let badAppleLine = 0;
-
-    let activeOutput = "terminal";
-
-    const mooreKernel = [
-        [1, 1, 1],
-        [1, 0, 1],
-        [1, 1, 1],
-    ];
-
     function writeToOutput(...text: string[]) {
         if (activeOutput === "terminal") {
             terminalOutput = [...terminalOutput, ...text];
@@ -307,6 +494,13 @@
         } else if (activeOutput === "pipe") {
             pipeOutput = [];
         }
+    }
+
+    function setCharInLineInStdout(char: string, line: number, col: number) {
+        // replace char in line
+        const lineChars = terminalOutput[line].split("");
+        lineChars[col] = char;
+        terminalOutput[line] = lineChars.join("");
     }
 
     function clip(value: number, min: number, max: number): number {
@@ -1198,6 +1392,11 @@
 
         cat: {
             execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: cat &lt;file&gt;");
+                    return;
+                }
+
                 switch (command[1]) {
                     case "projects":
                         if (currentDirectory === "~") {
@@ -1222,8 +1421,8 @@
                                 "┃ \u001b[96mName: HoosierTransfer\u001b[0m    ┃",
                                 `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
                                 "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
-                                "┃ \u001b[96mLanguages: C++, Java\u001b[0m     ┃",
-                                "┃ \u001b[96mOS: Arch Linux / Windows\u001b[0m ┃",
+                                "┃ \u001b[96mLanguages: C++, ts, Rust\u001b[0m ┃",
+                                "┃ \u001b[96mOS: Arch Linux          \u001b[0m ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
                             );
@@ -1804,34 +2003,35 @@
         login: {
             execute: async (command: string[]) => {
                 if (command.length === 1) {
-                    writeToOutput(
-                        "Usage: login &lt;username&gt &lt;password&gt",
-                    );
+                    writeToOutput("Usage: login &lt;username&gt");
                     return;
                 }
 
                 let username = command[1];
-                let password = command[2];
+                writeToOutput(
+                    "Please enter your password. It will be hidden for security reasons.",
+                );
+                hiddenInputCallback = async (password) => {
+                    const response = await fetch("/api/auth/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ username, password }),
+                    });
 
-                const response = await fetch("/api/auth/login", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ username, password }),
-                });
+                    if (response.status !== 200) {
+                        writeToOutput("Failed to login", await response.text());
+                        return;
+                    }
 
-                if (response.status !== 200) {
-                    writeToOutput("Failed to login", await response.text());
-                    return;
-                }
-
-                writeToOutput("Successfully logged in");
+                    writeToOutput("Successfully logged in");
+                };
             },
 
             manual_entries: [
                 "login - login to an account",
-                "Usage: login &lt;username&gt &lt;password&gt",
+                "Usage: login &lt;username&gt",
             ],
         },
 
@@ -2456,6 +2656,8 @@
                 "proxy - proxy a website",
                 "Usage: proxy &lt;url&gt",
             ],
+
+            hidden: true,
         },
 
         unimash: {
@@ -2599,6 +2801,161 @@
             manual_entries: [
                 "reset_game - reset the estrogen clicker game",
                 "Usage: reset_game",
+            ],
+        },
+
+        test_hidden_input: {
+            execute: (command: string[]) => {
+                writeToOutput("Enter a hidden input");
+
+                hiddenInputCallback = (input) => {
+                    writeToOutput(`Hidden input: ${input}`);
+                };
+            },
+
+            manual_entries: [
+                "test_hidden_input - test hidden input",
+                "Usage: test_hidden_input",
+            ],
+
+            hidden: true,
+        },
+
+        test: {
+            execute: (command: string[]) => {
+                const questions = [
+                    {
+                        question: "Test 1",
+                        answers: ["Answer 1", "Answer 2", "Answer 3"],
+                    },
+                    {
+                        question: "Test 2",
+                        answers: ["Answer 4", "Answer 5", "Answer 6"],
+                    },
+                    {
+                        question: "Test 3",
+                        answers: ["Answer 7", "Answer 8", "Answer 9"],
+                    },
+                ];
+                let startLine = terminalOutput.length + 1;
+                let currentQuestion = 0;
+                let selectedValue = 0;
+
+                let selectedValues: number[] = [];
+
+                writeToOutput(
+                    "\u001b[37m" + questions[currentQuestion].question,
+                );
+                for (
+                    let i = 0;
+                    i < questions[currentQuestion].answers.length;
+                    i++
+                ) {
+                    if (i === selectedValue) {
+                        writeToOutput(
+                            `[\u001b[33m*\u001b[0m] - ${questions[currentQuestion].answers[i]}`,
+                        );
+                    } else {
+                        writeToOutput(
+                            `[ ] - ${questions[currentQuestion].answers[i]}`,
+                        );
+                    }
+                }
+
+                keydownCallback = (event) => {
+                    if (event.key === "ArrowDown") {
+                        terminalOutput[startLine + selectedValue] =
+                            terminalOutput[startLine + selectedValue].replace(
+                                "[\u001b[33m*\u001b[0m]",
+                                "[ ]",
+                            );
+                        selectedValue =
+                            (selectedValue + 1) %
+                            questions[currentQuestion].answers.length;
+                        terminalOutput[startLine + selectedValue] =
+                            terminalOutput[startLine + selectedValue].replace(
+                                "[ ]",
+                                "[\u001b[33m*\u001b[0m]",
+                            );
+                    } else if (event.key === "ArrowUp") {
+                        terminalOutput[startLine + selectedValue] =
+                            terminalOutput[startLine + selectedValue].replace(
+                                "[\u001b[33m*\u001b[0m]",
+                                "[ ]",
+                            );
+                        selectedValue =
+                            (selectedValue -
+                                1 +
+                                questions[currentQuestion].answers.length) %
+                            questions[currentQuestion].answers.length;
+                        terminalOutput[startLine + selectedValue] =
+                            terminalOutput[startLine + selectedValue].replace(
+                                "[ ]",
+                                "[\u001b[33m*\u001b[0m]",
+                            );
+                    } else if (event.key === "Enter") {
+                        writeToOutput(
+                            `Selected: ${questions[currentQuestion].answers[selectedValue]}`,
+                        );
+                        selectedValues.push(selectedValue);
+                        currentQuestion++;
+                        selectedValue = 0;
+                        if (currentQuestion < questions.length) {
+                            startLine = terminalOutput.length + 1;
+                            writeToOutput(
+                                "\u001b[37m" +
+                                    questions[currentQuestion].question,
+                            );
+                            for (
+                                let i = 0;
+                                i < questions[currentQuestion].answers.length;
+                                i++
+                            ) {
+                                if (i === selectedValue) {
+                                    writeToOutput(
+                                        `[\u001b[33m*\u001b[0m] - ${questions[currentQuestion].answers[i]}`,
+                                    );
+                                } else {
+                                    writeToOutput(
+                                        `[ ] - ${questions[currentQuestion].answers[i]}`,
+                                    );
+                                }
+                            }
+                        } else {
+                            keydownCallback = null;
+                        }
+                    }
+                    return false;
+                };
+            },
+
+            manual_entries: ["test - test command", "Usage: test"],
+
+            hidden: true,
+        },
+
+        neko: {
+            execute: (command: string[]) => {
+                let lastFrameTimestamp: number;
+                function animationFrame(timestamp: number) {
+                    if (!oneko.isConnected) {
+                        return;
+                    }
+                    if (!lastFrameTimestamp) {
+                        lastFrameTimestamp = timestamp;
+                    }
+                    if (timestamp - lastFrameTimestamp > 100) {
+                        lastFrameTimestamp = timestamp;
+                        frame();
+                    }
+                    window.requestAnimationFrame(animationFrame);
+                }
+
+                window.requestAnimationFrame(animationFrame);
+            },
+            manual_entries: [
+                "neko - make a cat follow your cursor",
+                "Usage: neko",
             ],
         },
 
@@ -3076,9 +3433,46 @@
     function handleKeydown(event: KeyboardEvent) {
         scrollToBottom();
 
+        if (hiddenInputCallback) {
+            if (event.key.length === 1) {
+                hiddenInput += event.key;
+            } else if (event.key === "Backspace") {
+                hiddenInput = hiddenInput.slice(0, -1);
+            } else if (event.key === "Enter") {
+                hiddenInputCallback(hiddenInput);
+                hiddenInputCallback = null;
+                hiddenInput = "";
+            }
+
+            return;
+        }
+
+        if (keydownCallback) {
+            if (keydownCallback(event)) {
+                if (event.key.length === 1) {
+                    inputValue =
+                        inputValue.slice(0, cursorPosition) +
+                        event.key +
+                        inputValue.slice(cursorPosition);
+                    cursorPosition++;
+                } else if (event.key === "Backspace") {
+                    if (cursorPosition > 0) {
+                        inputValue =
+                            inputValue.slice(0, cursorPosition - 1) +
+                            inputValue.slice(cursorPosition);
+                        cursorPosition--;
+                    }
+                }
+            }
+
+            return;
+        }
+
         if (event.key === "Enter") {
             processCommand(inputValue);
-            commandHistory.push(inputValue);
+            if (commandHistory[commandHistory.length - 1] !== inputValue) {
+                commandHistory.push(inputValue);
+            }
             historyIndex = commandHistory.length;
             inputValue = "";
             cursorPosition = 0;
@@ -3164,6 +3558,10 @@
         }
         writeToOutput(`${currentDirectory} $ ${command}`);
 
+        if (command.length === 0) {
+            return;
+        }
+
         const commandSegments = splitByUnquotedPipe(command);
 
         if (commandSegments.length > 2) {
@@ -3238,6 +3636,11 @@
             displayHeight = window.screen.availHeight;
             displayWidth = window.screen.availWidth;
             platform = window.navigator.platform;
+
+            document.addEventListener("mousemove", (event) => {
+                mousePosX = event.clientX;
+                mousePosY = event.clientY;
+            });
 
             const canvas1 = document.createElement("canvas");
             const gl =
@@ -3366,6 +3769,8 @@
     <span class="estrogen-count">{$estrogenStore} Estrogen</span>
 {/if}
 
+<div id="oneko" bind:this={oneko}></div>
+
 <style>
     img {
         user-select: none;
@@ -3437,6 +3842,22 @@
 
     .cursor.end {
         margin-left: -1ch;
+    }
+
+    #oneko {
+        width: 32px;
+        height: 32px;
+        position: fixed;
+        pointer-events: none;
+        background-image: url("oneko.gif");
+        image-rendering: pixelated;
+        left: 16px;
+        top: 16px;
+        z-index: 100000;
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
     }
 
     @-webkit-keyframes blink {
