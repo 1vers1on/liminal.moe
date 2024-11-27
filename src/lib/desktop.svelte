@@ -18,7 +18,17 @@
     import { get } from "svelte/store";
     import type { Socket } from "socket.io";
 
-    import { estrogenStore, spiroStore, bicaStore, cyrpoStore, progesteroneStore, estrogenGelStore, estrogenPillsStore, estrogenPatchesStore, estrogenInjectionsStore } from "$lib/stores";
+    import {
+        estrogenStore,
+        spiroStore,
+        bicaStore,
+        cyrpoStore,
+        progesteroneStore,
+        estrogenGelStore,
+        estrogenPillsStore,
+        estrogenPatchesStore,
+        estrogenInjectionsStore,
+    } from "$lib/stores";
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
@@ -814,293 +824,331 @@
         }
     }
 
-    const commands: Record<string, (command: string[]) => void> = {
-        help: () => {
-            writeToOutput(
-                "\u001b[37mUse man to get more information about a command.",
-                "\u001b[37mAvailable commands:",
-                "\u001b[37munimash",
-                "\u001b[37mproxy",
-                "\u001b[37mhelp",
-                "\u001b[37mman",
-                "\u001b[37mclear",
-                "\u001b[37mwhoami",
-                "\u001b[37mecho",
-                "\u001b[37mexport",
-                "\u001b[37mmotd",
-                "\u001b[37mls",
-                "\u001b[37mcd",
-                "\u001b[37mcat",
-                "\u001b[37msubscribeToPush",
-                "\u001b[37mturn_me_into_a_girl",
-                "\u001b[37mconway",
-                "\u001b[37mprimordia",
-                "\u001b[37mcowsay",
-                "\u001b[37mneofetch",
-                "\u001b[37mant",
-                "\u001b[37msetspeed",
-                "\u001b[37mgridsize",
-                "\u001b[37mtrans",
-                "\u001b[37mnotification",
-                "\u001b[37mregister",
-                "\u001b[37mlogin",
-                "\u001b[37mlogout",
-                "\u001b[37madminhelp",
-                "\u001b[37mpostMessage",
-                "\u001b[37mmessageBoard",
-                "\u001b[37mfibonacci",
-                "\u001b[37mping",
-                "\u001b[37mbadapple",
-                "\u001b[37mstarwars",
-                "\u001b[37mdownload",
-                "\u001b[37misPrime",
-                "\u001b[37mview_image",
-                "\u001b[37mto_cat_noises",
-                "\u001b[37mfrom_cat_noises",
-                "\u001b[37mspeedtest",
-            );
-        },
+    interface Command {
+        execute: (command: string[]) => void;
+        manual_entries: string[];
+        hidden?: boolean;
+        admin_only?: boolean;
+    }
 
-        adminhelp: async () => {
-            const response = await fetch("/api/auth/getUserData");
-            const data = await response.json();
-
-            if (
-                !(
-                    data.user.permission === "admin" ||
-                    data.user.permission === "owner"
-                )
-            ) {
+    const commands: Record<string, Command> = {
+        help: {
+            execute: () => {
                 writeToOutput(
-                    "\u001b[37mYou do not have permission to use this command.",
+                    "\u001b[37mUse man to get more information about a command.",
+                    "\u001b[37mAvailable commands:",
                 );
-                return;
-            }
 
-            writeToOutput(
-                "\u001b[37mAvailable admin commands:",
-                "\u001b[37mupdateMotd",
-                "\u001b[37mupdateuserdata",
-                "\u001b[37mgetuserdata",
-                "\u001b[37mnotify",
-                "\u001b[37mupload",
-            );
-        },
-
-        cd: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: cd &lt;directory&gt;");
-                return;
-            }
-
-            if (command[1] === ".." || command[1] === "../") {
-                currentDirectory = "~";
-                return;
-            }
-
-            if (
-                command[1] === "what" ||
-                command[1] === "what/" ||
-                command[1] === "./what" ||
-                command[1] === "./what/"
-            ) {
-                currentDirectory = "~/what";
-                return;
-            }
-
-            writeToOutput(`cd: ${command[1]}: No such directory`);
-        },
-
-        conway: () => {
-            gridColors = [];
-            if (intervalProcess) clearInterval(intervalProcess);
-            grid = [];
-            gridState = [];
-            for (let i = 0; i < 16; i++) {
-                grid.push([]);
-                gridState.push([]);
-                for (let j = 0; j < 16; j++) {
-                    gridState[i].push(Math.random() < 0.5 ? 1 : 0);
-                    if (environmentVariables.get("TEXT_MODE") == "true") {
-                        grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                for (const command in commands) {
+                    if (
+                        !commands[command].hidden &&
+                        !commands[command].admin_only
+                    ) {
+                        writeToOutput(`\u001b[37m${command}`);
                     }
                 }
-            }
+            },
 
-            setKernel(mooreKernel, 16, 16);
-
-            if (environmentVariables.get("TEXT_MODE") == "true") {
-                addGridToTerminal();
-            } else {
-                addCanvasGrid();
-            }
-
-            if (intervalProcess) clearInterval(intervalProcess);
-            intervalProcess = setInterval(conwayIntervalFunc, intervalSpeed);
-            runningInterval = conwayIntervalFunc;
+            manual_entries: [
+                "help - display available commands",
+                "Usage: help",
+            ],
         },
 
-        primordia: () => {
-            if (intervalProcess) clearInterval(intervalProcess);
-            smoothGrid = true;
-            gridColors = equallySpacedTubroColormap(primordiaStates);
-            grid = [];
-            gridState = [];
-            let width = 32;
-            let height = 32;
-            for (let i = 0; i < width; i++) {
-                grid.push([]);
-                gridState.push([]);
-                for (let j = 0; j < height; j++) {
-                    gridState[i].push(Math.random());
+        adminhelp: {
+            execute: async () => {
+                const response = await fetch("/api/auth/getUserData");
+                const data = await response.json();
 
-                    if (environmentVariables.get("TEXT_MODE") == "true") {
-                        grid[i].push("■ ");
+                if (
+                    !(
+                        data.user.permission === "admin" ||
+                        data.user.permission === "owner"
+                    )
+                ) {
+                    writeToOutput(
+                        "\u001b[37mYou do not have permission to use this command.",
+                    );
+                    return;
+                }
+
+                writeToOutput("\u001b[37mAvailable admin commands:");
+
+                for (const command in commands) {
+                    if (
+                        !commands[command].hidden &&
+                        commands[command].admin_only
+                    ) {
+                        writeToOutput(`\u001b[37m${command}`);
                     }
                 }
-            }
+            },
 
-            if (environmentVariables.get("TEXT_MODE") == "true") {
-                addGridToTerminal();
-                updateGridOnTerminal();
-            } else {
-                addCanvasGrid();
-            }
+            manual_entries: [
+                "adminhelp - display available admin commands",
+                "Usage: adminhelp",
+            ],
+        },
 
-            let kernelNormalized: number[][] = [];
-            for (let x = 0; x < 3; x++) {
-                kernelNormalized.push([]);
-                for (let y = 0; y < 3; y++) {
-                    kernelNormalized[x][y] = mooreKernel[x][y] / 9;
+        cd: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: cd &lt;directory&gt;");
+                    return;
                 }
-            }
 
-            setKernel(kernelNormalized, width, height);
-
-            if (intervalProcess) clearInterval(intervalProcess);
-            intervalProcess = setInterval(primordiaIntervalFunc, intervalSpeed);
-            runningInterval = primordiaIntervalFunc;
-        },
-
-        clear: () => {
-            grid = [];
-            gridState = [];
-            if (intervalProcess) clearInterval(intervalProcess);
-            if (badAppleInterval) clearInterval(badAppleInterval);
-            clearOutput();
-
-            gridCanvases.forEach((canvas) => {
-                if (canvas) {
-                    canvas.remove();
+                if (command[1] === ".." || command[1] === "../") {
+                    currentDirectory = "~";
+                    return;
                 }
-            });
+
+                if (
+                    command[1] === "what" ||
+                    command[1] === "what/" ||
+                    command[1] === "./what" ||
+                    command[1] === "./what/"
+                ) {
+                    currentDirectory = "~/what";
+                    return;
+                }
+
+                writeToOutput(`cd: ${command[1]}: No such directory`);
+            },
+
+            manual_entries: [
+                "cd - change the current directory",
+                "Usage: cd &lt;directory&gt;",
+            ],
         },
 
-        whoami: () => {
-            writeToOutput(
-                "<br>",
-                "I'm HoosierTransfer a c++ developer with a passion for creating things.",
-                "Some little things about me~",
-                "<br>",
-                "~ I go by she/her pronouns",
-                "~ My other username is Aether or 1vers1on",
-                "~ Yes, i'm from Indiana (I don't live there anymore though)",
-                "~ I use arch btw",
-                "~ Liminal space and backrooms enthusiast",
-                "   - I also like the dreamcore and weirdcore aesthetics",
-                `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
-            );
+        conway: {
+            execute: () => {
+                gridColors = [];
+                if (intervalProcess) clearInterval(intervalProcess);
+                grid = [];
+                gridState = [];
+                for (let i = 0; i < 16; i++) {
+                    grid.push([]);
+                    gridState.push([]);
+                    for (let j = 0; j < 16; j++) {
+                        gridState[i].push(Math.random() < 0.5 ? 1 : 0);
+                        if (environmentVariables.get("TEXT_MODE") == "true") {
+                            grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                        }
+                    }
+                }
+
+                setKernel(mooreKernel, 16, 16);
+
+                if (environmentVariables.get("TEXT_MODE") == "true") {
+                    addGridToTerminal();
+                } else {
+                    addCanvasGrid();
+                }
+
+                if (intervalProcess) clearInterval(intervalProcess);
+                intervalProcess = setInterval(
+                    conwayIntervalFunc,
+                    intervalSpeed,
+                );
+                runningInterval = conwayIntervalFunc;
+            },
+
+            manual_entries: [
+                "conway - run Conway's Game of Life",
+                "Usage: conway",
+            ],
         },
 
-        export: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: export &lt;variable&gt=&lt;value&gt");
-                return;
-            }
+        primordia: {
+            execute: () => {
+                if (intervalProcess) clearInterval(intervalProcess);
+                smoothGrid = true;
+                gridColors = equallySpacedTubroColormap(primordiaStates);
+                grid = [];
+                gridState = [];
+                let width = 32;
+                let height = 32;
+                for (let i = 0; i < width; i++) {
+                    grid.push([]);
+                    gridState.push([]);
+                    for (let j = 0; j < height; j++) {
+                        gridState[i].push(Math.random());
 
-            let variable = command[1].split("=")[0];
-            let value = command[1].split("=")[1];
+                        if (environmentVariables.get("TEXT_MODE") == "true") {
+                            grid[i].push("■ ");
+                        }
+                    }
+                }
 
-            if (value[0] === '"' || value[0] === "'") {
-                // get all commands after the first one
-                let i = 2;
-                while (command[i] && !command[i].endsWith(value[0])) {
+                if (environmentVariables.get("TEXT_MODE") == "true") {
+                    addGridToTerminal();
+                    updateGridOnTerminal();
+                } else {
+                    addCanvasGrid();
+                }
+
+                let kernelNormalized: number[][] = [];
+                for (let x = 0; x < 3; x++) {
+                    kernelNormalized.push([]);
+                    for (let y = 0; y < 3; y++) {
+                        kernelNormalized[x][y] = mooreKernel[x][y] / 9;
+                    }
+                }
+
+                setKernel(kernelNormalized, width, height);
+
+                if (intervalProcess) clearInterval(intervalProcess);
+                intervalProcess = setInterval(
+                    primordiaIntervalFunc,
+                    intervalSpeed,
+                );
+                runningInterval = primordiaIntervalFunc;
+            },
+
+            manual_entries: ["primordia - run Primordia", "Usage: primordia"],
+        },
+
+        clear: {
+            execute: () => {
+                grid = [];
+                gridState = [];
+                if (intervalProcess) clearInterval(intervalProcess);
+                if (badAppleInterval) clearInterval(badAppleInterval);
+                clearOutput();
+
+                gridCanvases.forEach((canvas) => {
+                    if (canvas) {
+                        canvas.remove();
+                    }
+                });
+            },
+
+            manual_entries: ["clear - clear the terminal", "Usage: clear"],
+        },
+
+        whoami: {
+            execute: () => {
+                writeToOutput(
+                    "<br>",
+                    "I'm HoosierTransfer a c++ developer with a passion for creating things.",
+                    "Some little things about me~",
+                    "<br>",
+                    "~ I go by she/her pronouns",
+                    "~ My other username is Aether or 1vers1on",
+                    "~ Yes, i'm from Indiana (I don't live there anymore though)",
+                    "~ I use arch btw",
+                    "~ Liminal space and backrooms enthusiast",
+                    "   - I also like the dreamcore and weirdcore aesthetics",
+                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
+                );
+            },
+
+            manual_entries: [
+                "whoami - display information about me",
+                "Usage: whoami",
+            ],
+        },
+
+        export: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: export &lt;variable&gt=&lt;value&gt");
+                    return;
+                }
+
+                let variable = command[1].split("=")[0];
+                let value = command[1].split("=")[1];
+
+                if (value[0] === '"' || value[0] === "'") {
+                    // get all commands after the first one
+                    let i = 2;
+                    while (command[i] && !command[i].endsWith(value[0])) {
+                        value += " " + command[i];
+                        i++;
+                    }
                     value += " " + command[i];
-                    i++;
                 }
-                value += " " + command[i];
-            }
 
-            environmentVariables.set(variable, value);
+                environmentVariables.set(variable, value);
+            },
+
+            manual_entries: [
+                "export - set an environment variable",
+                "Usage: export &lt;variable&gt=&lt;value&gt",
+            ],
         },
 
-        echo: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("<br>");
-                return;
-            }
+        echo: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("<br>");
+                    return;
+                }
 
-            let i = 1;
-            let output = "";
-            while (command[i]) {
-                if (command[i].startsWith("$")) {
-                    let variable = command[i].slice(1);
-                    if (environmentVariables.has(variable)) {
-                        output += environmentVariables.get(variable);
+                let i = 1;
+                let output = "";
+                while (command[i]) {
+                    if (command[i].startsWith("$")) {
+                        let variable = command[i].slice(1);
+                        if (environmentVariables.has(variable)) {
+                            output += environmentVariables.get(variable);
+                        } else {
+                            output += command[i];
+                        }
                     } else {
                         output += command[i];
                     }
-                } else {
-                    output += command[i];
+                    output += " ";
+                    i++;
                 }
-                output += " ";
-                i++;
-            }
 
-            writeToOutput(output);
+                writeToOutput(output);
+            },
+
+            manual_entries: [
+                "echo - display a line of text",
+                "Usage: echo &lt;text&gt",
+            ],
         },
 
-        motd: () => {
-            writeToOutput(...motd);
+        motd: {
+            execute: () => {
+                writeToOutput(...motd);
+            },
+
+            manual_entries: [
+                "motd - display the message of the day",
+                "Usage: motd",
+            ],
         },
 
-        ":3": () => {
-            writeToOutput("meow");
+        ":3": {
+            execute: () => {
+                writeToOutput("meow");
+            },
+
+            manual_entries: [":3 - :3", "Usage: :3"],
+
+            hidden: true,
         },
 
-        ls: async (command: string[]) => {
-            if (currentDirectory === "~" && command.length === 1) {
-                writeToOutput(
-                    "\u001b[96mprojects",
-                    "\u001b[96mabout",
-                    "\u001b[96mcontact",
-                    "\u001b[96mskibidisigmafile",
-                    "\u001b[96m.env",
-                    "\u001b[96mpublickey.asc",
-                    "\u001b[95mwhat",
-                );
-            } else if (currentDirectory === "~/what" && command.length === 1) {
-                const response = await fetch(
-                    "/api/listFilesInServerDirectory",
-                    {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ directory: "what" }),
-                    },
-                );
-
-                const data = await response.json();
-                for (let file of data.files) {
-                    if (file.isDirectory) {
-                        writeToOutput(`\u001b[95m${file.name}`);
-                    } else {
-                        writeToOutput(`\u001b[96m${file.name}`);
-                    }
-                }
-            } else if (currentDirectory === "~" && command.length === 2) {
-                if (command[1] === "what") {
+        ls: {
+            execute: async (command: string[]) => {
+                if (currentDirectory === "~" && command.length === 1) {
+                    writeToOutput(
+                        "\u001b[96mprojects",
+                        "\u001b[96mabout",
+                        "\u001b[96mcontact",
+                        "\u001b[96mskibidisigmafile",
+                        "\u001b[96m.env",
+                        "\u001b[96mpublickey.asc",
+                        "\u001b[95mwhat",
+                    );
+                } else if (
+                    currentDirectory === "~/what" &&
+                    command.length === 1
+                ) {
                     const response = await fetch(
                         "/api/listFilesInServerDirectory",
                         {
@@ -1115,94 +1163,146 @@
                     const data = await response.json();
                     for (let file of data.files) {
                         if (file.isDirectory) {
-                            writeToOutput(`<\u001b[95m${file.name}`);
+                            writeToOutput(`\u001b[95m${file.name}`);
                         } else {
                             writeToOutput(`\u001b[96m${file.name}`);
                         }
                     }
+                } else if (currentDirectory === "~" && command.length === 2) {
+                    if (command[1] === "what") {
+                        const response = await fetch(
+                            "/api/listFilesInServerDirectory",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ directory: "what" }),
+                            },
+                        );
+
+                        const data = await response.json();
+                        for (let file of data.files) {
+                            if (file.isDirectory) {
+                                writeToOutput(`<\u001b[95m${file.name}`);
+                            } else {
+                                writeToOutput(`\u001b[96m${file.name}`);
+                            }
+                        }
+                    }
                 }
-            }
+            },
+
+            manual_entries: ["ls - list directory contents", "Usage: ls"],
         },
 
-        cat: async (command: string[]) => {
-            switch (command[1]) {
-                case "projects":
-                    if (currentDirectory === "~") {
-                        writeToOutput(
-                            "<br>",
-                            "┏━━━━━Projects━━━━━┓",
-                            "┃ \u001b[96mEagler Lambda\u001b[0m    ┃",
-                            "┃ \u001b[96mScience Help\u001b[0m     ┃",
-                            "┃ \u001b[96mSpork Viewer\u001b[0m     ┃",
-                            "┃ \u001b[96mSussy OS\u001b[0m         ┃",
-                            "┃ \u001b[96mYee Engine\u001b[0m       ┃",
-                            "┗━━━━━━━━━━━━━━━━━━┛",
-                            "<br>",
-                        );
-                    }
-                    break;
-                case "about":
-                    if (currentDirectory === "~") {
-                        writeToOutput(
-                            "<br>",
-                            "┏━━━━━━━━━━About━━━━━━━━━━━┓",
-                            "┃ \u001b[96mName: HoosierTransfer\u001b[0m    ┃",
-                            `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
-                            "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
-                            "┃ \u001b[96mLanguages: C++, Java\u001b[0m     ┃",
-                            "┃ \u001b[96mOS: Arch Linux / Windows\u001b[0m ┃",
-                            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
-                            "<br>",
-                        );
-                    }
-                    break;
-                case "contact":
-                    if (currentDirectory === "~") {
-                        writeToOutput(
-                            "<br>",
-                            "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
-                            "┃ \u001b[96mDiscord: 1vers1on\u001b[0m         ┃",
-                            "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
-                            "<br>",
-                        );
-                    }
-                    break;
+        cat: {
+            execute: async (command: string[]) => {
+                switch (command[1]) {
+                    case "projects":
+                        if (currentDirectory === "~") {
+                            writeToOutput(
+                                "<br>",
+                                "┏━━━━━Projects━━━━━┓",
+                                "┃ \u001b[96mEagler Lambda\u001b[0m    ┃",
+                                "┃ \u001b[96mScience Help\u001b[0m     ┃",
+                                "┃ \u001b[96mSpork Viewer\u001b[0m     ┃",
+                                "┃ \u001b[96mSussy OS\u001b[0m         ┃",
+                                "┃ \u001b[96mYee Engine\u001b[0m       ┃",
+                                "┗━━━━━━━━━━━━━━━━━━┛",
+                                "<br>",
+                            );
+                        }
+                        break;
+                    case "about":
+                        if (currentDirectory === "~") {
+                            writeToOutput(
+                                "<br>",
+                                "┏━━━━━━━━━━About━━━━━━━━━━━┓",
+                                "┃ \u001b[96mName: HoosierTransfer\u001b[0m    ┃",
+                                `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
+                                "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
+                                "┃ \u001b[96mLanguages: C++, Java\u001b[0m     ┃",
+                                "┃ \u001b[96mOS: Arch Linux / Windows\u001b[0m ┃",
+                                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+                                "<br>",
+                            );
+                        }
+                        break;
+                    case "contact":
+                        if (currentDirectory === "~") {
+                            writeToOutput(
+                                "<br>",
+                                "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
+                                "┃ \u001b[96mDiscord: 1vers1on\u001b[0m         ┃",
+                                "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
+                                "<br>",
+                            );
+                        }
+                        break;
 
-                case ".env":
-                    writeToOutput(
-                        ...Array.from(environmentVariables).map(
-                            ([key, value]) => `${key}=${value}`,
-                        ),
-                    );
-                    break;
-                case "publickey.asc":
-                    writeToOutput(
-                        "-----BEGIN PGP PUBLIC KEY BLOCK-----",
-                        "",
-                        "mDMEZyPB6BYJKwYBBAHaRw8BAQdADcSzbGQAJvjBRl7P9aiYvovY53xKivABs58q",
-                        "AnPL4+20O0hvb3NpZXJUcmFuc2Zlci8xdmVyczFvbiAobXJycCA6MykgPGludmVy",
-                        "czFvbjFAb3V0bG9vay5jb20+iJMEExYKADsWIQTC+7jeZ9BDTwpVTWFRoc7QBu0M",
-                        "1AUCZyPB6AIbAwULCQgHAgIiAgYVCgkICwIEFgIDAQIeBwIXgAAKCRBRoc7QBu0M",
-                        "1MRBAQCuDZPJZk8yeH8moIer8Gt2dapKxC8bF6lhaN+IWCw4SgD/eMba0dI0PqmU",
-                        "61LiaJpMsWZzUd1/VrVaB/nwvDw0jQq4OARnI8HoEgorBgEEAZdVAQUBAQdAD6+X",
-                        "KtZ+SJ3FTPbqZNjTM8wnUDFXS+lxH07aForia34DAQgHiHgEGBYKACAWIQTC+7je",
-                        "Z9BDTwpVTWFRoc7QBu0M1AUCZyPB6AIbDAAKCRBRoc7QBu0M1LQUAP9w+koFFhrZ",
-                        "mtU7aERE9F8gIYb9KetyUWHEOurTdEliXwD/ThuuOsvp8o8Sz6GQGCxjmYnuRj4b",
-                        "MB3ulBqapiRFLQE=",
-                        "=eAXd",
-                        "-----END PGP PUBLIC KEY BLOCK-----",
-                    );
-                    break;
-                case "what":
-                    writeToOutput("what is a directory");
-                    break;
-                case "":
-                    writeToOutput("cat: missing file operand");
-                    break;
-            }
+                    case ".env":
+                        writeToOutput(
+                            ...Array.from(environmentVariables).map(
+                                ([key, value]) => `${key}=${value}`,
+                            ),
+                        );
+                        break;
+                    case "publickey.asc":
+                        writeToOutput(
+                            "-----BEGIN PGP PUBLIC KEY BLOCK-----",
+                            "",
+                            "mDMEZyPB6BYJKwYBBAHaRw8BAQdADcSzbGQAJvjBRl7P9aiYvovY53xKivABs58q",
+                            "AnPL4+20O0hvb3NpZXJUcmFuc2Zlci8xdmVyczFvbiAobXJycCA6MykgPGludmVy",
+                            "czFvbjFAb3V0bG9vay5jb20+iJMEExYKADsWIQTC+7jeZ9BDTwpVTWFRoc7QBu0M",
+                            "1AUCZyPB6AIbAwULCQgHAgIiAgYVCgkICwIEFgIDAQIeBwIXgAAKCRBRoc7QBu0M",
+                            "1MRBAQCuDZPJZk8yeH8moIer8Gt2dapKxC8bF6lhaN+IWCw4SgD/eMba0dI0PqmU",
+                            "61LiaJpMsWZzUd1/VrVaB/nwvDw0jQq4OARnI8HoEgorBgEEAZdVAQUBAQdAD6+X",
+                            "KtZ+SJ3FTPbqZNjTM8wnUDFXS+lxH07aForia34DAQgHiHgEGBYKACAWIQTC+7je",
+                            "Z9BDTwpVTWFRoc7QBu0M1AUCZyPB6AIbDAAKCRBRoc7QBu0M1LQUAP9w+koFFhrZ",
+                            "mtU7aERE9F8gIYb9KetyUWHEOurTdEliXwD/ThuuOsvp8o8Sz6GQGCxjmYnuRj4b",
+                            "MB3ulBqapiRFLQE=",
+                            "=eAXd",
+                            "-----END PGP PUBLIC KEY BLOCK-----",
+                        );
+                        break;
+                    case "what":
+                        writeToOutput("what is a directory");
+                        break;
+                    case "":
+                        writeToOutput("cat: missing file operand");
+                        break;
+                }
 
-            if (currentDirectory === "~/what") {
-                if (command.length === 2) {
+                if (currentDirectory === "~/what") {
+                    if (command.length === 2) {
+                        const response = await fetch(
+                            "/api/readFileFromServerDirectory",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                    file: "what/" + command[1],
+                                }),
+                            },
+                        );
+
+                        const data = await response.json();
+                        if (data.error) {
+                            writeToOutput(data.error);
+                        } else {
+                            writeToOutput(data.fileContents);
+                        }
+                    }
+                }
+
+                // check if it starts with /what
+                if (
+                    command[1].startsWith("what/") ||
+                    command[1].startsWith("./what")
+                ) {
                     const response = await fetch(
                         "/api/readFileFromServerDirectory",
                         {
@@ -1210,9 +1310,7 @@
                             headers: {
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({
-                                file: "what/" + command[1],
-                            }),
+                            body: JSON.stringify({ file: command[1] }),
                         },
                     );
 
@@ -1223,993 +1321,1335 @@
                         writeToOutput(data.fileContents);
                     }
                 }
-            }
+            },
 
-            // check if it starts with /what
-            if (
-                command[1].startsWith("what/") ||
-                command[1].startsWith("./what")
-            ) {
-                const response = await fetch(
-                    "/api/readFileFromServerDirectory",
-                    {
+            manual_entries: [
+                "cat - print files to the standard output",
+                "Usage: cat &lt;file&gt;",
+            ],
+        },
+
+        view_image: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: view_image &lt;filename&gt");
+                    return;
+                }
+
+                if (
+                    command[1].startsWith("what/") ||
+                    command[1].startsWith("./what")
+                ) {
+                    const response = await fetch("/api/getImageB64", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({ file: command[1] }),
-                    },
-                );
+                    });
 
-                const data = await response.json();
-                if (data.error) {
-                    writeToOutput(data.error);
-                } else {
-                    writeToOutput(data.fileContents);
-                }
-            }
-        },
-
-        view_image: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: view_image &lt;filename&gt");
-                return;
-            }
-
-            if (
-                command[1].startsWith("what/") ||
-                command[1].startsWith("./what")
-            ) {
-                const response = await fetch("/api/getImageB64", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ file: command[1] }),
-                });
-
-                if (response.status === 404) {
-                    writeToOutput("\u001b[31mError: File not found");
-                    return;
-                }
-
-                if (response.status !== 200) {
-                    writeToOutput("\u001b[31mError: Failed to get image");
-                    return;
-                }
-
-                const data = await response.json();
-
-                writeToOutput(
-                    `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
-                );
-            } else if (currentDirectory === "~/what") {
-                const response = await fetch("/api/getImageB64", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ file: "what/" + command[1] }),
-                });
-
-                if (response.status === 404) {
-                    writeToOutput("\u001b[31mError: File not found");
-                    return;
-                }
-
-                if (response.status !== 200) {
-                    writeToOutput("\u001b[31mError: Failed to get image");
-                    return;
-                }
-
-                const data = await response.json();
-
-                writeToOutput(
-                    `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
-                );
-            } else {
-                writeToOutput("\u001b[31mError: File not found");
-            }
-        },
-
-        cowsay: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: cowsay &lt;message&gt");
-                return;
-            }
-            const message = command.slice(1).join(" ");
-            let underscoreTop = "_".repeat(message.length + 2);
-            let underscoreBottom = "-".repeat(message.length + 2);
-            writeToOutput(
-                " " + underscoreTop,
-                `< ${message} >`,
-                " " + underscoreBottom,
-                "        \\   ^__^",
-                "         \\  (oo)\\_______",
-                "            (__)\\       )\\/\\",
-                "                ||----w |",
-                "                ||     ||",
-            );
-        },
-
-        neofetch: (command: string[]) => {
-            neofetch(command);
-        },
-
-        fastfetch: (command: string[]) => {
-            neofetch(command);
-        },
-
-        ant: (command: string[]) => {
-            if (intervalProcess) clearInterval(intervalProcess);
-            if (command.length === 1) {
-                antRule = "RL";
-                gridColors = [];
-            } else {
-                command[1] = command[1].toUpperCase();
-                for (let i = 0; i < command[1].length; i++) {
-                    if (command[1][i] !== "R" && command[1][i] !== "L") {
-                        writeToOutput(
-                            "\u001b[31mInvalid rule. Must be a string of R's and L's",
-                        );
+                    if (response.status === 404) {
+                        writeToOutput("\u001b[31mError: File not found");
                         return;
                     }
-                }
 
-                antRule = command[1];
-                gridColors = generateEquallySpacedColors(antRule.length);
-            }
-            grid = [];
-            gridState = [];
-            let width = 60;
-            let height = 60;
-            for (let i = 0; i < width; i++) {
-                grid.push([]);
-                gridState.push([]);
-                for (let j = 0; j < height; j++) {
-                    gridState[i].push(0);
-
-                    if (environmentVariables.get("TEXT_MODE") == "true") {
-                        grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                    if (response.status !== 200) {
+                        writeToOutput("\u001b[31mError: Failed to get image");
+                        return;
                     }
-                }
-            }
-            antX = Math.floor(width / 2);
-            antY = Math.floor(height / 2);
-            if (environmentVariables.get("TEXT_MODE") == "true") {
-                addGridToTerminal();
-            } else {
-                addCanvasGrid();
-            }
-            if (intervalProcess) clearInterval(intervalProcess);
-            intervalProcess = setInterval(antInterval, intervalSpeed);
-            runningInterval = antInterval;
-        },
 
-        setspeed: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: setspeed &lt;speed&gt");
-                return;
-            }
-            const newSpeed = parseInt(command[1]);
-            if (isNaN(newSpeed)) {
-                writeToOutput("Invalid speed");
-                return;
-            }
-            intervalSpeed = newSpeed;
-            if (intervalProcess) {
-                clearInterval(intervalProcess);
-                intervalProcess = setInterval(runningInterval, intervalSpeed);
-            }
-        },
+                    const data = await response.json();
 
-        colortest: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: colorTest &lt;number&gt");
-                return;
-            }
-
-            let nOfColors = parseInt(command[1]);
-            if (isNaN(nOfColors)) {
-                writeToOutput("Invalid number");
-                return;
-            }
-
-            let colors = generateEquallySpacedColors(nOfColors);
-            let colorString = "";
-            for (let i = 0; i < colors.length; i++) {
-                colorString += `<span style="color:${colors[i]};">■</span> <br>`;
-            }
-
-            writeToOutput(colorString);
-        },
-
-        canvastest: async () => {
-            terminalOutput = [...terminalOutput, "cAnVas"];
-            gridCanvases = [];
-            await tick();
-            for (let i = 0; i < gridCanvases.length; i++) {
-                if (gridCanvases[i]) {
-                    activeGridCanvas = gridCanvases[i];
-                    break;
-                }
-            }
-            const context = activeGridCanvas.getContext("2d");
-            if (context) {
-                gridCanvasContext = context;
-            } else {
-                console.error("Failed to get 2D context");
-            }
-
-            for (let i = 0; i < 30; i++) {
-                for (let j = 0; j < 30; j++) {
-                    gridCanvasContext.fillStyle =
-                        Math.random() > 0.5 ? "black" : "white";
-                    gridCanvasContext.fillRect(i * 20, j * 20, 20, 20);
-                }
-            }
-        },
-
-        turn_me_into_a_girl: async () => {
-            writeToOutput(
-                "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.",
-                "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl.",
-            );
-            commandInputCallback = async (command) => {
-                if (
-                    command.toLowerCase() === "y" ||
-                    command.toLowerCase() === "yes"
-                ) {
                     writeToOutput(
-                        "\u001b[35mOkay then! As you wish.",
-                        "\u001b[35mPlease wait warmly... (Press c to cancel)",
+                        `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
                     );
-                    let timerLine = getOutputLength();
-                    writeToOutput("\u001b[37m[--------------------] 0%");
-                    const totalTime = 20000;
-                    const startTime = new Date();
-                    let lastTime = startTime;
-                    let currentTime;
-                    let progress = 0;
-                    let easing = (x: number) => {
-                        return 1 - Math.pow(1 - x, 4);
-                    };
-                    timerCountingDown = true;
-                    while (progress < 1) {
-                        if (!timerCountingDown) {
+                } else if (currentDirectory === "~/what") {
+                    const response = await fetch("/api/getImageB64", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ file: "what/" + command[1] }),
+                    });
+
+                    if (response.status === 404) {
+                        writeToOutput("\u001b[31mError: File not found");
+                        return;
+                    }
+
+                    if (response.status !== 200) {
+                        writeToOutput("\u001b[31mError: Failed to get image");
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    writeToOutput(
+                        `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
+                    );
+                } else {
+                    writeToOutput("\u001b[31mError: File not found");
+                }
+            },
+
+            manual_entries: [
+                "view_image - view an image",
+                "Usage: view_image &lt;filename&gt",
+            ],
+        },
+
+        cowsay: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: cowsay &lt;message&gt");
+                    return;
+                }
+                const message = command.slice(1).join(" ");
+                let underscoreTop = "_".repeat(message.length + 2);
+                let underscoreBottom = "-".repeat(message.length + 2);
+                writeToOutput(
+                    " " + underscoreTop,
+                    `< ${message} >`,
+                    " " + underscoreBottom,
+                    "        \\   ^__^",
+                    "         \\  (oo)\\_______",
+                    "            (__)\\       )\\/\\",
+                    "                ||----w |",
+                    "                ||     ||",
+                );
+            },
+
+            manual_entries: [
+                "cowsay - say a message with a cow",
+                "Usage: cowsay &lt;message&gt",
+            ],
+        },
+
+        neofetch: {
+            execute: (command: string[]) => {
+                neofetch(command);
+            },
+
+            manual_entries: [
+                "neofetch - display system information",
+                "Usage: neofetch",
+            ],
+        },
+
+        fastfetch: {
+            execute: (command: string[]) => {
+                neofetch(command);
+            },
+
+            manual_entries: [
+                "fastfetch - display system information",
+                "Usage: fastfetch",
+            ],
+
+            hidden: true,
+        },
+
+        ant: {
+            execute: (command: string[]) => {
+                if (intervalProcess) clearInterval(intervalProcess);
+                if (command.length === 1) {
+                    antRule = "RL";
+                    gridColors = [];
+                } else {
+                    command[1] = command[1].toUpperCase();
+                    for (let i = 0; i < command[1].length; i++) {
+                        if (command[1][i] !== "R" && command[1][i] !== "L") {
                             writeToOutput(
-                                "\u001b[37mThat's totally fine. Don't worry about it.",
-                                "\u001b[37mYou're a good person.",
+                                "\u001b[31mInvalid rule. Must be a string of R's and L's",
                             );
                             return;
                         }
-                        currentTime = new Date();
-                        progress =
-                            (currentTime.getTime() - startTime.getTime()) /
-                            totalTime;
-                        let bar = "\u001b[37m[\u001b[1337m";
-                        let barProgress = easing(progress) * 20;
-                        for (let i = 0; i < 20; i++) {
-                            if (i < barProgress) {
-                                bar += "=";
-                            } else {
-                                if (bar.endsWith("=")) {
-                                    bar += "\u001b[37m";
-                                }
-                                bar += "-";
-                            }
-                        }
-                        bar +=
-                            "\u001b[37m] " +
-                            Math.floor(easing(progress) * 100) +
-                            "%";
-                        setLineInOutput(bar, timerLine);
-                        await delay(1000 / 60);
                     }
-                    timerCountingDown = false;
-                    setLineInOutput(
-                        "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%",
-                        timerLine,
-                    );
-                    const line = getOutputLength();
-                    setLineInOutput("\u001b[95m", line);
-                    const string1 =
-                        "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
-                    for (let i = 0; i < string1.length; i++) {
-                        if (
-                            string1.charAt(i) == "<" &&
-                            string1.charAt(i + 1) == "b" &&
-                            string1.charAt(i + 2) == "r" &&
-                            string1.charAt(i + 3) == ">"
-                        ) {
-                            setLineInOutput("<br>", line);
-                            i += 3;
-                            await delay(20);
-                            continue;
-                        }
-                        appendToLineInOutput(string1.charAt(i), line);
-                        await delay(20);
-                    }
-                } else if (
-                    command.toLowerCase() === "n" ||
-                    command.toLowerCase() === "no"
-                ) {
-                    writeToOutput(
-                        "\u001b[37mThat's totally fine. Don't worry about it.",
-                        "\u001b[37mYou're a good person.",
-                    );
+
+                    antRule = command[1];
+                    gridColors = generateEquallySpacedColors(antRule.length);
                 }
-            };
-        },
-
-        notification: () => {
-            writeToOutput(
-                "\u001b[37mPlease enter the message you would like to send.",
-            );
-            commandInputCallback = (command) => {
-                if (Notification.permission !== "granted") {
-                    Notification.requestPermission().then((permission) => {
-                        if (permission === "granted") {
-                            new Notification(command);
-                        }
-                    });
-                } else {
-                    new Notification(command);
-                }
-            };
-        },
-
-        subscribeToPush: async () => {
-            if ("serviceWorker" in navigator && "PushManager" in window) {
-                navigator.serviceWorker
-                    .register("/serviceworker.js")
-                    .then((reg) => {
-                        console.log("Service Worker registered:", reg);
-                    })
-                    .catch((err) => {
-                        console.error(
-                            "Service Worker registration failed:",
-                            err,
-                        );
-                    });
-            }
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey:
-                    "BLspM6VfkiZhsWPyCECtuL6uhwTAiGsIrJgoQuag221tZDNW4B168etD5lUXdTvgsc6DWLL2gO5W8zfb-oniYms",
-            });
-
-            await fetch("/api/subscribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(subscription),
-            });
-
-            writeToOutput("Subscribed to notifications");
-        },
-
-        register: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput(
-                    "Usage: register &lt;username&gt &lt;password&gt",
-                );
-                return;
-            }
-
-            let username = command[1];
-            let password = command[2];
-
-            if (username.length < 3) {
-                writeToOutput("Username must be at least 3 characters long");
-                return;
-            }
-
-            if (password.length < 6) {
-                writeToOutput("Password must be at least 6 characters long");
-                return;
-            }
-
-            const response = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (response.status !== 201) {
-                writeToOutput(await response.text());
-                return;
-            }
-
-            writeToOutput("Successfully registered and logged in");
-        },
-
-        login: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: login &lt;username&gt &lt;password&gt");
-                return;
-            }
-
-            let username = command[1];
-            let password = command[2];
-
-            const response = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to login", await response.text());
-                return;
-            }
-
-            writeToOutput("Successfully logged in");
-        },
-
-        logout: async () => {
-            const response = await fetch("/api/auth/logout", {
-                method: "POST",
-            });
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to logout", await response.text());
-                return;
-            }
-
-            writeToOutput("Successfully logged out");
-        },
-
-        updateMotd: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: updateMotd &lt;message&gt");
-                return;
-            }
-
-            const response = await fetch("/api/admin/updateMotd", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message: command.slice(1).join(" ") }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput(
-                    "Failed to update message of the day",
-                    await response.text(),
-                );
-                return;
-            }
-
-            writeToOutput("Successfully updated message of the day");
-        },
-
-        updateuserdata: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput(
-                    "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
-                );
-                return;
-            }
-
-            const response = await fetch("/api/admin/updateUserData", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    username: command[1],
-                    column: command[2],
-                    value: command.slice(3).join(" "),
-                }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput(
-                    "Failed to update user data",
-                    await response.text(),
-                );
-                return;
-            }
-
-            writeToOutput("Successfully updated user data");
-        },
-
-        getuserdata: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: getuserdata &lt;username&gt");
-                return;
-            }
-
-            const response = await fetch("/api/admin/getUserData", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username: command[1] }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to get user data", await response.text());
-                return;
-            }
-
-            const data = await response.json();
-
-            writeToOutput(JSON.stringify(data.user, null, 2));
-        },
-
-        notify: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: notify &lt;message&gt");
-                return;
-            }
-
-            const response = await fetch("/api/admin/notify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    body: command.slice(1).join(" "),
-                    title: "HoosierTransfer",
-                }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput(
-                    "Failed to send notification",
-                    await response.text(),
-                );
-                return;
-            }
-
-            writeToOutput("Successfully sent notification");
-        },
-
-        gridsize: (command: string[]) => {
-            if (command.length < 3) {
-                writeToOutput("Usage: gridsize &lt;x&gt &lt;y&gt");
-                return;
-            }
-
-            if (parseInt(command[1]) > grid.length) {
-                for (let i = grid.length; i < parseInt(command[1]); i++) {
+                grid = [];
+                gridState = [];
+                let width = 60;
+                let height = 60;
+                for (let i = 0; i < width; i++) {
                     grid.push([]);
                     gridState.push([]);
-                    for (let j = 0; j < grid[0].length; j++) {
-                        grid[i].push("  ");
+                    for (let j = 0; j < height; j++) {
                         gridState[i].push(0);
+
+                        if (environmentVariables.get("TEXT_MODE") == "true") {
+                            grid[i].push(gridState[i][j] === 1 ? "■ " : "  ");
+                        }
                     }
                 }
-            } else if (parseInt(command[1]) < grid.length) {
-                grid = grid.slice(0, parseInt(command[1]));
-                gridState = gridState.slice(0, parseInt(command[1]));
-            }
+                antX = Math.floor(width / 2);
+                antY = Math.floor(height / 2);
+                if (environmentVariables.get("TEXT_MODE") == "true") {
+                    addGridToTerminal();
+                } else {
+                    addCanvasGrid();
+                }
+                if (intervalProcess) clearInterval(intervalProcess);
+                intervalProcess = setInterval(antInterval, intervalSpeed);
+                runningInterval = antInterval;
+            },
 
-            if (parseInt(command[2]) > grid[0].length) {
-                for (let i = 0; i < grid.length; i++) {
-                    for (
-                        let j = grid[i].length;
-                        j < parseInt(command[2]);
-                        j++
-                    ) {
-                        grid[i].push("  ");
-                        gridState[i].push(0);
+            manual_entries: ["ant - run Langton's Ant", "Usage: ant [rule]"],
+        },
+
+        setspeed: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: setspeed &lt;speed&gt");
+                    return;
+                }
+                const newSpeed = parseInt(command[1]);
+                if (isNaN(newSpeed)) {
+                    writeToOutput("Invalid speed");
+                    return;
+                }
+                intervalSpeed = newSpeed;
+                if (intervalProcess) {
+                    clearInterval(intervalProcess);
+                    intervalProcess = setInterval(
+                        runningInterval,
+                        intervalSpeed,
+                    );
+                }
+            },
+
+            manual_entries: [
+                "setspeed - set the speed of the simulation",
+                "Usage: setspeed &lt;speed&gt",
+            ],
+        },
+
+        colortest: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: colorTest &lt;number&gt");
+                    return;
+                }
+
+                let nOfColors = parseInt(command[1]);
+                if (isNaN(nOfColors)) {
+                    writeToOutput("Invalid number");
+                    return;
+                }
+
+                let colors = generateEquallySpacedColors(nOfColors);
+                let colorString = "";
+                for (let i = 0; i < colors.length; i++) {
+                    colorString += `<span style="color:${colors[i]};">■</span> <br>`;
+                }
+
+                writeToOutput(colorString);
+            },
+
+            manual_entries: [
+                "colortest - display a test of colors",
+                "Usage: colortest &lt;number&gt",
+            ],
+
+            hidden: true,
+        },
+
+        canvastest: {
+            execute: async (command: string[]) => {
+                terminalOutput = [...terminalOutput, "cAnVas"];
+                gridCanvases = [];
+                await tick();
+                for (let i = 0; i < gridCanvases.length; i++) {
+                    if (gridCanvases[i]) {
+                        activeGridCanvas = gridCanvases[i];
+                        break;
                     }
                 }
-            } else if (parseInt(command[2]) < grid[0].length) {
-                for (let i = 0; i < grid.length; i++) {
-                    grid[i] = grid[i].slice(0, parseInt(command[2]));
-                    gridState[i] = gridState[i].slice(0, parseInt(command[2]));
+                const context = activeGridCanvas.getContext("2d");
+                if (context) {
+                    gridCanvasContext = context;
+                } else {
+                    console.error("Failed to get 2D context");
                 }
-            }
 
-            fullUpdateGridNextFrame = true;
-
-            if (environmentVariables.get("TEXT_MODE") == "true") {
-                updateGridOnTerminal();
-            } else {
-                updateCanvasGrid();
-            }
-        },
-
-        convtest: () => {
-            // const input = [
-            //     [1, 1, 1, 1, 1, 1, 1, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 0, 0, 0, 0, 0, 0, 1],
-            //     [1, 1, 1, 1, 1, 1, 1, 1]
-            // ];
-
-            // make a 16x16 grid of 1s around the edges
-            const input: number[][] = [];
-            const size = 32;
-            for (let i = 0; i < size; i++) {
-                input.push([]);
-                for (let j = 0; j < size; j++) {
-                    if (
-                        i === 0 ||
-                        i === size - 1 ||
-                        j === 0 ||
-                        j === size - 1
-                    ) {
-                        input[i].push(1);
-                    } else {
-                        input[i].push(0);
+                for (let i = 0; i < 30; i++) {
+                    for (let j = 0; j < 30; j++) {
+                        gridCanvasContext.fillStyle =
+                            Math.random() > 0.5 ? "black" : "white";
+                        gridCanvasContext.fillRect(i * 20, j * 20, 20, 20);
                     }
                 }
-            }
+            },
 
-            const kernel = [
-                [1, 1, 1],
-                [1, 0, 1],
-                [1, 1, 1],
-            ];
+            manual_entries: [
+                "canvastest - display a test of the canvas",
+                "Usage: canvastest",
+            ],
 
-            const output = convolve2D(input, kernel);
-
-            writeToOutput(JSON.stringify(output, null, 2));
+            hidden: true,
         },
 
-        postMessage: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: postMessage &lt;message&gt");
-                return;
-            }
-
-            const response = await fetch("/api/addMessageToBoard", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ message: command.slice(1).join(" ") }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to post message", await response.text());
-                return;
-            }
-
-            writeToOutput("Successfully posted message");
-        },
-
-        messageBoard: async () => {
-            const response = await fetch("/api/getMessagesFromBoard", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ Number: 50 }),
-            });
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to get messages", await response.text());
-                return;
-            }
-
-            const data = await response.json();
-
-            // const date = new Date(response.createdAt);
-            // const dateString = date.toDateString();
-
-            data.forEach((message: any) => {
-                const date = new Date(message.createdAt);
-                const dateString = date.toDateString();
-
-                if (message.username === "HoosierTransfer") {
-                    message.username = `\u001b[1337m${message.username}`;
-                }
+        turn_me_into_a_girl: {
+            execute: async (command: string[]) => {
                 writeToOutput(
-                    `\u001b[37m[\u001b[33m${dateString}\u001b[37m] \u001b[32m${message.username}\u001b[32m: \u001b[37m${message.message}`,
+                    "\u001b[37mAre you sure you want to turn into a girl? Please enter y/n.",
+                    "\u001b[37mIf you decide you don't like it, you can always choose to stop being a girl.",
                 );
-            });
-        },
-
-        fibonacci: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: fibonacci &lt;number&gt");
-                return;
-            }
-
-            const n = parseInt(command[1]);
-            if (isNaN(n)) {
-                writeToOutput("Invalid number");
-                return;
-            }
-
-            const result = fibonacci(n);
-            addToOutputWrapped(result);
-        },
-
-        ping: async () => {
-            const startTime = performance.now();
-            const response = await fetch("/api/ping");
-            const endTime = performance.now();
-
-            if (response.status !== 200) {
-                writeToOutput("Failed to ping server", await response.text());
-                return;
-            }
-
-            writeToOutput(`Pong! Response time: ${endTime - startTime}ms`);
-        },
-
-        badapple: async () => {
-            badAppleLine = getOutputLength();
-            writeToOutput("Bad Apple not loaded. Please wait...");
-            const response = await fetch("/badapple.json");
-            badappleFrames = await response.json();
-
-            var i = 0;
-            badAppleInterval = setInterval(() => {
-                if (badappleFrames) {
-                    setLineInOutput(badappleFrames["frame_" + i], badAppleLine);
-                }
-                if (i >= 2190) {
-                    if (badAppleInterval) clearInterval(badAppleInterval);
-                }
-                i++;
-            }, 1000 / 10);
-        },
-
-        starwars: async () => {
-            badAppleLine = getOutputLength();
-            writeToOutput("Please wait...");
-            const response = await fetch("/starwars.json");
-            badappleFrames = await response.json();
-
-            var i = 0;
-            var thisFrameShown = 0;
-            badAppleInterval = setInterval(() => {
-                if (badappleFrames) {
-                    const firstNewline =
-                        badappleFrames[i.toString()].indexOf("\n");
-                    const displayFor = badappleFrames[i.toString()].substring(
-                        0,
-                        firstNewline,
-                    );
-                    setLineInOutput(
-                        badappleFrames[i.toString()].substring(
-                            firstNewline + 1,
-                        ),
-                        badAppleLine,
-                    );
-
-                    if (parseInt(displayFor) < thisFrameShown + 2) {
-                        i++;
-                        thisFrameShown = 0;
-                    } else {
-                        thisFrameShown++;
+                commandInputCallback = async (command) => {
+                    if (
+                        command.toLowerCase() === "y" ||
+                        command.toLowerCase() === "yes"
+                    ) {
+                        writeToOutput(
+                            "\u001b[35mOkay then! As you wish.",
+                            "\u001b[35mPlease wait warmly... (Press c to cancel)",
+                        );
+                        let timerLine = getOutputLength();
+                        writeToOutput("\u001b[37m[--------------------] 0%");
+                        const totalTime = 20000;
+                        const startTime = new Date();
+                        let lastTime = startTime;
+                        let currentTime;
+                        let progress = 0;
+                        let easing = (x: number) => {
+                            return 1 - Math.pow(1 - x, 4);
+                        };
+                        timerCountingDown = true;
+                        while (progress < 1) {
+                            if (!timerCountingDown) {
+                                writeToOutput(
+                                    "\u001b[37mThat's totally fine. Don't worry about it.",
+                                    "\u001b[37mYou're a good person.",
+                                );
+                                return;
+                            }
+                            currentTime = new Date();
+                            progress =
+                                (currentTime.getTime() - startTime.getTime()) /
+                                totalTime;
+                            let bar = "\u001b[37m[\u001b[1337m";
+                            let barProgress = easing(progress) * 20;
+                            for (let i = 0; i < 20; i++) {
+                                if (i < barProgress) {
+                                    bar += "=";
+                                } else {
+                                    if (bar.endsWith("=")) {
+                                        bar += "\u001b[37m";
+                                    }
+                                    bar += "-";
+                                }
+                            }
+                            bar +=
+                                "\u001b[37m] " +
+                                Math.floor(easing(progress) * 100) +
+                                "%";
+                            setLineInOutput(bar, timerLine);
+                            await delay(1000 / 60);
+                        }
+                        timerCountingDown = false;
+                        setLineInOutput(
+                            "\u001b[37m[\u001b[1337m====================\u001b[37m] 100%",
+                            timerLine,
+                        );
+                        const line = getOutputLength();
+                        setLineInOutput("\u001b[95m", line);
+                        const string1 =
+                            "Congratulations. You’re a girl now.<br>You might not feel much different yet, but that’s okay.<br>Only a girl would have wanted to click that button.<br>That means you’re a girl on the inside, through and through.<br>Good luck out there. We’re rooting for you.";
+                        for (let i = 0; i < string1.length; i++) {
+                            if (
+                                string1.charAt(i) == "<" &&
+                                string1.charAt(i + 1) == "b" &&
+                                string1.charAt(i + 2) == "r" &&
+                                string1.charAt(i + 3) == ">"
+                            ) {
+                                setLineInOutput("<br>", line);
+                                i += 3;
+                                await delay(20);
+                                continue;
+                            }
+                            appendToLineInOutput(string1.charAt(i), line);
+                            await delay(20);
+                        }
+                    } else if (
+                        command.toLowerCase() === "n" ||
+                        command.toLowerCase() === "no"
+                    ) {
+                        writeToOutput(
+                            "\u001b[37mThat's totally fine. Don't worry about it.",
+                            "\u001b[37mYou're a good person.",
+                        );
                     }
+                };
+            },
 
-                    if (i >= 3410) {
+            manual_entries: [
+                "\u001b[37mturn_me_into_a_girl - Turns you into a cute and silly girl :3",
+                "\u001b[37mUsage: turn_me_into_a_girl",
+            ],
+        },
+
+        notification: {
+            execute: (command: string[]) => {
+                writeToOutput(
+                    "\u001b[37mPlease enter the message you would like to send.",
+                );
+                commandInputCallback = (command) => {
+                    if (Notification.permission !== "granted") {
+                        Notification.requestPermission().then((permission) => {
+                            if (permission === "granted") {
+                                new Notification(command);
+                            }
+                        });
+                    } else {
+                        new Notification(command);
+                    }
+                };
+            },
+
+            manual_entries: [
+                "notification - send a notification",
+                "Usage: notification",
+            ],
+
+            admin_only: true,
+        },
+
+        subscribeToPush: {
+            execute: async (command: string[]) => {
+                if ("serviceWorker" in navigator && "PushManager" in window) {
+                    navigator.serviceWorker
+                        .register("/serviceworker.js")
+                        .then((reg) => {
+                            console.log("Service Worker registered:", reg);
+                        })
+                        .catch((err) => {
+                            console.error(
+                                "Service Worker registration failed:",
+                                err,
+                            );
+                        });
+                }
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey:
+                        "BLspM6VfkiZhsWPyCECtuL6uhwTAiGsIrJgoQuag221tZDNW4B168etD5lUXdTvgsc6DWLL2gO5W8zfb-oniYms",
+                });
+
+                await fetch("/api/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(subscription),
+                });
+
+                writeToOutput("Subscribed to notifications");
+            },
+
+            manual_entries: [
+                "subscribeToPush - subscribe to push notifications",
+                "Usage: subscribeToPush",
+            ],
+        },
+
+        register: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput(
+                        "Usage: register &lt;username&gt &lt;password&gt",
+                    );
+                    return;
+                }
+
+                let username = command[1];
+                let password = command[2];
+
+                if (username.length < 3) {
+                    writeToOutput(
+                        "Username must be at least 3 characters long",
+                    );
+                    return;
+                }
+
+                if (password.length < 6) {
+                    writeToOutput(
+                        "Password must be at least 6 characters long",
+                    );
+                    return;
+                }
+
+                const response = await fetch("/api/auth/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                if (response.status !== 201) {
+                    writeToOutput(await response.text());
+                    return;
+                }
+
+                writeToOutput("Successfully registered and logged in");
+            },
+
+            manual_entries: [
+                "register - register a new account",
+                "Usage: register &lt;username&gt &lt;password&gt",
+            ],
+        },
+
+        login: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput(
+                        "Usage: login &lt;username&gt &lt;password&gt",
+                    );
+                    return;
+                }
+
+                let username = command[1];
+                let password = command[2];
+
+                const response = await fetch("/api/auth/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput("Failed to login", await response.text());
+                    return;
+                }
+
+                writeToOutput("Successfully logged in");
+            },
+
+            manual_entries: [
+                "login - login to an account",
+                "Usage: login &lt;username&gt &lt;password&gt",
+            ],
+        },
+
+        logout: {
+            execute: async (command: string[]) => {
+                const response = await fetch("/api/auth/logout", {
+                    method: "POST",
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput("Failed to logout", await response.text());
+                    return;
+                }
+
+                writeToOutput("Successfully logged out");
+            },
+
+            manual_entries: [
+                "logout - logout of the current account",
+                "Usage: logout",
+            ],
+        },
+
+        updateMotd: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: updateMotd &lt;message&gt");
+                    return;
+                }
+
+                const response = await fetch("/api/admin/updateMotd", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        message: command.slice(1).join(" "),
+                    }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to update message of the day",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                writeToOutput("Successfully updated message of the day");
+            },
+
+            manual_entries: [
+                "updateMotd - update the message of the day",
+                "Usage: updateMotd &lt;message&gt",
+            ],
+
+            admin_only: true,
+        },
+
+        updateuserdata: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput(
+                        "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
+                    );
+                    return;
+                }
+
+                const response = await fetch("/api/admin/updateUserData", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username: command[1],
+                        column: command[2],
+                        value: command.slice(3).join(" "),
+                    }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to update user data",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                writeToOutput("Successfully updated user data");
+            },
+
+            manual_entries: [
+                "updateuserdata - update user data",
+                "Usage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
+            ],
+
+            admin_only: true,
+        },
+
+        getuserdata: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: getuserdata &lt;username&gt");
+                    return;
+                }
+
+                const response = await fetch("/api/admin/getUserData", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ username: command[1] }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to get user data",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                const data = await response.json();
+
+                writeToOutput(JSON.stringify(data.user, null, 2));
+            },
+
+            manual_entries: [
+                "getuserdata - get user data",
+                "Usage: getuserdata &lt;username&gt",
+            ],
+
+            admin_only: true,
+        },
+
+        notify: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: notify &lt;message&gt");
+                    return;
+                }
+
+                const response = await fetch("/api/admin/notify", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        body: command.slice(1).join(" "),
+                        title: "HoosierTransfer",
+                    }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to send notification",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                writeToOutput("Successfully sent notification");
+            },
+
+            manual_entries: [
+                "notify - send a notification to all users",
+                "Usage: notify &lt;message&gt",
+            ],
+
+            admin_only: true,
+        },
+
+        gridsize: {
+            execute: (command: string[]) => {
+                if (command.length < 3) {
+                    writeToOutput("Usage: gridsize &lt;x&gt &lt;y&gt");
+                    return;
+                }
+
+                if (parseInt(command[1]) > grid.length) {
+                    for (let i = grid.length; i < parseInt(command[1]); i++) {
+                        grid.push([]);
+                        gridState.push([]);
+                        for (let j = 0; j < grid[0].length; j++) {
+                            grid[i].push("  ");
+                            gridState[i].push(0);
+                        }
+                    }
+                } else if (parseInt(command[1]) < grid.length) {
+                    grid = grid.slice(0, parseInt(command[1]));
+                    gridState = gridState.slice(0, parseInt(command[1]));
+                }
+
+                if (parseInt(command[2]) > grid[0].length) {
+                    for (let i = 0; i < grid.length; i++) {
+                        for (
+                            let j = grid[i].length;
+                            j < parseInt(command[2]);
+                            j++
+                        ) {
+                            grid[i].push("  ");
+                            gridState[i].push(0);
+                        }
+                    }
+                } else if (parseInt(command[2]) < grid[0].length) {
+                    for (let i = 0; i < grid.length; i++) {
+                        grid[i] = grid[i].slice(0, parseInt(command[2]));
+                        gridState[i] = gridState[i].slice(
+                            0,
+                            parseInt(command[2]),
+                        );
+                    }
+                }
+
+                fullUpdateGridNextFrame = true;
+
+                if (environmentVariables.get("TEXT_MODE") == "true") {
+                    updateGridOnTerminal();
+                } else {
+                    updateCanvasGrid();
+                }
+            },
+
+            manual_entries: [
+                "gridsize - set the size of the grid",
+                "Usage: gridsize &lt;x&gt &lt;y&gt",
+            ],
+        },
+
+        convtest: {
+            execute: (command: string[]) => {
+                // const input = [
+                //     [1, 1, 1, 1, 1, 1, 1, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 0, 0, 0, 0, 0, 0, 1],
+                //     [1, 1, 1, 1, 1, 1, 1, 1]
+                // ];
+
+                // make a 16x16 grid of 1s around the edges
+                const input: number[][] = [];
+                const size = 32;
+                for (let i = 0; i < size; i++) {
+                    input.push([]);
+                    for (let j = 0; j < size; j++) {
+                        if (
+                            i === 0 ||
+                            i === size - 1 ||
+                            j === 0 ||
+                            j === size - 1
+                        ) {
+                            input[i].push(1);
+                        } else {
+                            input[i].push(0);
+                        }
+                    }
+                }
+
+                const kernel = [
+                    [1, 1, 1],
+                    [1, 0, 1],
+                    [1, 1, 1],
+                ];
+
+                const output = convolve2D(input, kernel);
+
+                writeToOutput(JSON.stringify(output, null, 2));
+            },
+
+            manual_entries: [
+                "convtest - test the convolution function",
+                "Usage: convtest",
+            ],
+
+            hidden: true,
+        },
+
+        postMessage: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: postMessage &lt;message&gt");
+                    return;
+                }
+
+                const response = await fetch("/api/addMessageToBoard", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        message: command.slice(1).join(" "),
+                    }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to post message",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                writeToOutput("Successfully posted message");
+            },
+
+            manual_entries: [
+                "postMessage - post a message to the message board",
+                "Usage: postMessage &lt;message&gt",
+            ],
+        },
+
+        messageBoard: {
+            execute: async (command: string[]) => {
+                const response = await fetch("/api/getMessagesFromBoard", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ Number: 50 }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to get messages",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                const data = await response.json();
+
+                // const date = new Date(response.createdAt);
+                // const dateString = date.toDateString();
+
+                data.forEach((message: any) => {
+                    const date = new Date(message.createdAt);
+                    const dateString = date.toDateString();
+
+                    if (message.username === "HoosierTransfer") {
+                        message.username = `\u001b[1337m${message.username}`;
+                    }
+                    writeToOutput(
+                        `\u001b[37m[\u001b[33m${dateString}\u001b[37m] \u001b[32m${message.username}\u001b[32m: \u001b[37m${message.message}`,
+                    );
+                });
+            },
+
+            manual_entries: [
+                "messageBoard - view the message board",
+                "Usage: messageBoard",
+            ],
+        },
+
+        fibonacci: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: fibonacci &lt;number&gt");
+                    return;
+                }
+
+                const n = parseInt(command[1]);
+                if (isNaN(n)) {
+                    writeToOutput("Invalid number");
+                    return;
+                }
+
+                const result = fibonacci(n);
+                addToOutputWrapped(result);
+            },
+
+            manual_entries: [
+                "fibonacci - calculate the fibonacci sequence",
+                "Usage: fibonacci &lt;number&gt",
+            ],
+        },
+
+        ping: {
+            execute: async (command: string[]) => {
+                const startTime = performance.now();
+                const response = await fetch("/api/ping");
+                const endTime = performance.now();
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to ping server",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                writeToOutput(`Pong! Response time: ${endTime - startTime}ms`);
+            },
+
+            manual_entries: ["ping - ping the server", "Usage: ping"],
+        },
+
+        badapple: {
+            execute: async (command: string[]) => {
+                badAppleLine = getOutputLength();
+                writeToOutput("Bad Apple not loaded. Please wait...");
+                const response = await fetch("/badapple.json");
+                badappleFrames = await response.json();
+
+                var i = 0;
+                badAppleInterval = setInterval(() => {
+                    if (badappleFrames) {
+                        setLineInOutput(
+                            badappleFrames["frame_" + i],
+                            badAppleLine,
+                        );
+                    }
+                    if (i >= 2190) {
                         if (badAppleInterval) clearInterval(badAppleInterval);
                     }
-                } else {
-                    setLineInOutput("Failed to load Star Wars", badAppleLine);
-                    if (badAppleInterval) clearInterval(badAppleInterval);
+                    i++;
+                }, 1000 / 10);
+            },
+
+            manual_entries: [
+                "badapple - play the Bad Apple video",
+                "Usage: badapple",
+            ],
+        },
+
+        starwars: {
+            execute: async (command: string[]) => {
+                badAppleLine = getOutputLength();
+                writeToOutput("Please wait...");
+                const response = await fetch("/starwars.json");
+                badappleFrames = await response.json();
+
+                var i = 0;
+                var thisFrameShown = 0;
+                badAppleInterval = setInterval(() => {
+                    if (badappleFrames) {
+                        const firstNewline =
+                            badappleFrames[i.toString()].indexOf("\n");
+                        const displayFor = badappleFrames[
+                            i.toString()
+                        ].substring(0, firstNewline);
+                        setLineInOutput(
+                            badappleFrames[i.toString()].substring(
+                                firstNewline + 1,
+                            ),
+                            badAppleLine,
+                        );
+
+                        if (parseInt(displayFor) < thisFrameShown + 2) {
+                            i++;
+                            thisFrameShown = 0;
+                        } else {
+                            thisFrameShown++;
+                        }
+
+                        if (i >= 3410) {
+                            if (badAppleInterval)
+                                clearInterval(badAppleInterval);
+                        }
+                    } else {
+                        setLineInOutput(
+                            "Failed to load Star Wars",
+                            badAppleLine,
+                        );
+                        if (badAppleInterval) clearInterval(badAppleInterval);
+                    }
+                }, 67);
+            },
+
+            manual_entries: [
+                "starwars - play the Star Wars video",
+                "Usage: starwars",
+            ],
+        },
+
+        download: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput(
+                        "Usage: download &lt;filename&gt &lt;content&gt",
+                    );
+                    return;
                 }
-            }, 67);
+                const fileContent = command.slice(2).join(" ");
+                const blob = new Blob([fileContent], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = command[1];
+                a.click();
+
+                URL.revokeObjectURL(url);
+            },
+
+            manual_entries: [
+                "download - download input as a file",
+                "Usage: download &lt;filename&gt &lt;content&gt",
+            ],
         },
 
-        download: async (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: download &lt;filename&gt &lt;content&gt");
-                return;
-            }
-            const fileContent = command.slice(2).join(" ");
-            const blob = new Blob([fileContent], { type: "text/plain" });
-            const url = URL.createObjectURL(blob);
+        isPrime: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: isPrime &lt;number&gt");
+                    return;
+                }
 
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = command[1];
-            a.click();
+                const n = parseInt(command[1]);
+                if (isNaN(n)) {
+                    writeToOutput("Invalid number");
+                    return;
+                }
 
-            URL.revokeObjectURL(url);
+                const result = isPrime(n);
+                if (result) {
+                    writeToOutput(`\u001b[32m${n} is prime`);
+                } else {
+                    writeToOutput(`\u001b[31m${n} is not prime`);
+                }
+            },
+
+            manual_entries: [
+                "isPrime - check if a number is prime",
+                "Usage: isPrime &lt;number&gt",
+            ],
         },
 
-        isPrime: (command: string[]) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: isPrime &lt;number&gt");
-                return;
-            }
+        meow: {
+            execute: (command: string[]) => {
+                writeToOutput("  /\\_/\\", " ( o.o )", "  > ^ <", "Meow!");
+            },
 
-            const n = parseInt(command[1]);
-            if (isNaN(n)) {
-                writeToOutput("Invalid number");
-                return;
-            }
+            manual_entries: ["meow - meow", "Usage: meow"],
 
-            const result = isPrime(n);
-            if (result) {
-                writeToOutput(`\u001b[32m${n} is prime`);
-            } else {
-                writeToOutput(`\u001b[31m${n} is not prime`);
-            }
+            hidden: true,
         },
 
-        meow: () => {
-            writeToOutput("  /\\_/\\", " ( o.o )", "  > ^ <", "Meow!");
+        silly_cat: {
+            execute: async (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: silly_cat &lt;number&gt");
+                    return;
+                }
+
+                const n = parseInt(command[1]);
+                if (isNaN(n)) {
+                    writeToOutput("Invalid number");
+                    return;
+                }
+
+                let output = "";
+
+                for (let i = 0; i < n; i++) {
+                    output +=
+                        noises[Math.floor(Math.random() * noises.length)] + " ";
+                }
+
+                addToOutputWrapped(output);
+            },
+
+            manual_entries: [
+                "silly_cat - cat noises",
+                "Usage: silly_cat &lt;number&gt",
+            ],
+
+            hidden: true,
         },
 
-        silly_cat: (command) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: silly_cat &lt;number&gt");
-                return;
-            }
+        to_cat_noises: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: to_cat_noises &lt;input&gt");
+                    return;
+                }
 
-            const n = parseInt(command[1]);
-            if (isNaN(n)) {
-                writeToOutput("Invalid number");
-                return;
-            }
+                const input = command.slice(1).join(" ");
 
-            let output = "";
+                addToOutputWrapped(compressDataToCatNoises(input));
+            },
 
-            for (let i = 0; i < n; i++) {
-                output +=
-                    noises[Math.floor(Math.random() * noises.length)] + " ";
-            }
-
-            addToOutputWrapped(output);
+            manual_entries: [
+                "to_cat_noises - convert input to cat noises",
+                "Usage: to_cat_noises &lt;input&gt",
+            ],
         },
 
-        to_cat_noises: (command) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: to_cat_noises &lt;input&gt");
-                return;
-            }
+        from_cat_noises: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: from_cat_noises &lt;input&gt");
+                    return;
+                }
 
-            const input = command.slice(1).join(" ");
+                const input = command.slice(1).join(" ");
 
-            addToOutputWrapped(compressDataToCatNoises(input));
+                addToOutputWrapped(decompressCatNoisesToData(input));
+            },
+
+            manual_entries: [
+                "from_cat_noises - convert cat noises to input",
+                "Usage: from_cat_noises &lt;input&gt",
+            ],
         },
 
-        from_cat_noises: (command) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: from_cat_noises &lt;input&gt");
-                return;
-            }
+        proxy: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: proxy &lt;url&gt");
+                    return;
+                }
 
-            const input = command.slice(1).join(" ");
+                const search = command.slice(1).join(" ");
+                window.location.href = `https://proxy.hoosiertransfer.net/proxy?url=${encodeURIComponent(
+                    search,
+                )}`;
+            },
 
-            addToOutputWrapped(decompressCatNoisesToData(input));
+            manual_entries: [
+                "proxy - proxy a website",
+                "Usage: proxy &lt;url&gt",
+            ],
         },
 
-        proxy: async (command) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: proxy &lt;url&gt");
-                return;
-            }
+        unimash: {
+            execute: (command: string[]) => {
+                window.location.href = "/unimash";
+            },
 
-            const search = command.slice(1).join(" ");
-            window.location.href = `https://proxy.hoosiertransfer.net/proxy?url=${encodeURIComponent(
-                search,
-            )}`;
+            manual_entries: [
+                "unimash - play unicode smash or pass",
+                "Usage: unimash",
+            ],
         },
 
-        unimash: () => {
-            window.location.href = "/unimash";
+        upload: {
+            execute: async (command: string[]) => {
+                fileInput.click();
+            },
+
+            manual_entries: ["upload - upload a file", "Usage: upload"],
+
+            admin_only: true,
         },
 
-        blahaj: () => {
-            writeToOutput(
-                "<img src='blahaj.png' style='max-width: 400px; max-height: 400px;'>",
-            );
+        speedtest: {
+            execute: async (command: string[]) => {
+                writeToOutput("\u001b[33mRunning speed test...");
+                const startTime = performance.now();
+                const responsePing = await fetch("/api/ping");
+                const endTime = performance.now();
+
+                if (responsePing.status !== 200) {
+                    writeToOutput("Failed to ping server");
+                    return;
+                }
+
+                const downloadSpeed = await measureDownloadSpeed();
+                const uploadSpeed = await measureUploadSpeed();
+
+                writeToOutput(
+                    `\u001b[37mPing: ${endTime - startTime}ms`,
+                    `\u001b[37mDownload speed: ${downloadSpeed} Mbps`,
+                    `\u001b[37mUpload speed: ${uploadSpeed} Mbps`,
+                );
+            },
+
+            manual_entries: [
+                "speedtest - run a speed test",
+                "Usage: speedtest",
+            ],
         },
 
-        upload: async () => {
-            fileInput.click();
+        estrogen_clicker: {
+            execute: (command: string[]) => {
+                estrogenClickerGameActive = true;
+
+                terminalOutput = [...terminalOutput, "NR4nvDQUzDKMcQDSL9isYA"];
+
+                estrogenInterval = setInterval(() => {
+                    let estrogenIncrease =
+                        estrogenGelStore.get() +
+                        estrogenPillsStore.get() * 10 +
+                        estrogenPatchesStore.get() * 20 +
+                        estrogenInjectionsStore.get() * 50;
+
+                    estrogenStore.set(estrogenStore.get() + estrogenIncrease);
+                }, 1000);
+            },
+
+            manual_entries: [
+                "estrogen_clicker - start the estrogen clicker game",
+                "Usage: estrogen_clicker",
+            ],
         },
 
-        speedtest: async () => {
-            writeToOutput("\u001b[33mRunning speed test...");
-            const startTime = performance.now();
-            const responsePing = await fetch("/api/ping");
-            const endTime = performance.now();
+        buy_upgrade: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: buy_upgrade &lt;upgrade&gt");
+                    return;
+                }
 
-            if (responsePing.status !== 200) {
-                writeToOutput("Failed to ping server");
-                return;
-            }
+                if (!estrogenClickerGameActive) {
+                    writeToOutput("Estrogen clicker game is not active");
+                    return;
+                }
 
-            const downloadSpeed = await measureDownloadSpeed();
-            const uploadSpeed = await measureUploadSpeed();
+                const upgrade = command[1].toLowerCase();
 
-            writeToOutput(
-                `\u001b[37mPing: ${endTime - startTime}ms`,
-                `\u001b[37mDownload speed: ${downloadSpeed} Mbps`,
-                `\u001b[37mUpload speed: ${uploadSpeed} Mbps`,
-            );
+                if (!estrogenUpgrades[upgrade]) {
+                    writeToOutput("Invalid upgrade");
+                    return;
+                }
+
+                estrogenUpgrades[upgrade]();
+
+                if (estrogenStore.get() < 0) estrogenStore.set(0);
+            },
+
+            manual_entries: [
+                "buy_upgrade - buy an upgrade in the estrogen clicker game",
+                "Usage: buy_upgrade &lt;upgrade&gt",
+            ],
         },
 
-        estrogen_clicker: () => {
-            estrogenClickerGameActive = true;
+        list_upgrades: {
+            execute: (command: string[]) => {
+                if (!estrogenClickerGameActive) {
+                    writeToOutput("Estrogen clicker game is not active");
+                    return;
+                }
 
-            terminalOutput = [
-                ...terminalOutput,
-                "NR4nvDQUzDKMcQDSL9isYA",
-            ];
+                writeToOutput(
+                    "Available upgrades:",
+                    `Spiro: ${spiroStore.get()} - ${100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)} estrogen - gain 1 estrogen per click`,
+                    `Bica: ${bicaStore.get()} - ${1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)} estrogen - gain 16 estrogen per click`,
+                    `Cypro: ${cyrpoStore.get()} - ${500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)} estrogen - gain 8 estrogen per click`,
+                    `Progesterone: ${progesteroneStore.get()} - ${10000 + progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5)} estrogen - multiplies click gain`,
+                    "\n",
+                    `Estrogen Gel: ${estrogenGelStore.get()} - ${1000 + estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1)} estrogen - gain 2 estrogen every second`,
+                    `Estrogen Pill: ${estrogenPillsStore.get()} - ${5000 + estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1)} estrogen - gain 10 estrogen every second`,
+                    `Estrogen Patch: ${estrogenPatchesStore.get()} - ${10000 + estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2)} estrogen - gain 20 estrogen every second`,
+                    `Estrogen Injection: ${estrogenInjectionsStore.get()} - ${20000 + estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3)} estrogen - gain 50 estrogen every second`,
+                );
+            },
 
-            estrogenInterval = setInterval(() => {
-                let estrogenIncrease = estrogenGelStore.get() + estrogenPillsStore.get() * 10 + estrogenPatchesStore.get() * 20 + estrogenInjectionsStore.get() * 50;
-
-                estrogenStore.set(estrogenStore.get() + estrogenIncrease);
-            }, 1000);
+            manual_entries: [
+                "list_upgrades - list available upgrades in the estrogen clicker game",
+                "Usage: list_upgrades",
+            ],
         },
 
-        buy_upgrade: (command) => {
-            if (command.length === 1) {
-                writeToOutput("Usage: buy_upgrade &lt;upgrade&gt");
-                return;
-            }
+        reset_game: {
+            execute: (command: string[]) => {
+                estrogenStore.set(0);
+                spiroStore.set(0);
+                bicaStore.set(0);
+                cyrpoStore.set(0);
+                writeToOutput("Game reset");
+            },
 
-            if (!estrogenClickerGameActive) {
-                writeToOutput("Estrogen clicker game is not active");
-                return;
-            }
-
-            const upgrade = command[1].toLowerCase();
-
-            if (!estrogenUpgrades[upgrade]) {
-                writeToOutput("Invalid upgrade");
-                return;
-            }
-
-            estrogenUpgrades[upgrade]();
-
-            if (estrogenStore.get() < 0) estrogenStore.set(0);
+            manual_entries: [
+                "reset_game - reset the estrogen clicker game",
+                "Usage: reset_game",
+            ],
         },
 
-        list_upgrades: () => {
-            if (!estrogenClickerGameActive) {
-                writeToOutput("Estrogen clicker game is not active");
-                return;
-            }
+        trans: {
+            execute: (command: string[]) => {
+                makeTransFlagColors();
+            },
 
-            writeToOutput(
-                "Available upgrades:",
-                `Spiro: ${spiroStore.get()} - ${100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)} estrogen - gain 1 estrogen per click`,
-                `Bica: ${bicaStore.get()} - ${1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)} estrogen - gain 16 estrogen per click`,
-                `Cypro: ${cyrpoStore.get()} - ${500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)} estrogen - gain 8 estrogen per click`,
-                `Progesterone: ${progesteroneStore.get()} - ${10000 + progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5)} estrogen - multiplies click gain`,
-                "\n",
-                `Estrogen Gel: ${estrogenGelStore.get()} - ${1000 + estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1)} estrogen - gain 2 estrogen every second`,
-                `Estrogen Pill: ${estrogenPillsStore.get()} - ${5000 + estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1)} estrogen - gain 10 estrogen every second`,
-                `Estrogen Patch: ${estrogenPatchesStore.get()} - ${10000 + estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2)} estrogen - gain 20 estrogen every second`,
-                `Estrogen Injection: ${estrogenInjectionsStore.get()} - ${20000 + estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3)} estrogen - gain 50 estrogen every second`,
-            );   
+            manual_entries: [
+                "trans - make the terminal trans flag colors",
+                "Usage: trans",
+            ],
         },
 
-        reset_game: () => {
-            estrogenStore.set(0);
-            spiroStore.set(0);
-            bicaStore.set(0);
-            cyrpoStore.set(0);
-            writeToOutput("Game reset");
+        man: {
+            execute: (command: string[]) => {
+                manual(command);
+            },
+
+            manual_entries: [
+                "man - display manual entries",
+                "Usage: man &lt;command&gt",
+            ],
         },
 
-        trans: makeTransFlagColors,
+        woman: {
+            execute: (command: string[]) => {
+                manual(command);
+            },
 
-        man: manual,
-        woman: manual,
+            manual_entries: [
+                "woman - display manual entries",
+                "Usage: woman &lt;command&gt",
+            ],
+
+            hidden: true,
+        },
     };
 
     let estrogenUpgrades: Record<string, () => void> = {
-        "spiro": () => {
-            if (estrogenStore.get() >= 100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)) {
-                estrogenStore.set(estrogenStore.get() - spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1));
+        spiro: () => {
+            if (
+                estrogenStore.get() >=
+                100 + spiroStore.get() * 100 * ((spiroStore.get() + 10) * 0.1)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        spiroStore.get() *
+                            100 *
+                            ((spiroStore.get() + 10) * 0.1),
+                );
                 spiroStore.set(spiroStore.get() + 1);
 
                 writeToOutput("Bought Spironolactone");
@@ -2218,9 +2658,15 @@
             }
         },
 
-        "bica": () => {
-            if (estrogenStore.get() >= 1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)) {
-                estrogenStore.set(estrogenStore.get() - bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2));
+        bica: () => {
+            if (
+                estrogenStore.get() >=
+                1000 + bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        bicaStore.get() * 1000 * ((bicaStore.get() + 10) * 0.2),
+                );
                 if (Math.random() < 0.05) {
                     writeToOutput("Womp womp liver failure :(");
                     estrogenStore.set(estrogenStore.get() - 10000);
@@ -2234,20 +2680,39 @@
             }
         },
 
-        "cypro": () => {
-            if (estrogenStore.get() >= 500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)) {
-                estrogenStore.set(estrogenStore.get() - cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15));
+        cypro: () => {
+            if (
+                estrogenStore.get() >=
+                500 + cyrpoStore.get() * 500 * ((cyrpoStore.get() + 10) * 0.15)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        cyrpoStore.get() *
+                            500 *
+                            ((cyrpoStore.get() + 10) * 0.15),
+                );
                 cyrpoStore.set(cyrpoStore.get() + 1);
 
                 writeToOutput("Bought Cyproterone");
             } else {
                 writeToOutput("Not enough estrogen to buy Cyproterone");
-            } 
+            }
         },
 
-        "progesterone": () => {
-            if (estrogenStore.get() >= 10000 + progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5)) {
-                estrogenStore.set(estrogenStore.get() - progesteroneStore.get() * 10000 * ((progesteroneStore.get() + 10) * 0.5));
+        progesterone: () => {
+            if (
+                estrogenStore.get() >=
+                10000 +
+                    progesteroneStore.get() *
+                        10000 *
+                        ((progesteroneStore.get() + 10) * 0.5)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        progesteroneStore.get() *
+                            10000 *
+                            ((progesteroneStore.get() + 10) * 0.5),
+                );
                 progesteroneStore.set(progesteroneStore.get() + 1);
 
                 writeToOutput("Bought Progesterone");
@@ -2256,9 +2721,20 @@
             }
         },
 
-        "estrogen_gel": () => {
-            if (estrogenStore.get() >= 1000 + estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1)) {
-                estrogenStore.set(estrogenStore.get() - estrogenGelStore.get() * 1000 * ((estrogenGelStore.get() + 10) * 0.1));
+        estrogen_gel: () => {
+            if (
+                estrogenStore.get() >=
+                1000 +
+                    estrogenGelStore.get() *
+                        1000 *
+                        ((estrogenGelStore.get() + 10) * 0.1)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        estrogenGelStore.get() *
+                            1000 *
+                            ((estrogenGelStore.get() + 10) * 0.1),
+                );
                 estrogenGelStore.set(estrogenGelStore.get() + 1);
 
                 writeToOutput("Bought Estrogen Gel");
@@ -2267,14 +2743,25 @@
             }
         },
 
-        "estrogen_pill": () => {
-            if (estrogenStore.get() >= 5000 + estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1)) {
+        estrogen_pill: () => {
+            if (
+                estrogenStore.get() >=
+                5000 +
+                    estrogenPillsStore.get() *
+                        5000 *
+                        ((estrogenPillsStore.get() + 10) * 0.1)
+            ) {
                 if (Math.random() < 0.01) {
                     writeToOutput("Womp womp blood clot :(");
                     estrogenStore.set(estrogenStore.get() - 10000);
                     return;
                 }
-                estrogenStore.set(estrogenStore.get() - estrogenPillsStore.get() * 5000 * ((estrogenPillsStore.get() + 10) * 0.1));
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        estrogenPillsStore.get() *
+                            5000 *
+                            ((estrogenPillsStore.get() + 10) * 0.1),
+                );
                 estrogenPillsStore.set(estrogenPillsStore.get() + 1);
 
                 writeToOutput("Bought Estrogen Pill");
@@ -2283,9 +2770,20 @@
             }
         },
 
-        "estrogen_patch": () => {
-            if (estrogenStore.get() >= 10000 + estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2)) {
-                estrogenStore.set(estrogenStore.get() - estrogenPatchesStore.get() * 10000 * ((estrogenPatchesStore.get() + 10) * 0.2));
+        estrogen_patch: () => {
+            if (
+                estrogenStore.get() >=
+                10000 +
+                    estrogenPatchesStore.get() *
+                        10000 *
+                        ((estrogenPatchesStore.get() + 10) * 0.2)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        estrogenPatchesStore.get() *
+                            10000 *
+                            ((estrogenPatchesStore.get() + 10) * 0.2),
+                );
                 estrogenPatchesStore.set(estrogenPatchesStore.get() + 1);
 
                 writeToOutput("Bought Estrogen Patch");
@@ -2294,9 +2792,20 @@
             }
         },
 
-        "estrogen_injection": () => {
-            if (estrogenStore.get() >= 20000 + estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3)) {
-                estrogenStore.set(estrogenStore.get() - estrogenInjectionsStore.get() * 20000 * ((estrogenInjectionsStore.get() + 10) * 0.3));
+        estrogen_injection: () => {
+            if (
+                estrogenStore.get() >=
+                20000 +
+                    estrogenInjectionsStore.get() *
+                        20000 *
+                        ((estrogenInjectionsStore.get() + 10) * 0.3)
+            ) {
+                estrogenStore.set(
+                    estrogenStore.get() -
+                        estrogenInjectionsStore.get() *
+                            20000 *
+                            ((estrogenInjectionsStore.get() + 10) * 0.3),
+                );
                 estrogenInjectionsStore.set(estrogenInjectionsStore.get() + 1);
 
                 writeToOutput("Bought Estrogen Injection");
@@ -2307,7 +2816,14 @@
     };
 
     function clickEstrogen() {
-        estrogenStore.set(estrogenStore.get() + (spiroStore.get() + bicaStore.get() * 16 + cyrpoStore.get() * 8 + 1) * (progesteroneStore.get() + 1));
+        estrogenStore.set(
+            estrogenStore.get() +
+                (spiroStore.get() +
+                    bicaStore.get() * 16 +
+                    cyrpoStore.get() * 8 +
+                    1) *
+                    (progesteroneStore.get() + 1),
+        );
     }
 
     async function uploadFile(event: any) {
@@ -2360,332 +2876,18 @@
 
     function manual(command: string[]) {
         if (command.length === 1) {
-            writeToOutput("Usage: man &ltcommand&gt");
+            writeToOutput(`Usage: ${command[0]} &lt;command&gt`);
+            return;
+        }
+        if (!commands[command[1]]) {
+            writeToOutput("\u001b[31mCommand not found");
             return;
         }
 
-        switch (command[1]) {
-            case "ls":
-                writeToOutput(
-                    "\u001b[37mls - list directory contents",
-                    "\u001b[37mUsage: ls",
-                );
-                break;
-            case "cat":
-                writeToOutput(
-                    "\u001b[37mcat - print file on the standard output",
-                    "\u001b[37mUsage: cat &lt;filename&gt",
-                );
-                break;
-            case "conway":
-                writeToOutput(
-                    "\u001b[37mconway - run Conway's Game of Life",
-                    "\u001b[37mUsage: conway",
-                );
-                break;
-            case "cowsay":
-                writeToOutput(
-                    "\u001b[37mcowsay - generate an ASCII cow",
-                    "\u001b[37mUsage: cowsay &lt;message&gt",
-                );
-                break;
-            case "fastfetch":
-            case "neofetch":
-                writeToOutput(
-                    "\u001b[37mneofetch - print system information",
-                    "\u001b[37mUsage: neofetch",
-                );
-                break;
-            case "ant":
-                writeToOutput(
-                    "\u001b[37mant - run Langton's Ant",
-                    "\u001b[37mUsage: ant &lt;rule&gt",
-                );
-                break;
-            case "setspeed":
-                writeToOutput(
-                    "\u001b[37msetspeed - set the delay between frrames in the simulation",
-                    "\u001b[37mUsage: setspeed &lt;speed&gt",
-                );
-                break;
-            case "colortest":
-                writeToOutput(
-                    "\u001b[37mcolortest - generate a list of colors",
-                    "\u001b[37mUsage: colortest &lt;number&gt",
-                );
-                break;
-            case "help":
-                writeToOutput(
-                    "\u001b[37mhelp - display available commands",
-                    "\u001b[37mUsage: help",
-                );
-                break;
-            case "clear":
-                writeToOutput(
-                    "\u001b[37mclear - clear the terminal",
-                    "\u001b[37mUsage: clear",
-                );
-                break;
-            case "whoami":
-                writeToOutput(
-                    "\u001b[37mwhoami - print information about me",
-                    "\u001b[37mUsage: whoami",
-                );
-                break;
-            case "echo":
-                writeToOutput(
-                    "\u001b[37mecho - print arguments to the terminal",
-                    "\u001b[37mUsage: echo &lt;message&gt",
-                );
-                break;
-            case "motd":
-                writeToOutput(
-                    "\u001b[37mmotd - print the message of the day",
-                    "\u001b[37mUsage: motd",
-                );
-                break;
+        const entry = commands[command[1]].manual_entries;
 
-            case "canvastest":
-                writeToOutput(
-                    "\u001b[37mcanvastest - test canvas rendering",
-                    "\u001b[37mUsage: canvastest",
-                );
-                break;
-
-            case "export":
-                writeToOutput(
-                    "\u001b[37mexport - set an environment variable",
-                    "\u001b[37mUsage: export &lt;variable&gt=&lt;value&gt",
-                );
-                break;
-
-            case "turn_me_into_a_girl":
-                writeToOutput(
-                    "\u001b[37mturn_me_into_a_girl - Turns you into a cute and silly girl :3",
-                    "\u001b[37mUsage: turn_me_into_a_girl",
-                );
-                break;
-
-            case "trans":
-                writeToOutput(
-                    "\u001b[37mtrans - Makes your terminal trans flag colors",
-                    "\u001b[37mUsage: trans",
-                );
-                break;
-
-            case "notification":
-                writeToOutput(
-                    "\u001b[37mnotification - send a notification",
-                    "\u001b[37mUsage: notification &lt;message&gt",
-                );
-                break;
-
-            case "register":
-                writeToOutput(
-                    "\u001b[37mregister - register a new account",
-                    "\u001b[37mUsage: register &lt;username&gt &lt;password&gt",
-                );
-                break;
-
-            case "login":
-                writeToOutput(
-                    "\u001b[37mlogin - log in to an existing account",
-                    "\u001b[37mUsage: login &lt;username&gt &lt;password&gt",
-                );
-                break;
-
-            case "logout":
-                writeToOutput(
-                    "\u001b[37mlogout - log out of the current account",
-                    "\u001b[37mUsage: logout",
-                );
-                break;
-
-            case "updateMotd":
-                writeToOutput(
-                    "\u001b[37mupdateMotd - update the message of the day",
-                    "\u001b[37mUsage: updateMotd &lt;message&gt",
-                );
-                break;
-
-            case "updateuserdata":
-                writeToOutput(
-                    "\u001b[37mupdateuserdata - update user data",
-                    "\u001b[37mUsage: updateuserdata &lt;username&gt &lt;column&gt &lt;value&gt",
-                );
-                break;
-
-            case "getuserdata":
-                writeToOutput(
-                    "\u001b[37mgetuserdata - get user data",
-                    "\u001b[37mUsage: getuserdata &lt;username&gt",
-                );
-                break;
-
-            case "notify":
-                writeToOutput(
-                    "\u001b[37mnotify - send a notification to all users",
-                    "\u001b[37mUsage: notify &lt;message&gt",
-                );
-                break;
-
-            case "subscribeToPush":
-                writeToOutput(
-                    "\u001b[37msubscribeToPush - subscribe to push notifications",
-                    "\u001b[37mUsage: subscribeToPush",
-                );
-                break;
-
-            case "primordia":
-                writeToOutput(
-                    "\u001b[37mprimordia - run Primordia",
-                    "\u001b[37mUsage: primordia",
-                );
-                break;
-
-            case "gridsize":
-                writeToOutput(
-                    "\u001b[37mgridsize - set the size of the grid",
-                    "\u001b[37mUsage: gridsize &lt;x&gt &lt;y&gt",
-                );
-                break;
-
-            case "convtest":
-                writeToOutput(
-                    "\u001b[37mconvtest - test convolution",
-                    "\u001b[37mUsage: convtest",
-                );
-                break;
-
-            case "postMessage":
-                writeToOutput(
-                    "\u001b[37mpostMessage - post a message to the message board",
-                    "\u001b[37mUsage: postMessage &lt;message&gt",
-                );
-                break;
-
-            case "messageBoard":
-                writeToOutput(
-                    "\u001b[37mmessageBoard - get messages from the message board",
-                    "\u001b[37mUsage: messageBoard",
-                );
-                break;
-
-            case "fibonacci":
-                writeToOutput(
-                    "\u001b[37mfibonacci - calculate the nth Fibonacci number really fast",
-                    "\u001b[37mUsage: fibonacci &lt;number&gt",
-                );
-                break;
-
-            case "cd":
-                writeToOutput(
-                    "\u001b[37mcd - change the current directory",
-                    "\u001b[37mUsage: cd &lt;directory&gt",
-                );
-                break;
-
-            case "ping":
-                writeToOutput(
-                    "\u001b[37mping - ping the server",
-                    "\u001b[37mUsage: ping",
-                );
-                break;
-
-            case "badapple":
-                writeToOutput(
-                    "\u001b[37mbadapple - play the Bad Apple video",
-                    "\u001b[37mUsage: badapple",
-                );
-                break;
-
-            case "starwars":
-                writeToOutput(
-                    "\u001b[37mstarwars - play Star Wars ",
-                    "\u001b[37mUsage: starwars",
-                );
-                break;
-
-            case "download":
-                writeToOutput(
-                    "\u001b[37mdownload - download to a file",
-                    "\u001b[37mUsage: download &lt;filename&gt &lt;content&gt",
-                );
-                break;
-
-            case "isPrime":
-                writeToOutput(
-                    "\u001b[37misPrime - check if a number is prime",
-                    "\u001b[37mUsage: isPrime &lt;number&gt",
-                );
-                break;
-
-            case "view_image":
-                writeToOutput(
-                    "\u001b[37mview_image - view an image",
-                    "\u001b[37mUsage: view_image &lt;filename&gt",
-                );
-                break;
-
-            case "meow":
-                writeToOutput(
-                    "\u001b[37mmeow - display a cute cat",
-                    "\u001b[37mUsage: meow",
-                );
-                break;
-
-            case "silly_cat":
-                writeToOutput(
-                    "\u001b[37msilly_cat - cat noises",
-                    "\u001b[37mUsage: silly_cat &lt;number&gt",
-                );
-                break;
-
-            case "to_cat_noises":
-                writeToOutput(
-                    "\u001b[37mto_cat_noises - convert text to cat noises",
-                    "\u001b[37mUsage: to_cat_noises &lt;input&gt",
-                );
-                break;
-
-            case "from_cat_noises":
-                writeToOutput(
-                    "\u001b[37mfrom_cat_noises - convert cat noises to text",
-                    "\u001b[37mUsage: from_cat_noises &lt;input&gt",
-                );
-                break;
-
-            case "proxy":
-                writeToOutput(
-                    "\u001b[37mproxy - proxy a website",
-                    "\u001b[37mUsage: proxy &lt;url&gt",
-                );
-                break;
-
-            case "unimash":
-                writeToOutput(
-                    "\u001b[37munimash - play unicode smash or pass",
-                    "\u001b[37mUsage: unimash",
-                );
-                break;
-
-            case "upload":
-                writeToOutput(
-                    "\u001b[37mupload - upload a file",
-                    "\u001b[37mUsage: upload",
-                );
-                break;
-
-            case "speedtest":
-                writeToOutput(
-                    "\u001b[37mspeedtest - test your connection speed",
-                    "\u001b[37mUsage: speedtest",
-                );
-                break;
-
-            default:
-                socket.emit("manual", command[1]);
-                break;
+        for (let i = 0; i < entry.length; i++) {
+            writeToOutput("\u001b[37m" + entry[i]);
         }
     }
 
@@ -2985,7 +3187,7 @@
         });
 
         if (args[0] in commands) {
-            commands[args[0]](args);
+            commands[args[0]].execute(args);
         } else if (args[0] === "") {
             writeToOutput("");
         } else {
@@ -3002,7 +3204,7 @@
             pipeArgs = [...pipeArgs, ...pipeOutput];
 
             if (pipeArgs[0] in commands) {
-                commands[pipeArgs[0]](pipeArgs);
+                commands[pipeArgs[0]].execute(pipeArgs);
             } else {
                 socket.emit("command", pipeArgs);
             }
@@ -3126,7 +3328,12 @@
             ></canvas>
         {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
             <button onclick={clickEstrogen}>
-                <img src="estrogen.png" alt="Estrogen" style="max-width: 100px; max-height: 100px;" draggable="false" />
+                <img
+                    src="estrogen.png"
+                    alt="Estrogen"
+                    style="max-width: 100px; max-height: 100px;"
+                    draggable="false"
+                />
             </button>
         {:else}
             <div class="terminal-line">{@html processAnsiColors(line)}</div>

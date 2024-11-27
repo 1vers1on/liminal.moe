@@ -40,5 +40,11 @@ export const cyrpoStore = persistentStore<number>("cyro", 0);
 
 export const estrogenGelStore = persistentStore<number>("estrogenGel", 0);
 export const estrogenPillsStore = persistentStore<number>("estrogenPills", 0);
-export const estrogenPatchesStore = persistentStore<number>("estrogenPatches", 0);
-export const estrogenInjectionsStore = persistentStore<number>("estrogenInjections", 0);
+export const estrogenPatchesStore = persistentStore<number>(
+    "estrogenPatches",
+    0,
+);
+export const estrogenInjectionsStore = persistentStore<number>(
+    "estrogenInjections",
+    0,
+);
