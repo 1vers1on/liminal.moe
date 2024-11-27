@@ -3770,7 +3770,12 @@
     <span class="estrogen-count">{$estrogenStore} Estrogen</span>
 {/if}
 
-<div id="oneko" bind:this={oneko} style="display: none;" draggable="false"></div>
+<div
+    id="oneko"
+    bind:this={oneko}
+    style="display: none;"
+    draggable="false"
+></div>
 
 <style>
     img {
