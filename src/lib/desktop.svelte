@@ -190,6 +190,219 @@
     let mousePosX = 0;
     let mousePosY = 0;
 
+    interface MinesweeperCell {
+        isMine: boolean;
+        isFlagged: boolean;
+        isRevealed: boolean;
+        adjacentMines: number;
+    }
+
+    let minesweeperGrid: MinesweeperCell[][] = $state([]);
+
+    const minesweeperColors: Record<number, string> = {
+        1: "\u001b[34m",
+        2: "\u001b[32m",
+        3: "\u001b[31m",
+        4: "\u001b[35m",
+        5: "\u001b[36m",
+        6: "\u001b[33m",
+        7: "\u001b[37m",
+        8: "\u001b[90m",
+    };
+
+    let minesweeperGameActive = false;
+
+    let minesweeperFirstClick = true;
+
+    let mineSweeperYsize = 9;
+    let mineSweeperXsize = 9;
+    let mineSweeperMines = 10;
+
+    function initMinesweeperGrid() {
+        minesweeperGrid = [];
+        for (let i = 0; i < mineSweeperYsize; i++) {
+            minesweeperGrid.push([]);
+            for (let j = 0; j < mineSweeperXsize; j++) {
+                minesweeperGrid[i].push({
+                    isMine: false,
+                    isFlagged: false,
+                    isRevealed: false,
+                    adjacentMines: 0,
+                });
+            }
+        }
+
+        placeMinesweeperMines(mineSweeperMines);
+        calculateAdjacentMines();
+
+        minesweeperGameActive = true;
+    }
+
+    function placeMinesweeperMines(mines: number) {
+        let minesPlaced = 0;
+        while (minesPlaced < mines) {
+            let x = Math.floor(Math.random() * mineSweeperYsize);
+            let y = Math.floor(Math.random() * mineSweeperXsize);
+            if (!minesweeperGrid[x][y].isMine) {
+                minesweeperGrid[x][y].isMine = true;
+                minesPlaced++;
+            }
+        }
+    }
+
+    function calculateAdjacentMines() {
+        for (let i = 0; i < mineSweeperYsize; i++) {
+            for (let j = 0; j < mineSweeperXsize; j++) {
+                if (minesweeperGrid[i][j].isMine) {
+                    continue;
+                }
+                let adjacentMines = 0;
+                for (let x = -1; x <= 1; x++) {
+                    for (let y = -1; y <= 1; y++) {
+                        if (x === 0 && y === 0) {
+                            continue;
+                        }
+                        let ni = i + x;
+                        let nj = j + y;
+                        if (
+                            ni < 0 ||
+                            ni >= mineSweeperYsize ||
+                            nj < 0 ||
+                            nj >= mineSweeperXsize
+                        ) {
+                            continue;
+                        }
+                        if (minesweeperGrid[ni][nj].isMine) {
+                            adjacentMines++;
+                        }
+                    }
+                }
+                minesweeperGrid[i][j].adjacentMines = adjacentMines;
+            }
+        }
+    }
+
+    function getMinesweeperSymbol(x: number, y: number): string {
+        if (minesweeperGrid[x][y].isFlagged) {
+            return "\u001b[31mF\u001b[0m&nbsp;";
+        } else if (minesweeperGrid[x][y].isRevealed) {
+            if (minesweeperGrid[x][y].isMine) {
+                return "\u001b[37mX\u001b[0m&nbsp;";
+            } else if (minesweeperGrid[x][y].adjacentMines > 0) {
+                return `${minesweeperColors[minesweeperGrid[x][y].adjacentMines]}${
+                    minesweeperGrid[x][y].adjacentMines
+                }\u001b[0m&nbsp;`;
+            } else {
+                return "&nbsp;&nbsp;";
+            }
+        } else {
+            return "■&nbsp;";
+        }
+    }
+
+    function rightClickMinesweeperCell(
+        event: MouseEvent,
+        x: number,
+        y: number,
+    ) {
+        if (!minesweeperGameActive) {
+            return;
+        }
+
+        event.preventDefault();
+        if (!minesweeperGameActive) {
+            return;
+        }
+        if (minesweeperGrid[x][y].isRevealed) {
+            return;
+        }
+        minesweeperGrid[x][y].isFlagged = !minesweeperGrid[x][y].isFlagged;
+    }
+
+    function clickMinesweeperCell(x: number, y: number) {
+        if (!minesweeperGameActive) {
+            return;
+        }
+
+        if (minesweeperFirstClick) {
+            while (
+                minesweeperGrid[x][y].isMine ||
+                minesweeperGrid[x][y].adjacentMines > 0
+            ) {
+                initMinesweeperGrid();
+            }
+            minesweeperFirstClick = false;
+        }
+
+        if (minesweeperGrid[x][y].isFlagged) {
+            return;
+        }
+        if (minesweeperGrid[x][y].isMine) {
+            writeToOutput("You lose!");
+            for (let i = 0; i < mineSweeperYsize; i++) {
+                for (let j = 0; j < mineSweeperXsize; j++) {
+                    minesweeperGrid[i][j].isRevealed = true;
+                    minesweeperGrid[i][j].isFlagged = false;
+                }
+            }
+            minesweeperGameActive = false;
+            return;
+        }
+
+        minesweeperGrid[x][y].isRevealed = true;
+
+        let stack: [number, number][] = [[x, y]];
+
+        while (stack.length > 0) {
+            let cell = stack.pop();
+            if (!cell) continue;
+            let [i, j] = cell;
+            if (minesweeperGrid[i][j].adjacentMines > 0) {
+                continue;
+            }
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    if (x === 0 && y === 0) {
+                        continue;
+                    }
+                    let ni = i + x;
+                    let nj = j + y;
+                    if (
+                        ni < 0 ||
+                        ni >= mineSweeperYsize ||
+                        nj < 0 ||
+                        nj >= mineSweeperXsize
+                    ) {
+                        continue;
+                    }
+                    if (minesweeperGrid[ni][nj].isRevealed) {
+                        continue;
+                    }
+                    minesweeperGrid[ni][nj].isRevealed = true;
+                    if (minesweeperGrid[ni][nj].adjacentMines === 0) {
+                        stack.push([ni, nj]);
+                    }
+                }
+            }
+        }
+
+        if (
+            minesweeperGrid.every((row) =>
+                row.every((cell) => cell.isRevealed || cell.isMine),
+            )
+        ) {
+            writeToOutput("You win!");
+            for (let i = 0; i < mineSweeperYsize; i++) {
+                for (let j = 0; j < mineSweeperXsize; j++) {
+                    minesweeperGrid[i][j].isRevealed = true;
+                    minesweeperGrid[i][j].isFlagged = false;
+                }
+            }
+
+            minesweeperGameActive = false;
+        }
+    }
+
     // credit to adryd for the oneko vencord plugin
     let oneko: HTMLElement;
 
@@ -1210,6 +1423,9 @@
                 if (intervalProcess) clearInterval(intervalProcess);
                 if (badAppleInterval) clearInterval(badAppleInterval);
                 clearOutput();
+
+                minesweeperGameActive = false;
+                minesweeperGrid = [];
 
                 gridCanvases.forEach((canvas) => {
                     if (canvas) {
@@ -2960,6 +3176,57 @@
             ],
         },
 
+        yippe: {
+            execute: (command: string[]) => {
+                for (let i = 0; i < 777; i++) {
+                    writeToOutput("Yipee!!");
+                }
+            },
+            manual_entries: ["yipe - yipee", "Usage: yipee"],
+
+            hidden: true,
+        },
+
+        minesweeper: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: minesweeper &lt;easy|medium|hard&gt");
+                    return;
+                }
+
+                if (command[1] === "easy") {
+                    mineSweeperYsize = 9;
+                    mineSweeperXsize = 9;
+                    mineSweeperMines = 10;
+                } else if (command[1] === "medium") {
+                    mineSweeperYsize = 16;
+                    mineSweeperXsize = 16;
+                    mineSweeperMines = 40;
+                } else if (command[1] === "hard") {
+                    mineSweeperYsize = 16;
+                    mineSweeperXsize = 24;
+                    mineSweeperMines = 70;
+                } else if (command[1] === "expert") {
+                    mineSweeperYsize = 16;
+                    mineSweeperXsize = 30;
+                    mineSweeperMines = 99;
+                } else {
+                    writeToOutput(
+                        "Usage: minesweeper &lt;easy|medium|hard|expert&gt",
+                    );
+                    return;
+                }
+
+                initMinesweeperGrid();
+                writeToOutput("QjucQiik0VmEON7mdPDqhA");
+            },
+
+            manual_entries: [
+                "minesweeper - play minesweeper",
+                "Usage: minesweeper &lt;easy|medium|hard|expert&gt",
+            ],
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -3731,7 +3998,7 @@
             <canvas width="300" height="300" bind:this={gridCanvases[i]}
             ></canvas>
         {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
-            <button onclick={clickEstrogen}>
+            <button class="ebutton" onclick={clickEstrogen}>
                 <img
                     src="estrogen.png"
                     alt="Estrogen"
@@ -3739,6 +4006,20 @@
                     draggable="false"
                 />
             </button>
+        {:else if line === "QjucQiik0VmEON7mdPDqhA"}
+            {#each minesweeperGrid as row, i}
+                {#each row as cell, j}
+                    <button
+                        class="minesweeperButton"
+                        onclick={() => clickMinesweeperCell(i, j)}
+                        oncontextmenu={(event) =>
+                            rightClickMinesweeperCell(event, i, j)}
+                    >
+                        {@html processAnsiColors(getMinesweeperSymbol(i, j))}
+                    </button>
+                {/each}
+                <br />
+            {/each}
         {:else}
             <div class="terminal-line">{@html processAnsiColors(line)}</div>
         {/if}
@@ -3771,7 +4052,7 @@
 {/if}
 
 <div
-    id="oneko"
+    class="oneko"
     bind:this={oneko}
     style="display: none;"
     draggable="false"
@@ -3785,14 +4066,24 @@
         -ms-user-select: none;
     }
 
-    button {
+    .ebutton {
         background-color: transparent;
         border: none;
         cursor: pointer;
         transition: ease 0.1s;
     }
 
-    button:active {
+    .minesweeperButton {
+        background: none;
+        color: inherit;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        outline: inherit;
+    }
+
+    .ebutton:active {
         transform: scale(0.9);
     }
 
@@ -3850,7 +4141,7 @@
         margin-left: -1ch;
     }
 
-    #oneko {
+    .oneko {
         width: 32px;
         height: 32px;
         position: fixed;
