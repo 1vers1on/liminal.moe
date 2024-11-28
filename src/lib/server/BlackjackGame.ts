@@ -5,22 +5,79 @@ interface Card {
     value: string;
 }
 
+interface Player {
+    username: string;
+    socket: Socket;
+    hand: Card[];
+    playing: boolean;
+}
+
 export class BlackjackGame {
     deck: Card[] = [];
-    playerHand: Card[] = [];
     dealerHand: Card[] = [];
-    socket: Socket;
+    connectedUsers: Map<string, Player> = new Map();
+
+    currentPlayer: string = "";
+
+    playersGone: string[] = [];
 
     isOver: boolean = false;
 
-    constructor(socket: Socket) {
+    owner: string = "";
+
+    constructor(owner: string) {
         this.deck = this.createDeck();
         this.shuffleDeck();
-        this.socket = socket;
+        this.owner = owner;
     }
 
-    writeOutput(message: string) {
-        this.socket.emit("output", [message]);
+    removePlayer(username: string) {
+        this.connectedUsers.delete(username);
+        this.playersGone = this.playersGone.filter(
+            (player) => player !== username,
+        );
+
+        if (this.currentPlayer === username) {
+            this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
+                (username) =>
+                    !this.playersGone.includes(username) &&
+                    this.connectedUsers.get(username)!.playing,
+            )!;
+        }
+
+        if (this.currentPlayer) {
+            this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
+            this.writeOutputToCurrentPlayer(
+                `Do you want to hit or stand? Type "hit" or "stand"`,
+            );
+        }
+    }
+
+    addPlayer(socket: Socket, username: string) {
+        this.connectedUsers.set(username, {
+            username: username,
+            socket,
+            hand: [],
+            playing: true,
+        });
+    }
+
+    writeOutputToAll(message: string) {
+        for (const user of this.connectedUsers.values()) {
+            user.socket.emit("output", [message]);
+        }
+    }
+
+    writeOutputToCurrentPlayer(message: string) {
+        this.connectedUsers
+            .get(this.currentPlayer)!
+            .socket.emit("output", [message]);
+    }
+
+    writeOutputToPlayer(username: string, message: string) {
+        if (this.connectedUsers.has(username)) {
+            this.connectedUsers.get(username)!.socket.emit("output", [message]);
+        }
     }
 
     createDeck() {
@@ -89,57 +146,162 @@ export class BlackjackGame {
         return hand.map((card) => `${card.value} of ${card.suit}`).join(", ");
     }
 
+    dealCards() {
+        for (const player of this.connectedUsers.values()) {
+            player.hand = [this.dealCard()!, this.dealCard()!];
+            player.socket.emit("output", [
+                `Your hand: ${this.handToString(player.hand)}`,
+            ]);
+        }
+    }
+
     startGame() {
-        this.playerHand = [this.dealCard()!, this.dealCard()!];
+        for (const player of this.connectedUsers.values()) {
+            player.socket.emit("blackjack", "start");
+        }
+
+        this.dealCards();
         this.dealerHand = [this.dealCard()!, this.dealCard()!];
-        this.writeOutput("Your hand: " + this.handToString(this.playerHand));
-        this.writeOutput(
-            "Dealer's hand: " + this.handToString(this.dealerHand.slice(0, 1)),
-        );
-        this.writeOutput(`Do you want to hit or stand? Type "hit" or "stand"`);
-    }
-
-    stand() {
-        let playerScore = this.calculateHand(this.playerHand);
-        let dealerScore = this.calculateHand(this.dealerHand);
-
-        while (dealerScore < 17) {
-            this.dealerHand.push(this.dealCard()!);
-            dealerScore = this.calculateHand(this.dealerHand);
-        }
-
-        this.writeOutput(
-            `Dealer's hand: ${this.handToString(this.dealerHand)}`,
+        this.writeOutputToAll(
+            "Dealer's hand: " +
+                this.handToString(this.dealerHand.slice(0, 1)) +
+                ", ?",
         );
 
-        if (dealerScore > 21) {
-            this.writeOutput(`Dealer busts! You win!`);
-        } else if (playerScore > dealerScore) {
-            this.writeOutput(`You win!`);
-        } else if (playerScore < dealerScore) {
-            this.writeOutput(`You lose!`);
-        } else {
-            this.writeOutput(`It's a tie!`);
-        }
-
-        this.isOver = true;
-
-        this.socket.emit("blackjack", "end");
-
-        this.isOver = true;
+        this.currentPlayer = Array.from(this.connectedUsers.keys())[0];
+        this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
+        this.writeOutputToCurrentPlayer(
+            `Do you want to hit or stand? Type "hit" or "stand"`,
+        );
     }
 
-    hit() {
-        this.playerHand.push(this.dealCard()!);
-        this.writeOutput("Your hand: " + this.handToString(this.playerHand));
+    dealerTurnIfTime(): boolean {
+        if (this.playersGone.length === this.connectedUsers.size) {
+            // this.endGame();
+            // this.writeOutputToAll("i will implement this in a bit :P");
+            this.writeOutputToAll(
+                `It's the dealer's turn. Dealer's hand: ${this.handToString(
+                    this.dealerHand,
+                )}`,
+            );
+            let dealerScore = this.calculateHand(this.dealerHand);
 
-        if (this.calculateHand(this.playerHand) > 21) {
-            this.writeOutput("You bust! Dealer wins!");
-            this.writeOutput(`Type "start" to play again`);
-        } else {
-            this.writeOutput(
+            while (dealerScore < 17) {
+                this.dealerHand.push(this.dealCard()!);
+
+                this.writeOutputToAll(
+                    `Dealer hits. Dealer's hand: ${this.handToString(
+                        this.dealerHand,
+                    )}`,
+                );
+
+                dealerScore = this.calculateHand(this.dealerHand);
+            }
+
+            if (dealerScore > 21) {
+                this.writeOutputToAll(`Dealer busts! You all win!`);
+            } else {
+                for (const player of this.connectedUsers.values()) {
+                    const playerScore = this.calculateHand(player.hand);
+                    if (playerScore > 21) {
+                        player.socket.emit("output", ["You bust!"]);
+                    } else if (playerScore > dealerScore) {
+                        player.socket.emit("output", ["You win!"]);
+                    } else if (playerScore < dealerScore) {
+                        player.socket.emit("output", ["You lose!"]);
+                    } else {
+                        player.socket.emit("output", ["It's a tie!"]);
+                    }
+                }
+            }
+
+            this.isOver = true;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    stand(username: string) {
+        if (this.currentPlayer !== username) {
+            this.writeOutputToPlayer(username, "It's not your turn");
+            return;
+        }
+
+        const player = this.connectedUsers.get(username)!;
+
+        this.writeOutputToAll(`${username} stands`);
+
+        if (!this.playersGone.includes(username)) {
+            this.playersGone.push(username);
+        }
+
+        if (this.dealerTurnIfTime()) {
+            return;
+        }
+
+        this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
+            (username) =>
+                !this.playersGone.includes(username) &&
+                this.connectedUsers.get(username)!.playing,
+        )!;
+
+        this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
+        this.writeOutputToCurrentPlayer(
+            `Do you want to hit or stand? Type "hit" or "stand"`,
+        );
+    }
+
+    hit(username: string) {
+        if (this.currentPlayer !== username) {
+            this.writeOutputToPlayer(username, "It's not your turn");
+            return;
+        }
+
+        const player = this.connectedUsers.get(username)!;
+        player.hand.push(this.dealCard()!);
+
+        player.socket.emit("output", [
+            `Your hand: ${this.handToString(player.hand)}`,
+        ]);
+
+        if (!this.playersGone.includes(username)) {
+            this.playersGone.push(username);
+        }
+
+        if (this.dealerTurnIfTime()) {
+            return;
+        }
+
+        const score = this.calculateHand(player.hand);
+        if (score > 21) {
+            this.writeOutputToAll(`${username} hits and busts!`);
+            this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
+                (username) =>
+                    !this.playersGone.includes(username) &&
+                    this.connectedUsers.get(username)!.playing,
+            )!;
+            player.playing = false;
+
+            this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
+            this.writeOutputToCurrentPlayer(
                 `Do you want to hit or stand? Type "hit" or "stand"`,
             );
+            return;
         }
+
+        this.writeOutputToAll(`${username} hits`);
+
+        this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
+            (username) =>
+                !this.playersGone.includes(username) &&
+                this.connectedUsers.get(username)!.playing,
+        )!;
+
+        this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
+        this.writeOutputToCurrentPlayer(
+            `Do you want to hit or stand? Type "hit" or "stand"`,
+        );
     }
 }

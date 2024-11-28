@@ -190,6 +190,8 @@
     let mousePosX = 0;
     let mousePosY = 0;
 
+    let pendingInvite = false;
+
     // minesweeper
 
     interface MinesweeperCell {
@@ -1241,6 +1243,7 @@
         manual_entries: string[];
         hidden?: boolean;
         admin_only?: boolean;
+        help_subsection?: string;
     }
 
     const commands: Record<string, Command> = {
@@ -1254,7 +1257,8 @@
                 for (const command in commands) {
                     if (
                         !commands[command].hidden &&
-                        !commands[command].admin_only
+                        !commands[command].admin_only &&
+                        !commands[command].help_subsection
                     ) {
                         writeToOutput(`\u001b[37m${command}`);
                     }
@@ -1264,6 +1268,26 @@
             manual_entries: [
                 "help - display available commands",
                 "Usage: help",
+            ],
+        },
+
+        blackjackHelp: {
+            execute: () => {
+                writeToOutput(
+                    "\u001b[37mUse man to get more information about a command.",
+                    "\u001b[37mAvailable commands:",
+                );
+
+                for (const command in commands) {
+                    if (commands[command].help_subsection === "blackjack") {
+                        writeToOutput(`\u001b[37m${command}`);
+                    }
+                }
+            },
+
+            manual_entries: [
+                "blackjackHelp - display available blackjack commands",
+                "Usage: blackjackHelp",
             ],
         },
 
@@ -3235,13 +3259,27 @@
         blackjack: {
             execute: (command: string[]) => {
                 blackjackActive = true;
-                socket.emit("blackjack", ["startSolo"]);
+                socket.emit("blackjack", ["create"]);
             },
 
             manual_entries: [
                 "blackjack - play blackjack",
                 "Usage: blackjack &lt;bet&gt",
             ],
+        },
+
+        startBlackjack: {
+            execute: (command: string[]) => {
+                blackjackActive = true;
+                socket.emit("blackjack", ["start"]);
+            },
+
+            manual_entries: [
+                "startBlackjack - start a blackjack game",
+                "Usage: startBlackjack",
+            ],
+
+            help_subsection: "blackjack",
         },
 
         hit: {
@@ -3256,7 +3294,7 @@
 
             manual_entries: ["hit - hit in blackjack", "Usage: hit"],
 
-            hidden: true,
+            help_subsection: "blackjack",
         },
 
         stand: {
@@ -3271,7 +3309,82 @@
 
             manual_entries: ["stand - stand in blackjack", "Usage: stand"],
 
-            hidden: true,
+            help_subsection: "blackjack",
+        },
+
+        invite: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: invite &lt;username&gt");
+                    return;
+                }
+
+                socket.emit("blackjack", ["invite", command[1]]);
+            },
+
+            manual_entries: [
+                "invite - invite a user to play blackjack",
+                "Usage: invite &lt;username&gt",
+            ],
+
+            help_subsection: "blackjack",
+        },
+
+        accept: {
+            execute: (command: string[]) => {
+                socket.emit("blackjack", ["accept"]);
+
+                pendingInvite = false;
+            },
+
+            manual_entries: [
+                "accept - accept a blackjack invite",
+                "Usage: accept",
+            ],
+
+            help_subsection: "blackjack",
+        },
+
+        decline: {
+            execute: (command: string[]) => {
+                socket.emit("blackjack", ["decline"]);
+
+                pendingInvite = false;
+            },
+
+            manual_entries: [
+                "decline - decline a blackjack invite",
+                "Usage: decline",
+            ],
+
+            help_subsection: "blackjack",
+        },
+
+        playersInGame: {
+            execute: (command: string[]) => {
+                socket.emit("blackjack", ["playersInGame"]);
+            },
+
+            manual_entries: [
+                "playersInGame - get players in the blackjack game",
+                "Usage: playersInGame",
+            ],
+
+            help_subsection: "blackjack",
+        },
+
+        stopGame: {
+            execute: (command: string[]) => {
+                blackjackActive = false;
+                socket.emit("blackjack", ["stop"]);
+            },
+
+            manual_entries: [
+                "stopGame - stop the blackjack game",
+                "Usage: stopGame",
+            ],
+
+            help_subsection: "blackjack",
         },
 
         onlineUsers: {
@@ -3955,6 +4068,19 @@
             socket.on("blackjack", (output: string) => {
                 if (output === "end") {
                     blackjackActive = false;
+                }
+
+                if (output === "start") {
+                    blackjackActive = true;
+                }
+
+                if (output === "invite") {
+                    pendingInvite = true;
+                }
+
+                if (output === "expired") {
+                    pendingInvite = false;
+                    writeToOutput("\u001b[31mInvite expired");
                 }
             });
 

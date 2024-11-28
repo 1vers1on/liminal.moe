@@ -4,10 +4,44 @@ import { Server, Socket } from "socket.io";
 import { deleteOldTokens, userExists, getUsername } from "$lib/auth";
 
 import { BlackjackGame } from "./BlackjackGame";
+import { ExpiringMap } from "./ExpiringMap";
 
-let blackjackGames: Map<string, BlackjackGame> = new Map();
+interface BlackjackRoom {
+    owner: string;
+    players: string[];
+}
+
+let blackjackGames: Map<BlackjackRoom, BlackjackGame> = new Map();
 
 let connectedUsers: Map<Socket, string> = new Map();
+
+let pendingInvites: ExpiringMap<string, BlackjackGame> = new ExpiringMap(
+    (key, value) => {
+        value.writeOutputToAll(
+            `\u001b[31mInvite to ${key} has expired\u001b[0m`,
+        );
+
+        let socket: Socket | undefined = undefined;
+        for (const [s, u] of connectedUsers) {
+            if (u === key) {
+                socket = s;
+                break;
+            }
+        }
+
+        socket?.emit("blackjack", "expired");
+    },
+);
+
+function getPlayerGame(user: string) {
+    for (const [room, game] of blackjackGames) {
+        if (room.players.includes(user)) {
+            return game;
+        }
+    }
+
+    return null;
+}
 
 export const websocketServer = () =>
     useServer(
@@ -17,9 +51,28 @@ export const websocketServer = () =>
             wsServer.on("connection", (socket: Socket) => {
                 console.log("Client connected");
                 socket.on("disconnect", () => {
+                    // just delete the whole game for now since we don't have a way to remove individual players
                     const user = connectedUsers.get(socket);
-                    if (user && blackjackGames.has(user)) {
-                        blackjackGames.delete(user);
+
+                    if (user) {
+                        for (const [room, game] of blackjackGames) {
+                            const game = blackjackGames.get(room);
+                            if (game) {
+                                game.writeOutputToAll(
+                                    `\u001b[31m${user} has disconnected\u001b[0m`,
+                                );
+                                game.removePlayer(user);
+
+                                if (game.connectedUsers.size === 0) {
+                                    blackjackGames.delete(room);
+                                }
+
+                                room.players = room.players.filter(
+                                    (player) => player !== user,
+                                );
+                            }
+                            break;
+                        }
                     }
 
                     if (connectedUsers.has(socket)) {
@@ -59,48 +112,185 @@ export const websocketServer = () =>
                         return;
                     }
 
-                    if (data[0] === "startSolo") {
-                        if (blackjackGames.has(user)) {
+                    const game = getPlayerGame(user);
+
+                    if (data[0] === "create") {
+                        if (game) {
                             socket.emit("output", [
                                 `\u001b[31mYou are already in a game\u001b[0m`,
                             ]);
                             return;
                         }
 
-                        const game = new BlackjackGame(socket);
-                        blackjackGames.set(user, game);
-                        game.startGame();
-                    } else if (data[0] === "startMulti") {
+                        const newGame = new BlackjackGame(user);
+                        const room = { owner: user, players: [user] };
+
+                        blackjackGames.set(room, newGame);
+
+                        newGame.addPlayer(socket, user);
+
                         socket.emit("output", [
-                            `\u001b[31mMultiplayer blackjack is not available yet\u001b[0m`,
+                            `\u001b[32mGame created\u001b[0m`,
                         ]);
-                    } else if (data[0] === "hit") {
-                        const game = blackjackGames.get(user);
+
+                        return;
+                    } else if (data[0] === "accept") {
+                        const game = pendingInvites.get(user);
+
                         if (!game) {
                             socket.emit("output", [
-                                `\u001b[31mYou are not in a game\u001b[0m`,
+                                `\u001b[31mYou do not have any pending invites\u001b[0m`,
                             ]);
                             return;
                         }
 
-                        game.hit();
+                        pendingInvites.delete(user);
+
+                        const room = Array.from(blackjackGames.keys()).find(
+                            (room) => room.owner === game.owner,
+                        );
+
+                        if (room) {
+                            room.players.push(user);
+                            game.addPlayer(socket, user);
+                            game.writeOutputToAll(
+                                `\u001b[32m${user} has joined the game\u001b[0m`,
+                            );
+                        }
+
+                        return;
+                    }
+
+                    if (!game) {
+                        socket.emit("output", [
+                            `\u001b[31mYou are not in a game\u001b[0m`,
+                        ]);
+                        return;
+                    }
+
+                    if (data[0] === "invite") {
+                        if (game.owner !== user) {
+                            socket.emit("output", [
+                                `\u001b[31mOnly the owner can invite players\u001b[0m`,
+                            ]);
+                            return;
+                        }
+
+                        const player = data[1];
+
+                        if (game.connectedUsers.has(player)) {
+                            socket.emit("output", [
+                                `\u001b[31m${player} is already in the game\u001b[0m`,
+                            ]);
+                            return;
+                        }
+
+                        if (
+                            !Array.from(connectedUsers.values()).includes(
+                                player,
+                            )
+                        ) {
+                            socket.emit("output", [
+                                `\u001b[31m${player} is not online\u001b[0m`,
+                            ]);
+                            return;
+                        }
+
+                        game.writeOutputToAll(
+                            `\u001b[33m${user} has invited ${player} to the game\u001b[0m`,
+                        );
+
+                        pendingInvites.set(player, game);
+
+                        let socketInvited: Socket | undefined = undefined;
+
+                        for (const [s, u] of connectedUsers) {
+                            if (u === player) {
+                                socketInvited = s;
+                                break;
+                            }
+                        }
+
+                        socketInvited?.emit("blackjack", "invite");
+
+                        socketInvited?.emit("output", [
+                            `\u001b[33m${user} has invited you to a game. Type accept to join. Or type decline.\u001b[0m`,
+                        ]);
+
+                        socket.emit("output", [
+                            `\u001b[34mInvite sent to ${player}\u001b[0m`,
+                        ]);
+                    } else if (data[0] === "decline") {
+                        const game = pendingInvites.get(user);
+
+                        if (!game) {
+                            socket.emit("output", [
+                                `\u001b[31mYou do not have any pending invites\u001b[0m`,
+                            ]);
+                            return;
+                        }
+
+                        pendingInvites.delete(user);
+
+                        game.writeOutputToAll(
+                            `\u001b[31m${user} has declined the invite\u001b[0m`,
+                        );
+
+                        socket.emit("output", [
+                            `\u001b[31mInvite declined\u001b[0m`,
+                        ]);
+                    } else if (data[0] === "start") {
+                        if (game.owner !== user) {
+                            socket.emit("output", [
+                                `\u001b[31mOnly the owner can start the game\u001b[0m`,
+                            ]);
+                            return;
+                        }
+
+                        game.startGame();
+                    } else if (data[0] === "hit") {
+                        game.hit(user);
 
                         if (game.isOver) {
-                            blackjackGames.delete(user);
+                            for (const [room, g] of blackjackGames) {
+                                if (g === game) {
+                                    blackjackGames.delete(room);
+                                    break;
+                                }
+                            }
                         }
                     } else if (data[0] === "stand") {
-                        const game = blackjackGames.get(user);
-                        if (!game) {
+                        game.stand(user);
+
+                        if (game.isOver) {
+                            for (const [room, g] of blackjackGames) {
+                                if (g === game) {
+                                    blackjackGames.delete(room);
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (data[0] === "playersInGame") {
+                        for (const player of game.connectedUsers.values()) {
                             socket.emit("output", [
-                                `\u001b[31mYou are not in a game\u001b[0m`,
+                                `\u001b[37m${player.username}\u001b[0m`,
+                            ]);
+                        }
+                    } else if (data[0] === "stop") {
+                        if (game.owner !== user) {
+                            socket.emit("output", [
+                                `\u001b[31mOnly the owner can stop the game\u001b[0m`,
                             ]);
                             return;
                         }
 
-                        game.stand();
+                        game.writeOutputToAll(`\u001b[31mGame ended\u001b[0m`);
 
-                        if (game.isOver) {
-                            blackjackGames.delete(user);
+                        for (const [room, g] of blackjackGames) {
+                            if (g === game) {
+                                blackjackGames.delete(room);
+                                break;
+                            }
                         }
                     }
                 });
