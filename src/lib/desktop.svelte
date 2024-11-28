@@ -190,6 +190,8 @@
     let mousePosX = 0;
     let mousePosY = 0;
 
+    // minesweeper
+
     interface MinesweeperCell {
         isMine: boolean;
         isFlagged: boolean;
@@ -217,6 +219,9 @@
     let mineSweeperYsize = 9;
     let mineSweeperXsize = 9;
     let mineSweeperMines = 10;
+
+    // blackjack
+    let blackjackActive = false;
 
     function initMinesweeperGrid() {
         minesweeperGrid = [];
@@ -3227,6 +3232,59 @@
             ],
         },
 
+        blackjack: {
+            execute: (command: string[]) => {
+                blackjackActive = true;
+                socket.emit("blackjack", ["startSolo"]);
+            },
+
+            manual_entries: [
+                "blackjack - play blackjack",
+                "Usage: blackjack &lt;bet&gt",
+            ],
+        },
+
+        hit: {
+            execute: (command: string[]) => {
+                if (!blackjackActive) {
+                    writeToOutput("Blackjack game is not active");
+                    return;
+                }
+
+                socket.emit("blackjack", ["hit"]);
+            },
+
+            manual_entries: ["hit - hit in blackjack", "Usage: hit"],
+
+            hidden: true,
+        },
+
+        stand: {
+            execute: (command: string[]) => {
+                if (!blackjackActive) {
+                    writeToOutput("Blackjack game is not active");
+                    return;
+                }
+
+                socket.emit("blackjack", ["stand"]);
+            },
+
+            manual_entries: ["stand - stand in blackjack", "Usage: stand"],
+
+            hidden: true,
+        },
+
+        onlineUsers: {
+            execute: (command: string[]) => {
+                socket.emit("onlineUsers");
+            },
+
+            manual_entries: [
+                "onlineUsers - gets who is online",
+                "Usage: onlineUsers",
+            ],
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -3894,6 +3952,12 @@
                 writeToOutput(...output);
             });
 
+            socket.on("blackjack", (output: string) => {
+                if (output === "end") {
+                    blackjackActive = false;
+                }
+            });
+
             writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
@@ -3953,6 +4017,13 @@
             terminalWidth = Math.floor(displayWidth / 10);
 
             terminalHeight = Math.floor(displayHeight / 25);
+
+            fetch("/api/auth/getToken")
+                .then((response) => response.json())
+                .then((data) => {
+                    console.log(data);
+                    socket.emit("auth", data.token);
+                });
 
             fetch("/api/visitorCount")
                 .then((response) => response.json())

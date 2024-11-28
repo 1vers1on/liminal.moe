@@ -2,6 +2,25 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function userExists(token: string) {
+    if (!token) {
+        return false;
+    }
+
+    deleteOldTokens(token);
+
+    const tokenRecord = await prisma.tokens.findFirst({
+        where: {
+            token,
+        },
+        include: {
+            user: true,
+        },
+    });
+
+    return !!tokenRecord?.user;
+}
+
 export async function isUserOwner(token: string) {
     if (!token) {
         return false;
