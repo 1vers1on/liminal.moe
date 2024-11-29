@@ -3,6 +3,8 @@
     import { goto } from "$app/navigation";
     import { io } from "socket.io-client";
 
+    import { isMobile } from "$lib/mobile";
+
     import pako from "pako";
 
     import {
@@ -29,6 +31,8 @@
         estrogenPatchesStore,
         estrogenInjectionsStore,
     } from "$lib/stores";
+
+    let mobile = $state(false);
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
 
@@ -3398,6 +3402,54 @@
             ],
         },
 
+        sigmacoins: {
+            execute: async () => {
+                const response = await fetch("/api/getSigmacoins");
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to get sigmacoins",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                const data = await response.json();
+
+                writeToOutput(`You have ${data.sigmacoins} sigmacoins`);
+            },
+
+            manual_entries: [
+                "sigmacoins - check your sigmacoins",
+                "Usage: sigmacoins",
+            ],
+        },
+
+        leaderboard: {
+            execute: async () => {
+                const response = await fetch("/api/sigmacoinLeaderboard");
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to get sigmacoin leaderboard",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                const data = (await response.json()).leaderboard;
+
+                data.forEach((entry: any, index: number) => {
+                    writeToOutput(
+                        `\u001b[37m${index + 1}. \u001b[32m${entry.name} - ${entry.sigmaCoins} sigmacoins`,
+                    );
+                });
+            },
+
+            manual_entries: [
+                "leaderboard - view the sigmacoin leaderboard",
+                "Usage: leaderboard",
+            ],
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -3870,6 +3922,11 @@
     }
 
     function handleKeydown(event: KeyboardEvent) {
+        if (mobile) {
+            mobile = false;
+            return;
+        }
+
         scrollToBottom();
 
         if (hiddenInputCallback) {
@@ -4144,10 +4201,11 @@
 
             terminalHeight = Math.floor(displayHeight / 25);
 
+            mobile = isMobile();
+
             fetch("/api/auth/getToken")
                 .then((response) => response.json())
                 .then((data) => {
-                    console.log(data);
                     socket.emit("auth", data.token);
                 });
 
@@ -4160,7 +4218,6 @@
                         visitorCount.toString(),
                     );
                     setLineInOutput(motd[3], 3);
-                    console.log(visitorCount);
                 });
 
             fetch("/api/getLastFmStatus")
@@ -4189,71 +4246,88 @@
     });
 </script>
 
-<div class="terminal" bind:this={terminalElement}>
-    {#each terminalOutput as line, i}
-        {#if line === "cAnVas"}
-            <canvas width="300" height="300" bind:this={gridCanvases[i]}
-            ></canvas>
-        {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
-            <button class="ebutton" onclick={clickEstrogen}>
-                <img
-                    src="estrogen.png"
-                    alt="Estrogen"
-                    style="max-width: 100px; max-height: 100px;"
-                    draggable="false"
-                />
-            </button>
-        {:else if line === "QjucQiik0VmEON7mdPDqhA"}
-            {#each minesweeperGrid as row, i}
-                {#each row as cell, j}
-                    <button
-                        class="minesweeperButton"
-                        onclick={() => clickMinesweeperCell(i, j)}
-                        oncontextmenu={(event) =>
-                            rightClickMinesweeperCell(event, i, j)}
-                    >
-                        {@html processAnsiColors(getMinesweeperSymbol(i, j))}
-                    </button>
-                {/each}
-                <br />
-            {/each}
-        {:else}
-            <div class="terminal-line">{@html processAnsiColors(line)}</div>
-        {/if}
-    {/each}
-    <div class="input-line">
-        <span class="prompt">{currentDirectory} $</span>
-        <span class="input-text">
-            {#each inputValue.split("") as char, i}
-                {#if i === cursorPosition}
-                    <span class="cursor">█</span>{@html char}
-                {:else}
-                    {@html char}
-                {/if}
-            {/each}
-            {#if cursorPosition === inputValue.length}
-                <span class="cursor end">█</span>
-            {/if}
-        </span>
+{#if mobile}
+    <div
+        style="display: flex; justify-content: center; align-items: center; height: 100vh;"
+    >
+        <div style="text-align: center;">
+            <h1>Sorry, this site is not optimized for mobile devices</h1>
+            <p>Please visit on a desktop or laptop</p>
+            <p>
+                If you are not on mobile and this message is showing, please
+                press any key to continue
+            </p>
+        </div>
     </div>
-</div>
+{:else}
+    <div class="terminal" bind:this={terminalElement}>
+        {#each terminalOutput as line, i}
+            {#if line === "cAnVas"}
+                <canvas width="300" height="300" bind:this={gridCanvases[i]}
+                ></canvas>
+            {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
+                <button class="ebutton" onclick={clickEstrogen}>
+                    <img
+                        src="estrogen.png"
+                        alt="Estrogen"
+                        style="max-width: 100px; max-height: 100px;"
+                        draggable="false"
+                    />
+                </button>
+            {:else if line === "QjucQiik0VmEON7mdPDqhA"}
+                {#each minesweeperGrid as row, i}
+                    {#each row as cell, j}
+                        <button
+                            class="minesweeperButton"
+                            onclick={() => clickMinesweeperCell(i, j)}
+                            oncontextmenu={(event) =>
+                                rightClickMinesweeperCell(event, i, j)}
+                        >
+                            {@html processAnsiColors(
+                                getMinesweeperSymbol(i, j),
+                            )}
+                        </button>
+                    {/each}
+                    <br />
+                {/each}
+            {:else}
+                <div class="terminal-line">{@html processAnsiColors(line)}</div>
+            {/if}
+        {/each}
+        <div class="input-line">
+            <span class="prompt">{currentDirectory} $</span>
+            <span class="input-text">
+                {#each inputValue.split("") as char, i}
+                    {#if i === cursorPosition}
+                        <span class="cursor">█</span>{@html char}
+                    {:else}
+                        {@html char}
+                    {/if}
+                {/each}
+                {#if cursorPosition === inputValue.length}
+                    <span class="cursor end">█</span>
+                {/if}
+            </span>
+        </div>
+    </div>
 
-<input
-    type="file"
-    bind:this={fileInput}
-    onchange={uploadFile}
-    style="display: none;"
-/>
-{#if estrogenClickerGameActive}
-    <span class="estrogen-count">{$estrogenStore} Estrogen</span>
+    <input
+        type="file"
+        bind:this={fileInput}
+        onchange={uploadFile}
+        style="display: none;"
+    />
+    {#if estrogenClickerGameActive}
+        <span class="estrogen-count">{$estrogenStore} Estrogen</span>
+    {/if}
+
+    <div
+        class="oneko"
+        bind:this={oneko}
+        style="display: none;"
+        draggable="false"
+    ></div>
 {/if}
-
-<div
-    class="oneko"
-    bind:this={oneko}
-    style="display: none;"
-    draggable="false"
-></div>
 
 <style>
     img {
