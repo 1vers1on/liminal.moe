@@ -21,7 +21,7 @@ export async function GET({ cookies }) {
         } else {
             const token = cookies.get("token") || "";
 
-            if ((await getUsername(token)) !== "HoosierTransfer") {
+            if ((await getUsername(token)) !== "1vers1on") {
                 visitorCount = await prisma.visitorCount.update({
                     where: { id: visitorCount.id },
                     data: { count: visitorCount.count + 1 },

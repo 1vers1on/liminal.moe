@@ -122,7 +122,7 @@
         "{visitors} Visitors so far!",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-        '┃  <a href="https://github.com/HoosierTransfer" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
+        '┃  <a href="https://github.com/1vers1on" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
         "┃                                                 ┃",
         "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
@@ -228,6 +228,7 @@
 
     // blackjack
     let blackjackActive = false;
+    let inBlackjackRoom = false;
 
     function initMinesweeperGrid() {
         minesweeperGrid = [];
@@ -1474,13 +1475,10 @@
             execute: () => {
                 writeToOutput(
                     "<br>",
-                    "I'm HoosierTransfer a c++ developer with a passion for creating things.",
+                    "I'm 1vers1on, a c++ developer with a passion for creating things.",
                     "Some little things about me~",
                     "<br>",
                     "~ I go by she/her pronouns",
-                    "~ My other username is Aether or 1vers1on",
-                    "~ Yes, i'm from Indiana (I don't live there anymore though)",
-                    "~ I use arch btw",
                     "~ Liminal space and backrooms enthusiast",
                     "   - I also like the dreamcore and weirdcore aesthetics",
                     `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
@@ -1667,7 +1665,7 @@
                             writeToOutput(
                                 "<br>",
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
-                                "┃ \u001b[96mName: HoosierTransfer\u001b[0m    ┃",
+                                "┃ \u001b[96mName: 1vers1on\u001b[0m           ┃",
                                 `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
                                 "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
                                 "┃ \u001b[96mLanguages: C++, ts, Rust\u001b[0m ┃",
@@ -2430,7 +2428,7 @@
                     },
                     body: JSON.stringify({
                         body: command.slice(1).join(" "),
-                        title: "HoosierTransfer",
+                        title: "1vers1on",
                     }),
                 });
 
@@ -2622,7 +2620,7 @@
                     const date = new Date(message.createdAt);
                     const dateString = date.toDateString();
 
-                    if (message.username === "HoosierTransfer") {
+                    if (message.username === "1vers1on") {
                         message.username = `\u001b[1337m${message.username}`;
                     }
                     writeToOutput(
@@ -2896,7 +2894,7 @@
                 }
 
                 const search = command.slice(1).join(" ");
-                window.location.href = `https://proxy.hoosiertransfer.net/proxy?url=${encodeURIComponent(
+                window.location.href = `https://proxy.1vers1on.net/proxy?url=${encodeURIComponent(
                     search,
                 )}`;
             },
@@ -3694,7 +3692,9 @@
         } else if (res.status === 401) {
             writeToOutput("\u001b[31mUnauthorized");
         } else {
-            writeToOutput("\u001b[31mFailed to upload file");
+            writeToOutput(
+                "\u001b[31mFailed to upload file" + (await res.text()),
+            );
         }
     }
 
@@ -3835,7 +3835,7 @@
         }
 
         const stats = [
-            "hoosiertransfer\u001b[37m@\u001b[96mnet",
+            "1vers1on\u001b[37m@\u001b[96mnet",
             "\u001b[37m-------------------",
             "OS\u001b[37m: " + platform,
             "Host\u001b[37m: archpcmain",
@@ -4128,7 +4128,12 @@
                 }
 
                 if (output === "start") {
+                    inBlackjackRoom = true;
                     blackjackActive = true;
+                }
+
+                if (output === "leave") {
+                    inBlackjackRoom = false;
                 }
 
                 if (output === "invite") {

@@ -250,26 +250,8 @@ export const websocketServer = () =>
                         game.startGame();
                     } else if (data[0] === "hit") {
                         game.hit(user);
-
-                        if (game.isOver) {
-                            for (const [room, g] of blackjackGames) {
-                                if (g === game) {
-                                    blackjackGames.delete(room);
-                                    break;
-                                }
-                            }
-                        }
                     } else if (data[0] === "stand") {
                         game.stand(user);
-
-                        if (game.isOver) {
-                            for (const [room, g] of blackjackGames) {
-                                if (g === game) {
-                                    blackjackGames.delete(room);
-                                    break;
-                                }
-                            }
-                        }
                     } else if (data[0] === "playersInGame") {
                         for (const player of game.connectedUsers.values()) {
                             socket.emit("output", [

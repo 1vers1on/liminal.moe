@@ -12,6 +12,8 @@ interface Player {
     playing: boolean;
 }
 
+const decks = 4;
+
 export class BlackjackGame {
     deck: Card[] = [];
     dealerHand: Card[] = [];
@@ -25,10 +27,38 @@ export class BlackjackGame {
 
     owner: string = "";
 
+    cutCardPosition: number = 0;
+
     constructor(owner: string) {
         this.deck = this.createDeck();
         this.shuffleDeck();
         this.owner = owner;
+
+        this.cutCardPosition =
+            Math.floor(this.deck.length * 0.6) +
+            Math.floor(Math.random() * Math.floor(this.deck.length * 0.05));
+    }
+
+    startNewGame() {
+        this.writeOutputToAll("Starting a new game");
+        if (this.deck.length < this.cutCardPosition) {
+            this.deck = this.createDeck();
+            this.shuffleDeck();
+            this.cutCardPosition =
+                Math.floor(this.deck.length * 0.6) +
+                Math.floor(Math.random() * Math.floor(this.deck.length * 0.05));
+
+            this.writeOutputToAll("Shuffling the deck");
+        }
+        this.dealerHand = [];
+        this.connectedUsers.forEach((player) => {
+            player.hand = [];
+            player.playing = true;
+        });
+        this.currentPlayer = "";
+        this.playersGone = [];
+        this.isOver = false;
+        this.startGame();
     }
 
     removePlayer(username: string) {
@@ -98,10 +128,11 @@ export class BlackjackGame {
             "K",
             "A",
         ];
-
-        for (let suit of suits) {
-            for (let value of values) {
-                deck.push({ suit, value });
+        for (let i = 0; i < decks; i++) {
+            for (let suit of suits) {
+                for (let value of values) {
+                    deck.push({ suit, value });
+                }
             }
         }
 
@@ -177,8 +208,6 @@ export class BlackjackGame {
 
     dealerTurnIfTime(): boolean {
         if (this.playersGone.length === this.connectedUsers.size) {
-            // this.endGame();
-            // this.writeOutputToAll("i will implement this in a bit :P");
             this.writeOutputToAll(
                 `It's the dealer's turn. Dealer's hand: ${this.handToString(
                     this.dealerHand,
@@ -266,10 +295,6 @@ export class BlackjackGame {
             `Your hand: ${this.handToString(player.hand)}`,
         ]);
 
-        if (!this.playersGone.includes(username)) {
-            this.playersGone.push(username);
-        }
-
         if (this.dealerTurnIfTime()) {
             return;
         }
@@ -277,6 +302,15 @@ export class BlackjackGame {
         const score = this.calculateHand(player.hand);
         if (score > 21) {
             this.writeOutputToAll(`${username} hits and busts!`);
+
+            if (!this.playersGone.includes(username)) {
+                this.playersGone.push(username);
+            }
+
+            if (this.dealerTurnIfTime()) {
+                return;
+            }
+
             this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
                 (username) =>
                     !this.playersGone.includes(username) &&
@@ -293,13 +327,6 @@ export class BlackjackGame {
 
         this.writeOutputToAll(`${username} hits`);
 
-        this.currentPlayer = Array.from(this.connectedUsers.keys()).find(
-            (username) =>
-                !this.playersGone.includes(username) &&
-                this.connectedUsers.get(username)!.playing,
-        )!;
-
-        this.writeOutputToAll(`It's ${this.currentPlayer}'s turn`);
         this.writeOutputToCurrentPlayer(
             `Do you want to hit or stand? Type "hit" or "stand"`,
         );
