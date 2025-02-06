@@ -3838,7 +3838,7 @@
             "1vers1on\u001b[37m@\u001b[96mnet",
             "\u001b[37m-------------------",
             "OS\u001b[37m: " + platform,
-            "Host\u001b[37m: archpcmain",
+            "Host\u001b[37m: sigmatron9000",
             "Uptime\u001b[37m: " +
                 Math.floor(
                     (new Date().getTime() - pageLoadTime.getTime()) / 1000,
