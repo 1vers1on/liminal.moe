@@ -2,16 +2,15 @@
     import { onMount } from "svelte";
     import { fly, fade } from "svelte/transition";
     import Desktop from "$lib/desktop.svelte";
+    import { isMobile } from "$lib/mobile";
 
-    let isMobile = $state(false);
+
+    let mobile = $state(false);
     let tiltX = $state(0);
     let tiltY = $state(0);
 
     onMount(() => {
-        const userAgent = navigator.userAgent.toLowerCase();
-        const mobileRegex =
-            /(iphone|ipod|ipad|android|blackberry|windows phone|mobile|tablet)/;
-        isMobile = mobileRegex.test(userAgent) && window.innerWidth < 1024;
+        mobile = isMobile();
 
         if (window.DeviceOrientationEvent) {
             window.addEventListener('deviceorientation', (event) => {
@@ -22,7 +21,7 @@
     });
 </script>
 
-{#if isMobile}
+{#if mobile}
     <div class="mobile-container" 
          transition:fade 
          style="--tiltX: {tiltX}deg; --tiltY: {tiltY}deg;">

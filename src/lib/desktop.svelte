@@ -120,7 +120,7 @@
         "Hello there! Welcome to my website.",
         "\u001b[95mFetching message of the day...",
         "\u001b[95mFetching last.fm status...",
-        "{visitors} Visitors so far!",
+        "\u001b[95mFetching visitor count...\u001b[0m Visitors so far!",
         "<br>",
         "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
         '┃  <a href="https://github.com/1vers1on" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
@@ -2894,27 +2894,6 @@
             ],
         },
 
-        proxy: {
-            execute: (command: string[]) => {
-                if (command.length === 1) {
-                    writeToOutput("Usage: proxy &lt;url&gt");
-                    return;
-                }
-
-                const search = command.slice(1).join(" ");
-                window.location.href = `https://proxy.1vers1on.net/proxy?url=${encodeURIComponent(
-                    search,
-                )}`;
-            },
-
-            manual_entries: [
-                "proxy - proxy a website",
-                "Usage: proxy &lt;url&gt",
-            ],
-
-            hidden: true,
-        },
-
         unimash: {
             execute: (command: string[]) => {
                 window.location.href = "/unimash";
@@ -4171,9 +4150,17 @@
         terminalOutput;
         scrollToBottom();
     });
+    writeToOutput(...motd);
 
     onMount(() => {
         (async () => {
+            // writeToOutput(...motd);
+            window.addEventListener("keydown", handleKeydown);
+            getMotd().then((message) => {
+                setLineInOutput(message, 1);
+                motd[1] = message;
+            });
+
             socket = io({ path: "/wss/" });
 
             socket.on("output", (output: string[]) => {
@@ -4202,13 +4189,6 @@
                     pendingInvite = false;
                     writeToOutput("\u001b[31mInvite expired");
                 }
-            });
-
-            writeToOutput(...motd);
-            window.addEventListener("keydown", handleKeydown);
-            getMotd().then((message) => {
-                setLineInOutput(message, 1);
-                motd[1] = message;
             });
 
             displayHeight = window.screen.availHeight;
@@ -4277,7 +4257,7 @@
                 .then((data) => {
                     visitorCount = data.count;
                     motd[3] = motd[3].replace(
-                        "{visitors}",
+                        "\u001b[95mFetching visitor count...",
                         visitorCount.toString(),
                     );
                     setLineInOutput(motd[3], 3);
