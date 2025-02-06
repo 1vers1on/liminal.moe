@@ -31,6 +31,7 @@
         estrogenPatchesStore,
         estrogenInjectionsStore,
     } from "$lib/stores";
+    import { run } from "svelte/legacy";
 
     let mobile = $state(false);
 
@@ -196,6 +197,9 @@
 
     let pendingInvite = false;
 
+    let cmatrixInterval: ReturnType<typeof setInterval> | null = null;
+    let cmatrixActive: boolean = false;
+
     // minesweeper
 
     interface MinesweeperCell {
@@ -229,6 +233,10 @@
     // blackjack
     let blackjackActive = false;
     let inBlackjackRoom = false;
+
+    function getRandomChar() {
+        return String.fromCharCode(Math.floor(Math.random() * 93) + 33);
+    }
 
     function initMinesweeperGrid() {
         minesweeperGrid = [];
@@ -3448,6 +3456,55 @@
             ],
         },
 
+        cmatrix: {
+            execute: (command: string[]) => {
+                clearOutput();
+                const matrixChars = Array.from({length: 94}, (_, i) => String.fromCharCode(33 + i));
+                const brightGreen = "\u001b[92m";
+                const darkGreen = "\u001b[32m";
+                
+                const runningLines = new Int8Array(terminalWidth);
+                const charIndices = new Int8Array(terminalWidth);
+                
+                const buffer = new Array(terminalWidth);
+                let outputBuffer = '';
+                
+                cmatrixInterval = setInterval(() => {
+                    if (cmatrixActive) {
+                        cmatrixActive = false;
+                        if (cmatrixInterval) clearInterval(cmatrixInterval);
+                        return;
+                    }
+
+                    for (let i = 0; i < terminalWidth; i++) {
+                        if (runningLines[i] > 0) {
+                            runningLines[i]--;
+                            charIndices[i] = (Math.random() * 94) | 0;
+                            buffer[i] = darkGreen + matrixChars[charIndices[i]];
+                        } else {
+                            if (Math.random() < 0.05) {
+                                runningLines[i] = (Math.random() * 10 + 1) | 0;
+                                charIndices[i] = (Math.random() * 94) | 0;
+                                buffer[i] = brightGreen + matrixChars[charIndices[i]];
+                            } else {
+                                buffer[i] = ' ';
+                            }
+                        }
+                    }
+
+                    outputBuffer = buffer.join('');
+                    
+                    terminalOutput = [outputBuffer, ...terminalOutput.slice(0, terminalHeight - 1)];
+
+                }, 1000 / 60);
+            },
+
+            manual_entries: [
+                "cmatrix - activate cmatrix",
+                "Usage: cmatrix",
+            ],
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -4007,6 +4064,7 @@
         } else if (event.key === "c" && timerCountingDown && !event.ctrlKey) {
             timerCountingDown = false;
         } else if (event.key === "c" && event.ctrlKey) {
+            if (cmatrixInterval) clearInterval(cmatrixInterval);
             return;
         } else if (event.key.length === 1) {
             inputValue =
