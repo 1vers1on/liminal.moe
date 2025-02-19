@@ -6,8 +6,8 @@ import { deleteOldTokens, userExists, getUsername } from "$lib/auth";
 import { BlackjackGame } from "./BlackjackGame";
 import { ExpiringMap } from "./ExpiringMap";
 
-import nacl from 'tweetnacl';
-import naclUtil from 'tweetnacl-util';
+import nacl from "tweetnacl";
+import naclUtil from "tweetnacl-util";
 
 interface BlackjackRoom {
     owner: string;
