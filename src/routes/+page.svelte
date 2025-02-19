@@ -11,7 +11,6 @@
 
     onMount(() => {
         mobile = isMobile();
-
         if (window.DeviceOrientationEvent) {
             window.addEventListener('deviceorientation', (event) => {
                 tiltX = event.beta ? Math.min(Math.max(event.beta * 0.5, -15), 15) : 0;
@@ -28,7 +27,7 @@
         <div class="content-wrapper">
             <h1 class="fancy-title">Welcome, Traveler!</h1>
             <p class="fancy-msg">
-                this site is optimized for desktop, but since you're here, take a moment to explore and soak in the vibes. ✨
+                this site is optimized for desktop, but since you're here, take a moment to soak in the vibes. ✨
             </p>
         </div>
     </div>

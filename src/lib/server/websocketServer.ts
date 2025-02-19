@@ -6,6 +6,9 @@ import { deleteOldTokens, userExists, getUsername } from "$lib/auth";
 import { BlackjackGame } from "./BlackjackGame";
 import { ExpiringMap } from "./ExpiringMap";
 
+import nacl from 'tweetnacl';
+import naclUtil from 'tweetnacl-util';
+
 interface BlackjackRoom {
     owner: string;
     players: string[];
@@ -290,6 +293,23 @@ export const websocketServer = () =>
                             socket.emit("output", [
                                 `\u001b[31mNo manual entry for ${data}\u001b[0m`,
                             ]);
+                            break;
+                    }
+                });
+
+                const keyPair = nacl.box.keyPair();
+                let sharedKey: Uint8Array | undefined = undefined;
+
+                socket.on("ssh", (message: string) => {
+                    const data = JSON.parse(message);
+                    switch (data.type) {
+                        case "key":
+                            const key = naclUtil.decodeBase64(data.key);
+                            sharedKey = nacl.box.before(key, keyPair.secretKey);
+                            socket.emit("ssh", {
+                                type: "key",
+                                key: naclUtil.encodeBase64(keyPair.publicKey),
+                            });
                             break;
                     }
                 });

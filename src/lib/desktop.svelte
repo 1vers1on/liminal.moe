@@ -19,6 +19,8 @@
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
     import type { Socket } from "socket.io";
+    import nacl from 'tweetnacl';
+    import naclUtil from 'tweetnacl-util';
 
     import {
         estrogenStore,
@@ -32,6 +34,10 @@
         estrogenInjectionsStore,
     } from "$lib/stores";
     import { run } from "svelte/legacy";
+
+    const keyPair = nacl.box.keyPair();
+    let sharedKey: Uint8Array | null = null;
+    let isSshMode = false;
 
     let mobile = $state(false);
 
@@ -1489,7 +1495,7 @@
                     "~ I go by she/her pronouns",
                     "~ Liminal space and backrooms enthusiast",
                     "   - I also like the dreamcore and weirdcore aesthetics",
-                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif">`,
+                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="https://sushi.tauon.dev/res/88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated" title="feel free to hotlink!"></a>`,
                 );
             },
 
@@ -3484,6 +3490,56 @@
             ],
         },
 
+        copy: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: copy &lt;text&gt");
+                    return;
+                }
+
+                const text = command.slice(1).join(" ");
+                navigator.clipboard.writeText(text);
+                writeToOutput("Copied to clipboard");
+            },
+
+            manual_entries: ["copy - copy text to clipboard", "Usage: copy &lt;text&gt"],
+        },
+
+        paste: {
+            execute: async () => {
+                const text = await navigator.clipboard.readText();
+                writeToOutput(text);
+            },
+
+            manual_entries: ["paste - paste text from clipboard", "Usage: paste"],
+        },
+
+        flipacoin: {
+            execute: () => {
+                const array = new Uint8Array(1);
+                window.crypto.getRandomValues(array);
+
+                if (array[0] % 2 === 0) {
+                    writeToOutput("Heads");
+                } else {
+                    writeToOutput("Tails");
+                }
+            },
+
+            manual_entries: ["flipacoin - flip a coin", "Usage: flipacoin"],
+        },
+
+        ssh: {
+            execute: (command: string[]) => {
+
+            },
+
+            manual_entries: [
+                "ssh - connect to a remote server",
+                "Usage: ssh &lt;username&gt",
+            ],
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -3871,7 +3927,7 @@
         }
 
         const stats = [
-            "1vers1on\u001b[37m@\u001b[96mnet",
+            "liminal.moe",
             "\u001b[37m-------------------",
             "OS\u001b[37m: " + platform,
             "Host\u001b[37m: sigmatron9000",
@@ -3914,7 +3970,7 @@
         writeToOutput(...output);
     }
 
-    function processAnsiColors(text: string) {
+    function processAnsiCodes(text: string) {
         const regex = /\u001b\[(\d+)m(.*?)(?=\u001b|\n|$)/g;
         let result = text;
         let matches = [...text.matchAll(regex)];
@@ -3945,8 +4001,25 @@
                 processed += rainbowText;
             } else if (code === "0") {
                 processed += content;
-            } else {
-                processed += content;
+            }
+
+            switch (code) {
+                case "2":
+                    processed += `<span style="opacity: 0.5">${content}</span>`;
+                    break;
+                case "4":
+                    processed += `<span style="text-decoration: underline">${content}</span>`;
+                    break;
+                case "7":
+                    processed += `<span style="filter: invert(1)">${content}</span>`;
+                    break;
+                case "9":
+                    processed += `<span style="text-decoration: line-through">${content}</span>`;
+                    break;
+                case "2J":
+                    processed = "";
+                    clearOutput();
+                    break;
             }
 
             lastIndex = index + fullMatch.length;
@@ -4139,6 +4212,8 @@
             } else {
                 socket.emit("command", pipeArgs);
             }
+
+            pipeOutput = [];
         }
 
         if (transMode) {
@@ -4162,6 +4237,10 @@
             });
 
             socket = io({ path: "/wss/" });
+
+            socket.on("ssh", (output: string) => {
+                const data = JSON.parse(output); 
+            });
 
             socket.on("output", (output: string[]) => {
                 writeToOutput(...output);
@@ -4326,7 +4405,7 @@
                             oncontextmenu={(event) =>
                                 rightClickMinesweeperCell(event, i, j)}
                         >
-                            {@html processAnsiColors(
+                            {@html processAnsiCodes(
                                 getMinesweeperSymbol(i, j),
                             )}
                         </button>
@@ -4334,7 +4413,7 @@
                     <br />
                 {/each}
             {:else}
-                <div class="terminal-line">{@html processAnsiColors(line)}</div>
+                <div class="terminal-line">{@html processAnsiCodes(line)}</div>
             {/if}
         {/each}
         <div class="input-line">
