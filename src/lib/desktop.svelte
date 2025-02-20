@@ -1,3 +1,9 @@
+<script module lang="ts">
+    declare class V86 {
+        constructor(options: any);
+    }
+</script>
+
 <script lang="ts">
     import { onMount, tick } from "svelte";
     import { goto } from "$app/navigation";
@@ -19,8 +25,8 @@
     import Page from "../routes/+page.svelte";
     import { get } from "svelte/store";
     import type { Socket } from "socket.io";
-    import nacl from 'tweetnacl';
-    import naclUtil from 'tweetnacl-util';
+    import nacl from "tweetnacl";
+    import naclUtil from "tweetnacl-util";
 
     import {
         estrogenStore,
@@ -70,6 +76,11 @@
     let terminalHeight = 24;
 
     let pageLoadTime = new Date();
+
+    let v86Loaded = false;
+    let v86Running = false;
+
+    let emulator: any;
 
     let environmentVariables = new Map<string, any>([
         ["PRIMORDIA_UPDATE_FREQ", 10],
@@ -693,6 +704,14 @@
         return years;
     }
 
+    function writeToOutputWithoutNewline(text: string) {
+        if (activeOutput === "terminal") {
+            terminalOutput[terminalOutput.length - 1] += text;
+        } else if (activeOutput === "pipe") {
+            pipeOutput[pipeOutput.length - 1] += text;
+        }
+    }
+
     function writeToOutput(...text: string[]) {
         if (activeOutput === "terminal") {
             terminalOutput = [...terminalOutput, ...text];
@@ -717,6 +736,16 @@
         }
     }
 
+    function getLineFromOutput(line: number): string {
+        if (activeOutput === "terminal") {
+            return terminalOutput[line];
+        } else if (activeOutput === "pipe") {
+            return pipeOutput[line];
+        }
+
+        return "";
+    }
+
     function getOutputLength() {
         if (activeOutput === "terminal") {
             return terminalOutput.length;
@@ -736,9 +765,21 @@
     }
 
     function setCharInLineInStdout(char: string, line: number, col: number) {
-        // replace char in line
+        // Ensure there are enough lines
+        while (terminalOutput.length <= line) {
+            terminalOutput.push(""); // Add empty lines if necessary
+        }
+
+        // Ensure the line has enough columns (whitespace padding)
         const lineChars = terminalOutput[line].split("");
+        while (lineChars.length <= col) {
+            lineChars.push(" "); // Add whitespace if necessary
+        }
+
+        // Replace the character at the specified position
         lineChars[col] = char;
+
+        // Join the modified line and update the terminal output
         terminalOutput[line] = lineChars.join("");
     }
 
@@ -1003,6 +1044,25 @@
                 fullUpdateGridNextFrame = false;
             }
         }
+    }
+
+    function getKeyboardCode(event: KeyboardEvent): number {
+        if (event.key === "ArrowUp") {
+            return 38;
+        } else if (event.key === "ArrowDown") {
+            return 40;
+        } else if (event.key === "ArrowLeft") {
+            return 37;
+        } else if (event.key === "ArrowRight") {
+            return 39;
+        } else if (event.key === "Enter") {
+            return 13;
+        } else if (event.key === "Backspace") {
+            return 8;
+        } else if (event.key.length === 1) {
+            return event.key.charCodeAt(0);
+        }
+        return -1;
     }
 
     function printTypewriter(text: string, delay = 2) {
@@ -3444,16 +3504,18 @@
         cmatrix: {
             execute: (command: string[]) => {
                 clearOutput();
-                const matrixChars = Array.from({length: 94}, (_, i) => String.fromCharCode(33 + i));
+                const matrixChars = Array.from({ length: 94 }, (_, i) =>
+                    String.fromCharCode(33 + i),
+                );
                 const brightGreen = "\u001b[92m";
                 const darkGreen = "\u001b[32m";
-                
+
                 const runningLines = new Int8Array(terminalWidth);
                 const charIndices = new Int8Array(terminalWidth);
-                
+
                 const buffer = new Array(terminalWidth);
-                let outputBuffer = '';
-                
+                let outputBuffer = "";
+
                 cmatrixInterval = setInterval(() => {
                     if (cmatrixActive) {
                         cmatrixActive = false;
@@ -3470,24 +3532,24 @@
                             if (Math.random() < 0.05) {
                                 runningLines[i] = (Math.random() * 10 + 1) | 0;
                                 charIndices[i] = (Math.random() * 94) | 0;
-                                buffer[i] = brightGreen + matrixChars[charIndices[i]];
+                                buffer[i] =
+                                    brightGreen + matrixChars[charIndices[i]];
                             } else {
-                                buffer[i] = ' ';
+                                buffer[i] = " ";
                             }
                         }
                     }
 
-                    outputBuffer = buffer.join('');
-                    
-                    terminalOutput = [outputBuffer, ...terminalOutput.slice(0, terminalHeight - 1)];
+                    outputBuffer = buffer.join("");
 
+                    terminalOutput = [
+                        outputBuffer,
+                        ...terminalOutput.slice(0, terminalHeight - 1),
+                    ];
                 }, 1000 / 60);
             },
 
-            manual_entries: [
-                "cmatrix - activate cmatrix",
-                "Usage: cmatrix",
-            ],
+            manual_entries: ["cmatrix - activate cmatrix", "Usage: cmatrix"],
         },
 
         copy: {
@@ -3502,7 +3564,10 @@
                 writeToOutput("Copied to clipboard");
             },
 
-            manual_entries: ["copy - copy text to clipboard", "Usage: copy &lt;text&gt"],
+            manual_entries: [
+                "copy - copy text to clipboard",
+                "Usage: copy &lt;text&gt",
+            ],
         },
 
         paste: {
@@ -3511,7 +3576,10 @@
                 writeToOutput(text);
             },
 
-            manual_entries: ["paste - paste text from clipboard", "Usage: paste"],
+            manual_entries: [
+                "paste - paste text from clipboard",
+                "Usage: paste",
+            ],
         },
 
         flipacoin: {
@@ -3530,14 +3598,93 @@
         },
 
         ssh: {
-            execute: (command: string[]) => {
-
-            },
+            execute: (command: string[]) => {},
 
             manual_entries: [
                 "ssh - connect to a remote server",
                 "Usage: ssh &lt;username&gt",
             ],
+        },
+
+        boot: {
+            execute: (command: string[]) => {
+                if (!v86Loaded) {
+                    writeToOutput("v86 is not loaded yet. give it a sec plz");
+                    return;
+                }
+
+                emulator = new V86({
+                    wasm_path: "v86.wasm",
+
+                    bios: {
+                        url: "seabios.bin",
+                    },
+                    vga_bios: {
+                        url: "vgabios.bin",
+                    },
+                    bzimage: {
+                        url: "buildroot-bzimage.bin",
+                        async: false,
+                    },
+                    filesystem: {},
+                    cmdline: "tsc=reliable mitigations=off random.trust_cpu=on",
+                    autostart: true,
+                });
+
+                emulator.add_listener("emulator-stopped", () => {
+                    v86Running = false;
+                    clearOutput();
+                    writeToOutput("linux stopped");
+                });
+
+                emulator.add_listener("emulator-ready", () => {
+                    emulator.screen_adapter.set_size_text(
+                        terminalWidth,
+                        terminalHeight,
+                    );
+                    emulator.screen_adapter.put_char = function (
+                        row: number,
+                        col: number,
+                        chr: number,
+                        blinking: number,
+                        bg_color: number,
+                        fg_color: number,
+                    ) {
+                        
+                        if (chr === 0) {
+                            return;
+                        }
+                        if (row >= terminalHeight || col >= terminalWidth) {
+                            return;
+                        }
+                        if (row < 0 || col < 0) {
+                            return;
+                        }
+
+                        setCharInLineInStdout(
+                            `${String.fromCharCode(chr)}`,
+                            row,
+                            col,
+                        );
+                    };
+
+                    emulator.screen_adapter.clear_screen = function () {
+                        clearOutput();
+                    };
+
+                    emulator.keyboard_set_status(true);
+                });
+
+                console.log("linux started");
+                writeToOutput("");
+                clearOutput();
+
+                v86Running = true;
+            },
+
+            manual_entries: ["boot - boot linux", "Usage: boot"],
+
+            hidden: true,
         },
 
         trans: {
@@ -4036,6 +4183,18 @@
             return;
         }
 
+        if (v86Running) {
+            // emulator.keyboard_send_text(event.key);
+            // if (event.key === "Enter") {
+            //     emulator.keyboard_send_scancodes([0x1c]); // Enter key
+            // } else if (event.key === "Backspace") {
+            //     emulator.keyboard_send_scancodes([0x0e]); // Backspace key
+            // } else if (event.key.length === 1) {
+            //     emulator.keyboard_send_text(event.key);
+            // }
+            return;
+        }
+
         scrollToBottom();
 
         if (hiddenInputCallback) {
@@ -4229,6 +4388,12 @@
 
     onMount(() => {
         (async () => {
+            const script = document.createElement("script");
+            script.src = "libv86.js";
+            script.onload = () => {
+                v86Loaded = true;
+            };
+            document.body.appendChild(script);
             // writeToOutput(...motd);
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
@@ -4239,7 +4404,7 @@
             socket = io({ path: "/wss/" });
 
             socket.on("ssh", (output: string) => {
-                const data = JSON.parse(output); 
+                const data = JSON.parse(output);
             });
 
             socket.on("output", (output: string[]) => {
@@ -4368,6 +4533,8 @@
     });
 </script>
 
+<div id="screen_container" style="display: block"></div>
+
 {#if mobile}
     <div
         style="display: flex; justify-content: center; align-items: center; height: 100vh;"
@@ -4405,9 +4572,7 @@
                             oncontextmenu={(event) =>
                                 rightClickMinesweeperCell(event, i, j)}
                         >
-                            {@html processAnsiCodes(
-                                getMinesweeperSymbol(i, j),
-                            )}
+                            {@html processAnsiCodes(getMinesweeperSymbol(i, j))}
                         </button>
                     {/each}
                     <br />
