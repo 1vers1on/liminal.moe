@@ -78,7 +78,8 @@
     let pageLoadTime = new Date();
 
     let v86Loaded = false;
-    let v86Running = false;
+    let v86Focused = false;
+    let v86Running = $state(false);
 
     let emulator: any;
 
@@ -1555,7 +1556,8 @@
                     "~ I go by she/her pronouns",
                     "~ Liminal space and backrooms enthusiast",
                     "   - I also like the dreamcore and weirdcore aesthetics",
-                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="https://sushi.tauon.dev/res/88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated" title="feel free to hotlink!"></a>`,
+                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="luna88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated"></a><img title="cssdif" style="image-rendering: pixelated;" src="cssdif.gif"><img title="e-scp" style="image-rendering: pixelated;" src="e-scp.gif"><img title="femboy" style="image-rendering: pixelated;" src="femboy.gif"><img title="gay" style="image-rendering: pixelated;" src="gaywebring.gif">`,
+                    `<img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="miku" style="image-rendering: pixelated;" src="miku.gif"><img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="mousepow" style="image-rendering: pixelated;" src="mousepow.gif"><img title="newlambda" style="image-rendering: pixelated;" src="newlambda.gif"><img title="nya" style="image-rendering: pixelated;" src="nya2.gif"><img title="parental" style="image-rendering: pixelated;" src="parental.gif"><img title="transnow" style="image-rendering: pixelated;" src="transnow2.gif">`,
                 );
             },
 
@@ -3606,7 +3608,7 @@
             ],
         },
 
-        boot: {
+        linux: {
             execute: (command: string[]) => {
                 if (!v86Loaded) {
                     writeToOutput("v86 is not loaded yet. give it a sec plz");
@@ -3632,6 +3634,7 @@
                 });
 
                 emulator.add_listener("emulator-stopped", () => {
+                    v86Focused = false;
                     v86Running = false;
                     clearOutput();
                     writeToOutput("linux stopped");
@@ -3650,7 +3653,6 @@
                         bg_color: number,
                         fg_color: number,
                     ) {
-                        
                         if (chr === 0) {
                             return;
                         }
@@ -3679,12 +3681,11 @@
                 writeToOutput("");
                 clearOutput();
 
+                v86Focused = true;
                 v86Running = true;
             },
 
-            manual_entries: ["boot - boot linux", "Usage: boot"],
-
-            hidden: true,
+            manual_entries: ["linux - boot linux", "Usage: linux"],
         },
 
         trans: {
@@ -4184,14 +4185,13 @@
         }
 
         if (v86Running) {
-            // emulator.keyboard_send_text(event.key);
-            // if (event.key === "Enter") {
-            //     emulator.keyboard_send_scancodes([0x1c]); // Enter key
-            // } else if (event.key === "Backspace") {
-            //     emulator.keyboard_send_scancodes([0x0e]); // Backspace key
-            // } else if (event.key.length === 1) {
-            //     emulator.keyboard_send_text(event.key);
-            // }
+            if (event.key === "Escape" && event.ctrlKey) {
+                v86Focused = !v86Focused;
+                emulator.keyboard_set_status(v86Focused);
+            }
+        }
+
+        if (v86Focused) {
             return;
         }
 
@@ -4394,7 +4394,7 @@
                 v86Loaded = true;
             };
             document.body.appendChild(script);
-            // writeToOutput(...motd);
+
             window.addEventListener("keydown", handleKeydown);
             getMotd().then((message) => {
                 setLineInOutput(message, 1);
@@ -4596,6 +4596,12 @@
                 {/if}
             </span>
         </div>
+        {#if v86Running}
+            <div class="terminal-line">
+                Linux is currently running. Press ctrl + escape to switch
+                between terminals.
+            </div>
+        {/if}
     </div>
 
     <input
