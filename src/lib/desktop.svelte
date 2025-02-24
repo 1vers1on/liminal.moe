@@ -41,6 +41,8 @@
     } from "$lib/stores";
     import { run } from "svelte/legacy";
 
+    let mobileInputContent = "";
+
     const keyPair = nacl.box.keyPair();
     let sharedKey: Uint8Array | null = null;
     let isSshMode = false;
@@ -48,7 +50,7 @@
     let mobile = $state(false);
 
     const noises = ["meow", "nya", "mrrp", "mew", "purr", "mrow", "mewp"];
-
+    let mobileInput: HTMLInputElement;
     let keydownCallback: ((event: KeyboardEvent) => boolean) | null = null;
 
     let hiddenInput = "";
@@ -112,6 +114,25 @@
         "95": "#d670d6", // bright magenta
         "96": "#29b8db", // bright cyan
         "97": "#ffffff", // bright white
+    };
+
+    const COLORS2: Record<number, string> = {
+        0: "#000000",
+        1: "#cd3131",
+        2: "#0dbc79",
+        3: "#e5e510",
+        4: "#2472c8",
+        5: "#bc3fbc",
+        6: "#11a8cd",
+        7: "#e5e5e5",
+        8: "#666666",
+        9: "#f14c4c",
+        10: "#23d18b",
+        11: "#f5f543",
+        12: "#3b8eea",
+        13: "#d670d6",
+        14: "#29b8db",
+        15: "#ffffff",
     };
 
     // Background colors (40-47, 100-107)
@@ -248,9 +269,22 @@
     let mineSweeperXsize = 9;
     let mineSweeperMines = 10;
 
-    // blackjack
     let blackjackActive = false;
     let inBlackjackRoom = false;
+
+    function get8BitAnsiColor(color: number): string {
+        if (color < 16) {
+            return COLORS2[color];
+        } else if (color < 232) {
+            const r = Math.floor((color - 16) / 36);
+            const g = Math.floor(((color - 16) % 36) / 6);
+            const b = (color - 16) % 6;
+            return `rgb(${r * 51}, ${g * 51}, ${b * 51})`;
+        } else {
+            const shade = (color - 232) * 10 + 8;
+            return `rgb(${shade}, ${shade}, ${shade})`;
+        }
+    }
 
     function getRandomChar() {
         return String.fromCharCode(Math.floor(Math.random() * 93) + 33);
@@ -4119,71 +4153,93 @@
     }
 
     function processAnsiCodes(text: string) {
-        const regex = /\u001b\[(\d+)m(.*?)(?=\u001b|\n|$)/g;
-        let result = text;
-        let matches = [...text.matchAll(regex)];
-
-        if (matches.length === 0) return text;
-
+        const regex = /\u001b\[([\d;]+)m(.*?)(?=\u001b|\n|$)/g;
         let processed = "";
         let lastIndex = 0;
 
-        for (let match of matches) {
-            const [fullMatch, code, content] = match;
-            const index = match.index;
-
+        for (const match of text.matchAll(regex)) {
+            const [fullMatch, codesStr, content] = match;
+            const index = match.index || 0;
             processed += text.substring(lastIndex, index);
+            lastIndex = index + fullMatch.length;
+
             if (transMode) {
                 processed += content;
-            } else if (COLORS[code]) {
-                processed += `<span style="color: ${COLORS[code]}">${content}</span>`;
-            } else if (BG_COLORS[code]) {
-                processed += `<span style="background-color: ${BG_COLORS[code]}">${content}</span>`;
-            } else if (code === "1337") {
-                let rainbowText = "";
-                for (let i = 0; i < content.length; i++) {
-                    let hue = (i / content.length) * 360;
-                    rainbowText += `<span style="color: hsl(${hue}, 100%, 50%)">${content[i]}</span>`;
+                continue;
+            }
+
+            const codes = codesStr.split(";");
+            let style = "";
+            let textContent = content;
+            let rainbowApplied = false;
+
+            for (let i = 0; i < codes.length; i++) {
+                const code = codes[i];
+
+                if (code === "0") {
+                    style = "";
+                    continue;
                 }
 
-                processed += rainbowText;
-            } else if (code === "0") {
-                processed += content;
+                if (code === "1") {
+                    style += "font-weight: bold;";
+                } else if (code === "2") {
+                    style += "opacity: 0.5;";
+                } else if (code === "3") {
+                    style += "font-style: italic;";
+                } else if (code === "4") {
+                    style += "text-decoration: underline;";
+                } else if (code === "5" || code === "6") {
+                    style += "text-decoration: blink;";
+                } else if (code === "7") {
+                    style += "filter: invert(1);";
+                } else if (code === "8") {
+                    style += "display: none;";
+                } else if (code === "9") {
+                    style += "text-decoration: line-through;";
+                } else if (code === "1337") {
+                    let rainbowText = "";
+                    for (let j = 0; j < content.length; j++) {
+                        let hue = (j / content.length) * 360;
+                        rainbowText += `<span style="color: hsl(${hue}, 100%, 50%)">${content[j]}</span>`;
+                    }
+                    textContent = rainbowText;
+                    rainbowApplied = true;
+                } else if (COLORS[code]) {
+                    style += `color: ${COLORS[code]};`;
+                } else if (BG_COLORS[code]) {
+                    style += `background-color: ${BG_COLORS[code]};`;
+                } else if (code === "38" && codes[i + 1] === "5") {
+                    const colorCode = codes[i + 2];
+                    style += `color: ${get8BitAnsiColor(parseInt(colorCode))};`;
+                    i += 2;
+                } else if (code === "48" && codes[i + 1] === "5") {
+                    const colorCode = codes[i + 2];
+                    style += `background-color: ${get8BitAnsiColor(parseInt(colorCode))};`;
+                    i += 2;
+                } else if (code === "38" && codes[i + 1] === "2") {
+                    const r = codes[i + 2],
+                        g = codes[i + 3],
+                        b = codes[i + 4];
+                    style += `color: rgb(${r}, ${g}, ${b});`;
+                    i += 4;
+                } else if (code === "48" && codes[i + 1] === "2") {
+                    const r = codes[i + 2],
+                        g = codes[i + 3],
+                        b = codes[i + 4];
+                    style += `background-color: rgb(${r}, ${g}, ${b});`;
+                    i += 4;
+                }
             }
 
-            switch (code) {
-                case "2":
-                    processed += `<span style="opacity: 0.5">${content}</span>`;
-                    break;
-                case "4":
-                    processed += `<span style="text-decoration: underline">${content}</span>`;
-                    break;
-                case "7":
-                    processed += `<span style="filter: invert(1)">${content}</span>`;
-                    break;
-                case "9":
-                    processed += `<span style="text-decoration: line-through">${content}</span>`;
-                    break;
-                case "2J":
-                    processed = "";
-                    clearOutput();
-                    break;
-            }
-
-            lastIndex = index + fullMatch.length;
+            processed += `<span style="${style}">${textContent}</span>`;
         }
 
         processed += text.substring(lastIndex);
-
         return processed;
     }
 
     function handleKeydown(event: KeyboardEvent) {
-        if (mobile) {
-            mobile = false;
-            return;
-        }
-
         if (v86Running) {
             if (event.key === "Escape" && event.ctrlKey) {
                 v86Focused = !v86Focused;
@@ -4394,8 +4450,37 @@
                 v86Loaded = true;
             };
             document.body.appendChild(script);
-
-            window.addEventListener("keydown", handleKeydown);
+            mobile = isMobile();
+            if (mobile) {
+                writeToOutput(
+                    "\u001b[31mMobile support is experimental and WILL NOT work as expected",
+                );
+                mobileInput.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleKeydown({ key: "Enter" } as KeyboardEvent);
+                        mobileInput.value = "";
+                        mobileInputContent = "";
+                    }
+                });
+                mobileInput.addEventListener("input", (event) => {
+                    const inputValue = mobileInput.value;
+                    if (inputValue.length < mobileInputContent.length) {
+                        mobileInputContent = inputValue;
+                        handleKeydown({ key: "Backspace" } as KeyboardEvent);
+                    } else {
+                        const diff = inputValue.slice(
+                            mobileInputContent.length,
+                        );
+                        mobileInputContent = inputValue;
+                        for (let i = 0; i < diff.length; i++) {
+                            handleKeydown({ key: diff[i] } as KeyboardEvent);
+                        }
+                    }
+                });
+            } else {
+                window.addEventListener("keydown", handleKeydown);
+            }
             getMotd().then((message) => {
                 setLineInOutput(message, 1);
                 motd[1] = message;
@@ -4488,8 +4573,6 @@
 
             terminalHeight = Math.floor(displayHeight / 25);
 
-            mobile = isMobile();
-
             fetch("/api/auth/getToken")
                 .then((response) => response.json())
                 .then((data) => {
@@ -4535,7 +4618,7 @@
 
 <div id="screen_container" style="display: block"></div>
 
-{#if mobile}
+<!-- {#if mobile}
     <div
         style="display: flex; justify-content: center; align-items: center; height: 100vh;"
     >
@@ -4548,81 +4631,103 @@
             </p>
         </div>
     </div>
-{:else}
-    <div class="terminal" bind:this={terminalElement}>
-        {#each terminalOutput as line, i}
-            {#if line === "cAnVas"}
-                <canvas width="300" height="300" bind:this={gridCanvases[i]}
-                ></canvas>
-            {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
-                <button class="ebutton" onclick={clickEstrogen}>
-                    <img
-                        src="estrogen.png"
-                        alt="Estrogen"
-                        style="max-width: 100px; max-height: 100px;"
-                        draggable="false"
-                    />
-                </button>
-            {:else if line === "QjucQiik0VmEON7mdPDqhA"}
-                {#each minesweeperGrid as row, i}
-                    {#each row as cell, j}
-                        <button
-                            class="minesweeperButton"
-                            onclick={() => clickMinesweeperCell(i, j)}
-                            oncontextmenu={(event) =>
-                                rightClickMinesweeperCell(event, i, j)}
-                        >
-                            {@html processAnsiCodes(getMinesweeperSymbol(i, j))}
-                        </button>
-                    {/each}
-                    <br />
+{:else} -->
+<div class="terminal" bind:this={terminalElement}>
+    {#each terminalOutput as line, i}
+        {#if line === "cAnVas"}
+            <canvas width="300" height="300" bind:this={gridCanvases[i]}
+            ></canvas>
+        {:else if line === "NR4nvDQUzDKMcQDSL9isYA"}
+            <button class="ebutton" onclick={clickEstrogen}>
+                <img
+                    src="estrogen.png"
+                    alt="Estrogen"
+                    style="max-width: 100px; max-height: 100px;"
+                    draggable="false"
+                />
+            </button>
+        {:else if line === "QjucQiik0VmEON7mdPDqhA"}
+            {#each minesweeperGrid as row, i}
+                {#each row as cell, j}
+                    <button
+                        class="minesweeperButton"
+                        onclick={() => clickMinesweeperCell(i, j)}
+                        oncontextmenu={(event) =>
+                            rightClickMinesweeperCell(event, i, j)}
+                    >
+                        {@html processAnsiCodes(getMinesweeperSymbol(i, j))}
+                    </button>
                 {/each}
-            {:else}
-                <div class="terminal-line">{@html processAnsiCodes(line)}</div>
-            {/if}
-        {/each}
-        <div class="input-line">
-            <span class="prompt">{currentDirectory} $</span>
-            <span class="input-text">
-                {#each inputValue.split("") as char, i}
-                    {#if i === cursorPosition}
-                        <span class="cursor">█</span>{@html char}
-                    {:else}
-                        {@html char}
-                    {/if}
-                {/each}
-                {#if cursorPosition === inputValue.length}
-                    <span class="cursor end">█</span>
-                {/if}
-            </span>
-        </div>
-        {#if v86Running}
-            <div class="terminal-line">
-                Linux is currently running. Press ctrl + escape to switch
-                between terminals.
-            </div>
+                <br />
+            {/each}
+        {:else}
+            <div class="terminal-line">{@html processAnsiCodes(line)}</div>
         {/if}
+    {/each}
+    <div class="input-line">
+        <span class="prompt">{currentDirectory} $</span>
+        <span class="input-text">
+            {#each inputValue.split("") as char, i}
+                {#if i === cursorPosition}
+                    <span class="cursor">█</span>{@html char}
+                {:else}
+                    {@html char}
+                {/if}
+            {/each}
+            {#if cursorPosition === inputValue.length}
+                <span class="cursor end">█</span>
+            {/if}
+        </span>
     </div>
-
-    <input
-        type="file"
-        bind:this={fileInput}
-        onchange={uploadFile}
-        style="display: none;"
-    />
-    {#if estrogenClickerGameActive}
-        <span class="estrogen-count">{$estrogenStore} Estrogen</span>
+    {#if v86Running}
+        <div class="terminal-line">
+            Linux is currently running. Press ctrl + escape to switch between
+            terminals.
+        </div>
     {/if}
-
-    <div
-        class="oneko"
-        bind:this={oneko}
-        style="display: none;"
-        draggable="false"
-    ></div>
+    <!-- {#if mobile} -->
+    <input
+        type="text"
+        class="mobileInput"
+        bind:this={mobileInput}
+        placeholder="Type here on mobile."
+        style={mobile ? "" : "display: none;"}
+    />
+    <!-- {/if} -->
+</div>
+<input
+    type="file"
+    bind:this={fileInput}
+    onchange={uploadFile}
+    style="display: none;"
+/>
+{#if estrogenClickerGameActive}
+    <span class="estrogen-count">{$estrogenStore} Estrogen</span>
 {/if}
 
+<div
+    class="oneko"
+    bind:this={oneko}
+    style="display: none;"
+    draggable="false"
+></div>
+
+<!-- {/if} -->
+
 <style>
+    input {
+        font-family: inherit;
+        font-size: inherit;
+        background: transparent;
+        border: 1px solid #23d18b;
+        color: white;
+    }
+
+    input:focus {
+        border: 1px solid #2bffaa;
+        outline: none;
+    }
+
     img {
         user-select: none;
         -moz-user-select: none;
