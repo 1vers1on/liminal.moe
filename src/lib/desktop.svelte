@@ -42,6 +42,7 @@
     import { run } from "svelte/legacy";
 
     let mobileInputContent = "";
+    let doNotTrack = true;
 
     const keyPair = nacl.box.keyPair();
     let sharedKey: Uint8Array | null = null;
@@ -1358,6 +1359,7 @@
         hidden?: boolean;
         admin_only?: boolean;
         help_subsection?: string;
+        case_insensitive?: boolean;
     }
 
     const commands: Record<string, Command> = {
@@ -3722,6 +3724,52 @@
             manual_entries: ["linux - boot linux", "Usage: linux"],
         },
 
+        iwashere: {
+            execute: async (command: string[]) => {
+                if (command.length < 2) {
+                    writeToOutput("Usage: iwashere &ltusername&gt (message)");
+                    return;
+                }
+
+                const username = command[1];
+                const message = command.slice(2).join(" ");
+
+                const response = await fetch("/api/iwashere", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ username, message }),
+                });
+
+                if (response.status !== 200) {
+                    writeToOutput(
+                        "Failed to mark your presence",
+                        await response.text(),
+                    );
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    writeToOutput(
+                        "Marked your presence on the internet forever",
+                    );
+                } else {
+                    writeToOutput(data.error);
+                }
+            },
+
+            manual_entries: [
+                "iwashere - Mark your presence on the internet forever.",
+                "If you would like to request a removal, please contact me.",
+                "Usage: iwashere &ltusername&gt (message)",
+            ],
+
+            case_insensitive: true,
+        },
+
         trans: {
             execute: (command: string[]) => {
                 makeTransFlagColors();
@@ -4406,7 +4454,19 @@
         });
 
         if (args[0] in commands) {
-            commands[args[0]].execute(args);
+            for (const key in commands) {
+                if (commands[key].case_insensitive) {
+                    if (key.toLowerCase() === args[0].toLowerCase()) {
+                        commands[key].execute(args);
+                        return;
+                    }
+                } else {
+                    if (key === args[0]) {
+                        commands[key].execute(args);
+                        return;
+                    }
+                }
+            }
         } else if (args[0] === "") {
             writeToOutput("");
         } else {
@@ -4423,7 +4483,19 @@
             pipeArgs = [...pipeArgs, ...pipeOutput];
 
             if (pipeArgs[0] in commands) {
-                commands[pipeArgs[0]].execute(pipeArgs);
+                for (const key in commands) {
+                    if (commands[key].case_insensitive) {
+                        if (key.toLowerCase() === pipeArgs[0].toLowerCase()) {
+                            commands[key].execute(pipeArgs);
+                            return;
+                        }
+                    } else {
+                        if (key === pipeArgs[0]) {
+                            commands[key].execute(pipeArgs);
+                            return;
+                        }
+                    }
+                }
             } else {
                 socket.emit("command", pipeArgs);
             }
@@ -4444,6 +4516,12 @@
 
     onMount(() => {
         (async () => {
+            doNotTrack =
+                (navigator.doNotTrack && navigator.doNotTrack === "1") ||
+                ((navigator as any).msDoNotTrack &&
+                    (navigator as any).msDoNotTrack === "1") ||
+                ((window as any).doNotTrack &&
+                    (window as any).doNotTrack === "1");
             const script = document.createElement("script");
             script.src = "libv86.js";
             script.onload = () => {
