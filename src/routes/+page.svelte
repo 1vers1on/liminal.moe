@@ -1,29 +1,29 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { fly, fade } from "svelte/transition";
+    // import { onMount } from "svelte";
+    // import { fly, fade } from "svelte/transition";
     import Desktop from "$lib/desktop.svelte";
-    import { isMobile } from "$lib/mobile";
+    // import { isMobile } from "$lib/mobile";
 
-    let mobile = $state(false);
-    let tiltX = $state(0);
-    let tiltY = $state(0);
+    // let mobile = $state(false);
+    // let tiltX = $state(0);
+    // let tiltY = $state(0);
 
-    onMount(() => {
-        mobile = isMobile();
-        if (window.DeviceOrientationEvent) {
-            window.addEventListener("deviceorientation", (event) => {
-                tiltX = event.beta
-                    ? Math.min(Math.max(event.beta * 0.5, -15), 15)
-                    : 0;
-                tiltY = event.gamma
-                    ? Math.min(Math.max(event.gamma * 0.5, -15), 15)
-                    : 0;
-            });
-        }
-    });
+    // onMount(() => {
+    //     mobile = isMobile();
+    //     if (window.DeviceOrientationEvent) {
+    //         window.addEventListener("deviceorientation", (event) => {
+    //             tiltX = event.beta
+    //                 ? Math.min(Math.max(event.beta * 0.5, -15), 15)
+    //                 : 0;
+    //             tiltY = event.gamma
+    //                 ? Math.min(Math.max(event.gamma * 0.5, -15), 15)
+    //                 : 0;
+    //         });
+    //     }
+    // });
 </script>
 
-{#if mobile}
+<!-- {#if mobile}
     <div
         class="mobile-container"
         transition:fade
@@ -37,11 +37,11 @@
             </p>
         </div>
     </div>
-{:else}
+{:else} -->
     <Desktop />
-{/if}
+<!-- {/if} -->
 
-<style>
+<!-- <style>
     .mobile-container {
         display: flex;
         flex-direction: column;
@@ -140,4 +140,4 @@
             transform: translateZ(30px);
         }
     }
-</style>
+</style> -->

@@ -166,6 +166,7 @@
         '┃  <a href="https://github.com/1vers1on" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
         "┃                                                 ┃",
         "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
+        "┃  \u001b[96mEmail: invers1on1@outlook.com\u001b[0m                  ┃",
         "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
         "<br>",
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
@@ -1586,7 +1587,7 @@
             execute: () => {
                 writeToOutput(
                     "<br>",
-                    "I'm 1vers1on, a c++ developer with a passion for creating things.",
+                    "I'm 1vers1on, a developer with a passion for creating things.",
                     "Some little things about me~",
                     "<br>",
                     "~ I go by she/her pronouns",
@@ -3768,6 +3769,118 @@
             ],
 
             case_insensitive: true,
+        },
+
+        gibberish: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: gibberish <words>");
+                    return;
+                }
+
+                const length = parseInt(command[1]);
+                if (isNaN(length)) {
+                    writeToOutput("Invalid length");
+                    return;
+                }
+
+                const weightedConsonants = [
+                    { a: "t", weight: 0.159 },
+                    { a: "n", weight: 0.094 },
+                    { a: "s", weight: 0.093 },
+                    { a: "r", weight: 0.087 },
+                    { a: "h", weight: 0.08 },
+                    { a: "d", weight: 0.079 },
+                    { a: "l", weight: 0.058 },
+                    { a: "c", weight: 0.045 },
+                    { a: "m", weight: 0.032 },
+                    { a: "w", weight: 0.03 },
+                    { a: "f", weight: 0.028 },
+                    { a: "g", weight: 0.024 },
+                    { a: "y", weight: 0.019 },
+                    { a: "p", weight: 0.019 },
+                    { a: "b", weight: 0.015 },
+                    { a: "v", weight: 0.01 },
+                    { a: "k", weight: 0.008 },
+                    { a: "j", weight: 0.002 },
+                    { a: "x", weight: 0.001 },
+                    { a: "q", weight: 0.001 },
+                    { a: "z", weight: 0.001 },
+                ];
+
+                const weightedVowels = [
+                    { a: "e", weight: 0.127 },
+                    { a: "a", weight: 0.081 },
+                    { a: "i", weight: 0.069 },
+                    { a: "o", weight: 0.075 },
+                    { a: "u", weight: 0.027 },
+                ];
+
+                const weightedSyllables = [
+                    { a: "CV", weight: 0.4 }, // very common and simple
+                    { a: "CVC", weight: 0.35 }, // simple but a bit more complex
+                    { a: "VC", weight: 0.15 }, // still simple
+                    { a: "V", weight: 0.05 }, // single vowels (shortest)
+                    { a: "CVCV", weight: 0.02 }, // gets a little more complex
+                    { a: "CCV", weight: 0.02 }, // slightly more complex, but still simple
+                    { a: "CCVC", weight: 0.01 }, // longer and more complex
+                    { a: "CCVCC", weight: 0.01 }, // even more complex
+                    { a: "CCCVCC", weight: 0.005 }, // very rare, complex
+                ];
+
+                const pickRandomWeighted = (
+                    weighted: { a: string; weight: number }[],
+                ) => {
+                    const totalWeight = weighted.reduce(
+                        (acc, curr) => acc + curr.weight,
+                        0,
+                    );
+                    const random = Math.random() * totalWeight;
+                    let sum = 0;
+                    for (const letter of weighted) {
+                        sum += letter.weight;
+                        if (random < sum) {
+                            return letter.a;
+                        }
+                    }
+                    return weighted[weighted.length - 1].a;
+                };
+
+                const maxSyllables = 4;
+                const minSyllables = 2;
+
+                let gibberish = "";
+
+                for (let i = 0; i < length; i++) {
+                    let word = "";
+                    const numSyllables = Math.floor(
+                        Math.random() * (maxSyllables - minSyllables + 1) +
+                            minSyllables,
+                    );
+                    for (let j = 0; j < numSyllables; j++) {
+                        let pattern = pickRandomWeighted(weightedSyllables);
+                        for (let k = 0; k < pattern.length; k++) {
+                            if (pattern[k] === "C") {
+                                word += pickRandomWeighted(weightedConsonants);
+                            } else {
+                                word += pickRandomWeighted(weightedVowels);
+                            }
+                        }
+                    }
+                    gibberish += word + " ";
+                }
+
+                gibberish =
+                    gibberish.charAt(0).toUpperCase() + gibberish.slice(1);
+                gibberish = gibberish.slice(0, -1) + ".";
+
+                addToOutputWrapped(gibberish);
+            },
+
+            manual_entries: [
+                "gibberish - generate gibberish",
+                "Usage: gibberish &lt;words&gt",
+            ],
         },
 
         trans: {
