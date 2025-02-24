@@ -156,19 +156,30 @@
         "107": "#ffffff",
     };
 
+    function makeTextWindow(title: string, content: string[], width: number): string {
+        // make a window like the thingy in the motd
+        let window = [];
+        let windowWidth = Math.max(title.length, width);
+        window.push("┌" + "─".repeat(windowWidth) + "┐");
+        window.push("│" + title.padEnd(windowWidth) + "│");
+        window.push("├" + "─".repeat(windowWidth) + "┤");
+        for (let line of content) {
+            window.push("│" + line.padEnd(windowWidth) + "│");
+        }
+        window.push("└" + "─".repeat(windowWidth) + "┘");
+        return window.join("<br>");
+    }
+
     let motd = [
         "Hello there! Welcome to my website.",
         "\u001b[95mFetching message of the day...",
         "\u001b[95mFetching last.fm status...",
         "\u001b[95mFetching visitor count...\u001b[0m Visitors so far!",
-        "<br>",
-        "┏━━━Socials━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓",
-        '┃  <a href="https://github.com/1vers1on" target="_blank" rel="nofollow">\u001b[96mGithub</a>                                         ┃',
-        "┃                                                 ┃",
-        "┃  \u001b[96mDiscord: 1vers1on\u001b[0m                              ┃",
-        "┃  \u001b[96mEmail: invers1on1@outlook.com\u001b[0m                  ┃",
-        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
-        "<br>",
+        makeTextWindow("Socials", [
+            "Github: 1vers1on",
+            "Discord: 1vers1on",
+            "Email: invers1on1@outlook.com"
+        ], 30),
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",

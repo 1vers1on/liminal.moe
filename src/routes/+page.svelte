@@ -38,7 +38,7 @@
         </div>
     </div>
 {:else} -->
-    <Desktop />
+<Desktop />
 <!-- {/if} -->
 
 <!-- <style>
