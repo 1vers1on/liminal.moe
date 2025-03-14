@@ -1,0 +1,66 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model VisitorCount {
+  id    Int    @id @default(autoincrement())
+  count Int    @default(0)
+}
+
+model Users {
+  id           Int             @id @default(autoincrement())
+  password     String
+  name         String          @unique
+  permission   String
+  createdAt    DateTime        @default(now())
+  lastMessage  DateTime?
+
+  sigmaCoins  Int             @default(0)
+  
+  tokens       Tokens[]        @relation("UserTokens")
+
+  messages     messageBoard[]  @relation("UserMessages")
+}
+
+model Tokens {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  userId    Int
+  user      Users    @relation("UserTokens", fields: [userId], references: [id])
+}
+
+model motd {
+  id    Int    @id @default(autoincrement())
+  message String
+}
+
+model Subscription {
+  id               String   @id @default(uuid())
+  endpoint         String   @unique @db.VarChar(500)
+  keysAuth         String
+  keysP256dh       String
+  createdAt        DateTime @default(now())
+}
+
+model messageBoard {
+  id        Int      @id @default(autoincrement())
+  user      Int
+  message   String
+  createdAt DateTime @default(now())
+  
+  // Relation field
+  userRelation Users @relation("UserMessages", fields: [user], references: [id])
+}
+
+model PeopleHere {
+  id        Int      @id @default(autoincrement())
+  name      String
+  message String?
+  createdAt DateTime @default(now())
+}
