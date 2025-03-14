@@ -173,7 +173,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         "107": "#ffffff",
     };
 
-    function makeTextWindow(title: string, content: string[], width: number): string {
+    function makeTextWindow(
+        title: string,
+        content: string[],
+        width: number,
+    ): string {
         // make a window like the thingy in the motd
         let window = [];
         let windowWidth = Math.max(title.length, width);
@@ -192,11 +196,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         "\u001b[95mFetching message of the day...",
         "\u001b[95mFetching last.fm status...",
         "\u001b[95mFetching visitor count...\u001b[0m Visitors so far!",
-        makeTextWindow("Socials", [
-            "Github: 1vers1on",
-            "Discord: 1vers1on",
-            "Email: invers1on1@outlook.com"
-        ], 30),
+        makeTextWindow(
+            "Socials",
+            [
+                "Github: 1vers1on",
+                "Discord: 1vers1on",
+                "Email: invers1on1@outlook.com",
+            ],
+            30,
+        ),
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
@@ -319,12 +327,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     function createWhiteNoise(duration: number): AudioBufferSourceNode {
         // Create a buffer with random noise
         const bufferSize = audioContext.sampleRate * duration * 0.001;
-        const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const buffer = audioContext.createBuffer(
+            1,
+            bufferSize,
+            audioContext.sampleRate,
+        );
         const data = buffer.getChannelData(0);
 
         // Fill the buffer with random values between -1 and 1
         for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;  // Random values between -1 and 1
+            data[i] = Math.random() * 2 - 1; // Random values between -1 and 1
         }
 
         // Create a BufferSourceNode to play the noise
@@ -338,8 +350,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         const gain = audioContext.createGain();
         noise.connect(gain);
         gain.connect(audioContext.destination);
-        gain.gain.setValueAtTime(0.5, audioContext.currentTime + duration / 1000 - 0.05);
-        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+        gain.gain.setValueAtTime(
+            0.5,
+            audioContext.currentTime + duration / 1000 - 0.05,
+        );
+        gain.gain.linearRampToValueAtTime(
+            0,
+            audioContext.currentTime + duration / 1000,
+        );
 
         return noise;
     }
@@ -382,7 +400,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (this.notes[i] === "W") {
                     playWhiteNoise(interval);
                 } else {
-                    playNote(this.notes[i], interval, this.volumes[i], this.type);
+                    playNote(
+                        this.notes[i],
+                        interval,
+                        this.volumes[i],
+                        this.type,
+                    );
                 }
 
                 i++;
@@ -442,36 +465,38 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         setType(type: OscillatorType) {
             this.type = type;
-        }   
-    };
+        }
+    }
 
     function noteToFrequency(note: string): number {
         const notes: Record<string, number> = {
-            'C': 261.63,
-            'C#': 277.18,
-            'D': 293.66,
-            'D#': 311.13,
-            'E': 329.63,
-            'F': 349.23,
-            'F#': 369.99,
-            'G': 392.00,
-            'G#': 415.30,
-            'A': 440.00,
-            'A#': 466.16,
-            'B': 493.88
+            C: 261.63,
+            "C#": 277.18,
+            D: 293.66,
+            "D#": 311.13,
+            E: 329.63,
+            F: 349.23,
+            "F#": 369.99,
+            G: 392.0,
+            "G#": 415.3,
+            A: 440.0,
+            "A#": 466.16,
+            B: 493.88,
         };
 
         const noteMatch = note.match(/^([A-Ga-g#b]+)(\d+)$/);
-        
+
         if (!noteMatch) {
-            throw new Error('Invalid note format. Use note like "A4" or "C#5".');
+            throw new Error(
+                'Invalid note format. Use note like "A4" or "C#5".',
+            );
         }
 
         const noteName = noteMatch[1].toUpperCase();
         const octave = parseInt(noteMatch[2], 10);
 
         if (!notes[noteName]) {
-            throw new Error('Invalid note name.');
+            throw new Error("Invalid note name.");
         }
 
         let frequency = notes[noteName];
@@ -486,18 +511,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         audioContext = new AudioContext();
     }
 
-    function playNote(note: string, duration: number, volume?: number, type?: OscillatorType) {
+    function playNote(
+        note: string,
+        duration: number,
+        volume?: number,
+        type?: OscillatorType,
+    ) {
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
 
-        oscillator.type = type || 'sine';
+        oscillator.type = type || "sine";
         oscillator.frequency.value = noteToFrequency(note);
         oscillator.connect(gain);
 
         gain.connect(audioContext.destination);
 
-        gain.gain.setValueAtTime(volume || 0.5, audioContext.currentTime + duration / 1000 - 0.05);
-        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+        gain.gain.setValueAtTime(
+            volume || 0.5,
+            audioContext.currentTime + duration / 1000 - 0.05,
+        );
+        gain.gain.linearRampToValueAtTime(
+            0,
+            audioContext.currentTime + duration / 1000,
+        );
 
         gain.gain.value = volume || 0.5;
         oscillator.start(audioContext.currentTime);
@@ -4121,16 +4157,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 initAudioContext();
             },
 
-            manual_entries: [
-                "startAudio - start audio",
-                "Usage: startAudio",
-            ],
+            manual_entries: ["startAudio - start audio", "Usage: startAudio"],
         },
 
         playNote: {
             execute: (command: string[]) => {
                 if (command.length === 1) {
-                    writeToOutput("Usage: playNote &lt;note&gt (oscillator type)");
+                    writeToOutput(
+                        "Usage: playNote &lt;note&gt (oscillator type)",
+                    );
                     return;
                 }
 
@@ -4139,7 +4174,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     return;
                 }
 
-                playNote(command[1], 500, 0.5, command[2] as OscillatorType || "sine");
+                playNote(
+                    command[1],
+                    500,
+                    0.5,
+                    (command[2] as OscillatorType) || "sine",
+                );
             },
 
             manual_entries: [
