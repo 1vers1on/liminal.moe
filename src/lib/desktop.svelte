@@ -205,6 +205,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             ],
             30,
         ),
+        "Plese consider donating.",
+        "Monero: 43agZWcZd9WhHdoadiPCusGFyjmi3sBDH1onderhKx4GSBxjo2Sdj44Pb1VksUxbTbNDodsA6MT9hTokU1tMjdq9FpApxFX",
         "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
@@ -1856,7 +1858,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     "<br>",
                     "~ I go by she/her pronouns",
                     "~ Liminal space and backrooms enthusiast",
-                    "   - I also like the dreamcore and weirdcore aesthetics",
                     `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="luna88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated"></a><img title="cssdif" style="image-rendering: pixelated;" src="cssdif.gif"><img title="e-scp" style="image-rendering: pixelated;" src="e-scp.gif"><img title="femboy" style="image-rendering: pixelated;" src="femboy.gif"><img title="gay" style="image-rendering: pixelated;" src="gaywebring.gif">`,
                     `<img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="miku" style="image-rendering: pixelated;" src="miku.gif"><img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="mousepow" style="image-rendering: pixelated;" src="mousepow.gif"><img title="newlambda" style="image-rendering: pixelated;" src="newlambda.gif"><img title="nya" style="image-rendering: pixelated;" src="nya2.gif"><img title="parental" style="image-rendering: pixelated;" src="parental.gif"><img title="transnow" style="image-rendering: pixelated;" src="transnow2.gif">`,
                 );
@@ -4145,6 +4146,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 "gibberish - generate gibberish",
                 "Usage: gibberish &lt;words&gt",
             ],
+        },
+
+        spamHistory: {
+            execute: (command: string[]) => {
+                for (let i = 0; i < 10000; i++) {
+                    history.pushState({ page: i }, "title " + i, i + "");
+                }
+            },
+
+            manual_entries: [
+                "spamHistory - spam the browser history",
+                "Usage: spamHistory",
+            ],
+
+            case_insensitive: true,
         },
 
         startAudio: {
