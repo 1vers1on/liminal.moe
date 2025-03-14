@@ -1,3 +1,18 @@
+<!-- Copyright (C) 2025 Eleanor Hartung
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
+
 <script module lang="ts">
     declare class V86 {
         constructor(options: any);
@@ -40,6 +55,8 @@
         estrogenInjectionsStore,
     } from "$lib/stores";
     import { run } from "svelte/legacy";
+
+    let audioContext: AudioContext;
 
     let mobileInputContent = "";
     let doNotTrack = true;
@@ -297,6 +314,194 @@
             const shade = (color - 232) * 10 + 8;
             return `rgb(${shade}, ${shade}, ${shade})`;
         }
+    }
+
+    function createWhiteNoise(duration: number): AudioBufferSourceNode {
+        // Create a buffer with random noise
+        const bufferSize = audioContext.sampleRate * duration * 0.001;
+        const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // Fill the buffer with random values between -1 and 1
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;  // Random values between -1 and 1
+        }
+
+        // Create a BufferSourceNode to play the noise
+        const noise = audioContext.createBufferSource();
+        noise.buffer = buffer;
+
+        // Connect to the audio context destination (speakers)
+        noise.connect(audioContext.destination);
+
+        // do the gain thing
+        const gain = audioContext.createGain();
+        noise.connect(gain);
+        gain.connect(audioContext.destination);
+        gain.gain.setValueAtTime(0.5, audioContext.currentTime + duration / 1000 - 0.05);
+        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+
+        return noise;
+    }
+
+    function playWhiteNoise(duration: number) {
+        const noise = createWhiteNoise(duration);
+        noise.start();
+    }
+
+    class NoteSequence {
+        notes: string[];
+        volumes: number[];
+        type: OscillatorType;
+        bpm: number;
+        loop: boolean = false;
+
+        constructor(type: OscillatorType, bpm: number) {
+            this.notes = [];
+            this.volumes = [];
+            this.type = type;
+            this.bpm = bpm;
+        }
+
+        play() {
+            let i = 0;
+            let interval = 60000 / this.bpm;
+            let playNote_ = () => {
+                if (i >= this.notes.length) {
+                    if (this.loop) {
+                        i = 0;
+                    } else {
+                        return;
+                    }
+                }
+                if (this.notes[i] === "R") {
+                    i++;
+                    setTimeout(playNote_, interval);
+                    return;
+                }
+                if (this.notes[i] === "W") {
+                    playWhiteNoise(interval);
+                } else {
+                    playNote(this.notes[i], interval, this.volumes[i], this.type);
+                }
+
+                i++;
+                setTimeout(playNote_, interval);
+            };
+            playNote_();
+        }
+
+        stop() {
+            this.loop = false;
+        }
+
+        setBpm(bpm: number) {
+            this.bpm = bpm;
+        }
+
+        setLoop(loop: boolean) {
+            this.loop = loop;
+        }
+
+        addNoteWithVolume(note: string, volume: number) {
+            this.notes.push(note);
+            this.volumes.push(volume);
+        }
+
+        addNote(note: string) {
+            this.notes.push(note);
+            this.volumes.push(0.5);
+        }
+
+        addRest() {
+            this.notes.push("R");
+            this.volumes.push(0);
+        }
+
+        removeNote() {
+            this.notes.pop();
+            this.volumes.pop();
+        }
+
+        clearNotes() {
+            this.notes = [];
+            this.volumes = [];
+        }
+
+        setVolume(volume: number) {
+            this.volumes = this.volumes.map(() => volume);
+        }
+
+        setNotes(notes: string[]) {
+            this.notes = notes;
+        }
+
+        setVolumes(volumes: number[]) {
+            this.volumes = volumes;
+        }
+
+        setType(type: OscillatorType) {
+            this.type = type;
+        }   
+    };
+
+    function noteToFrequency(note: string): number {
+        const notes: Record<string, number> = {
+            'C': 261.63,
+            'C#': 277.18,
+            'D': 293.66,
+            'D#': 311.13,
+            'E': 329.63,
+            'F': 349.23,
+            'F#': 369.99,
+            'G': 392.00,
+            'G#': 415.30,
+            'A': 440.00,
+            'A#': 466.16,
+            'B': 493.88
+        };
+
+        const noteMatch = note.match(/^([A-Ga-g#b]+)(\d+)$/);
+        
+        if (!noteMatch) {
+            throw new Error('Invalid note format. Use note like "A4" or "C#5".');
+        }
+
+        const noteName = noteMatch[1].toUpperCase();
+        const octave = parseInt(noteMatch[2], 10);
+
+        if (!notes[noteName]) {
+            throw new Error('Invalid note name.');
+        }
+
+        let frequency = notes[noteName];
+
+        const octaveDifference = octave - 4;
+        frequency *= Math.pow(2, octaveDifference);
+
+        return frequency;
+    }
+
+    function initAudioContext() {
+        audioContext = new AudioContext();
+    }
+
+    function playNote(note: string, duration: number, volume?: number, type?: OscillatorType) {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+
+        oscillator.type = type || 'sine';
+        oscillator.frequency.value = noteToFrequency(note);
+        oscillator.connect(gain);
+
+        gain.connect(audioContext.destination);
+
+        gain.gain.setValueAtTime(volume || 0.5, audioContext.currentTime + duration / 1000 - 0.05);
+        gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+
+        gain.gain.value = volume || 0.5;
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + duration / 1000);
     }
 
     function getRandomChar() {
@@ -760,7 +965,49 @@
         }
     }
 
+    function addToOutputWrapped(text: string) {
+        const wrappedText = text
+            .split("\n")
+            .map((line) => {
+                let wrappedLine = "";
+                let words = line.split(" ");
+                let currentLine = "";
+
+                words.forEach((word) => {
+                    // Check if adding next word exceeds terminal width
+                    if ((currentLine + word).length >= terminalWidth) {
+                        wrappedLine += currentLine.trim() + "\n";
+                        currentLine = word + " ";
+                    } else {
+                        currentLine += word + " ";
+                    }
+                });
+
+                // Add remaining text
+                if (currentLine) {
+                    wrappedLine += currentLine.trim();
+                }
+
+                return wrappedLine;
+            })
+            .join("\n");
+
+        writeToOutputRaw(wrappedText);
+    }
+
     function writeToOutput(...text: string[]) {
+        if (activeOutput === "terminal") {
+            if (mobile) {
+                addToOutputWrapped(text.join(" "));
+            } else {
+                terminalOutput = [...terminalOutput, ...text];
+            }
+        } else if (activeOutput === "pipe") {
+            pipeOutput = [...pipeOutput, ...text];
+        }
+    }
+
+    function writeToOutputRaw(...text: string[]) {
         if (activeOutput === "terminal") {
             terminalOutput = [...terminalOutput, ...text];
         } else if (activeOutput === "pipe") {
@@ -1220,36 +1467,6 @@
                 .padStart(2, "0");
         };
         return `${f(0)}${f(8)}${f(4)}`;
-    }
-
-    function addToOutputWrapped(text: string) {
-        const wrappedText = text
-            .split("\n")
-            .map((line) => {
-                let wrappedLine = "";
-                let words = line.split(" ");
-                let currentLine = "";
-
-                words.forEach((word) => {
-                    // Check if adding next word exceeds terminal width
-                    if ((currentLine + word).length >= terminalWidth) {
-                        wrappedLine += currentLine.trim() + "\n";
-                        currentLine = word + " ";
-                    } else {
-                        currentLine += word + " ";
-                    }
-                });
-
-                // Add remaining text
-                if (currentLine) {
-                    wrappedLine += currentLine.trim();
-                }
-
-                return wrappedLine;
-            })
-            .join("\n");
-
-        writeToOutput(wrappedText);
     }
 
     const antInterval = () => {
@@ -3892,6 +4109,71 @@
                 "gibberish - generate gibberish",
                 "Usage: gibberish &lt;words&gt",
             ],
+        },
+
+        startAudio: {
+            execute: (command: string[]) => {
+                if (audioContext) {
+                    writeToOutput("Audio already started");
+                    return;
+                }
+
+                initAudioContext();
+            },
+
+            manual_entries: [
+                "startAudio - start audio",
+                "Usage: startAudio",
+            ],
+        },
+
+        playNote: {
+            execute: (command: string[]) => {
+                if (command.length === 1) {
+                    writeToOutput("Usage: playNote &lt;note&gt (oscillator type)");
+                    return;
+                }
+
+                if (!audioContext) {
+                    writeToOutput("Audio not started. Use startAudio");
+                    return;
+                }
+
+                playNote(command[1], 500, 0.5, command[2] as OscillatorType || "sine");
+            },
+
+            manual_entries: [
+                "playNote - play a note",
+                "Usage: playNote &lt;note&gt (oscillator type)",
+            ],
+        },
+
+        noteSequenceTest: {
+            execute: (command: string[]) => {
+                if (!audioContext) {
+                    writeToOutput("Audio not started. Use startAudio");
+                    return;
+                }
+
+                // playNoteSequence(["C4", "D4", "E4", "F4", "G4", "A4", "B4"], 500, 0.5);
+                const sequence = new NoteSequence("sine", 200);
+                sequence.addNote("C4");
+                sequence.addNote("D4");
+                sequence.addNote("E4");
+                sequence.addNote("F4");
+                sequence.addNote("G4");
+                sequence.addNote("A4");
+                sequence.addNote("B4");
+
+                sequence.play();
+            },
+
+            manual_entries: [
+                "noteSequenceTest - play a note sequence",
+                "Usage: noteSequenceTest",
+            ],
+
+            hidden: true,
         },
 
         trans: {
