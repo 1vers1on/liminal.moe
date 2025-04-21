@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 Eleanor Hartung
+/* Copyright (C) 2025 Ellie Hartung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published
