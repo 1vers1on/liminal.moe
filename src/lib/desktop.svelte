@@ -178,16 +178,80 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         content: string[],
         width: number,
     ): string {
-        // make a window like the thingy in the motd
-        let window = [];
-        let windowWidth = Math.max(title.length, width);
-        window.push("┌" + "─".repeat(windowWidth) + "┐");
-        window.push("│" + title.padEnd(windowWidth) + "│");
-        window.push("├" + "─".repeat(windowWidth) + "┤");
+        const getVisibleLength = (str: string): number => {
+            let visibleCount = 0;
+            let i = 0;
+            let inTag = false;
+            let quoteChar: string | null = null;
+
+            while (i < str.length) {
+                const char = str[i];
+
+                if (inTag) {
+                    if (quoteChar) {
+                        if (char === quoteChar) {
+                            quoteChar = null;
+                        }
+                    } else {
+                        if (char === '"' || char === "'") {
+                            quoteChar = char;
+                        } else if (char === ">") {
+                            inTag = false;
+                        }
+                    }
+                    i++;
+                } else {
+                    if (char === "<") {
+                        inTag = true;
+                        i++;
+                    } else if (char === "&") {
+                        const semicolonIndex = str.indexOf(";", i);
+                        if (semicolonIndex !== -1 && semicolonIndex - i < 10) {
+                            visibleCount++;
+                            i = semicolonIndex + 1;
+                        } else {
+                            visibleCount++;
+                            i++;
+                        }
+                    } else {
+                        visibleCount++;
+                        i++;
+                    }
+                }
+            }
+            return visibleCount;
+        };
+
+        const titleVisibleLength = getVisibleLength(title);
+        const windowWidth = Math.max(titleVisibleLength, width);
+
+        let window: string[] = [];
+        const horizontalBorder = "─".repeat(windowWidth);
+
+        window.push("┌" + horizontalBorder + "┐");
+
+        const titlePaddingNeeded = Math.max(
+            0,
+            windowWidth - titleVisibleLength,
+        );
+        const titlePadding = " ".repeat(titlePaddingNeeded);
+        window.push("│" + title + titlePadding + "│");
+
+        window.push("├" + horizontalBorder + "┤");
+
         for (let line of content) {
-            window.push("│" + line.padEnd(windowWidth) + "│");
+            const lineVisibleLength = getVisibleLength(line);
+            const linePaddingNeeded = Math.max(
+                0,
+                windowWidth - lineVisibleLength,
+            );
+            const linePadding = " ".repeat(linePaddingNeeded);
+
+            window.push("│" + line + linePadding + "│");
         }
-        window.push("└" + "─".repeat(windowWidth) + "┘");
+
+        window.push("└" + horizontalBorder + "┘");
+
         return window.join("<br>");
     }
 
@@ -199,15 +263,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         makeTextWindow(
             "Socials",
             [
-                "Github: 1vers1on",
+                "Github: <a href=\"https://github.com/1vers1on\" target=\"_blank\">1vers1on</a>",
                 "Discord: 1vers1on",
                 "Email: invers1on1@outlook.com",
             ],
             30,
         ),
-        "Plese consider donating.",
-        "Monero: 43agZWcZd9WhHdoadiPCusGFyjmi3sBDH1onderhKx4GSBxjo2Sdj44Pb1VksUxbTbNDodsA6MT9hTokU1tMjdq9FpApxFX",
-        "If you want to find out more about me, type <i>whoami</i>, or type <i>help</i> to see a list of available commands.",
+        "If you want to find out more about me, type <i>whoami</i>, or type <i>quickhelp</i> to see how to use this site.",
         "<br>",
         isToday("08-07") ? "It's my birthday today!<br><br>" : "",
     ];
@@ -1654,6 +1716,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             ],
         },
 
+        quickhelp: {
+            execute: () => {
+                writeToOutput(
+                    "\u001b[37mUse the man command to get more information about a command.",
+                    "\u001b[37mUse the ls command to list files and directories.",
+                    "\u001b[37mUse the cat command to display file contents.",
+                    "\u001b[37mUse the help command to get a list of available commands.",
+                );
+            },
+
+            manual_entries: [
+                "quickhelp - help for non linux users",
+                "Usage: quickhelp",
+            ],
+        },
+
         blackjackHelp: {
             execute: () => {
                 writeToOutput(
@@ -1858,8 +1936,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     "<br>",
                     "~ I go by she/her pronouns",
                     "~ Liminal space and backrooms enthusiast",
-                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="luna88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated"></a><img title="cssdif" style="image-rendering: pixelated;" src="cssdif.gif"><img title="e-scp" style="image-rendering: pixelated;" src="e-scp.gif"><img title="femboy" style="image-rendering: pixelated;" src="femboy.gif"><img title="gay" style="image-rendering: pixelated;" src="gaywebring.gif">`,
-                    `<img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="miku" style="image-rendering: pixelated;" src="miku.gif"><img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="mousepow" style="image-rendering: pixelated;" src="mousepow.gif"><img title="newlambda" style="image-rendering: pixelated;" src="newlambda.gif"><img title="nya" style="image-rendering: pixelated;" src="nya2.gif"><img title="parental" style="image-rendering: pixelated;" src="parental.gif"><img title="transnow" style="image-rendering: pixelated;" src="transnow2.gif">`,
+                    "~ Ham radio operator",
+                    "~ Electrical engineer",
+                    "<br>",
+                    `<img title="trans" style="image-rendering: pixelated;" src="button274.gif"><img title="archbtw" style="image-rendering: pixelated;" src="button195.png"><img title="firefox" style="image-rendering: pixelated;" src="button102.gif"><img title="blender" style="image-rendering: pixelated;" src="blender.gif"><img title="16bit" style="image-rendering: pixelated;" src="bestviewed16bit.gif"><a href="https://sushi.tauon.dev" target="_blank"><img src="luna88x31.png" width="88px" height="31px" alt="luna 88 by 31 button" style="image-rendering: pixelated"></a><img title="cssdif" style="image-rendering: pixelated;" src="cssdif.gif"><img title="e-scp" style="image-rendering: pixelated;" src="e-scp.gif">`,
+                    `<img title="miku" style="image-rendering: pixelated;" src="miku.gif"><img title="lulu" style="image-rendering: pixelated;" src="lulu.gif"><img title="mousepow" style="image-rendering: pixelated;" src="mousepow.gif"><img title="newlambda" style="image-rendering: pixelated;" src="newlambda.gif"><img title="nya" style="image-rendering: pixelated;" src="nya2.gif"><img title="parental" style="image-rendering: pixelated;" src="parental.gif"><img title="transnow" style="image-rendering: pixelated;" src="transnow2.gif">`,
                 );
             },
 
@@ -1959,7 +2040,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         "\u001b[96mprojects",
                         "\u001b[96mabout",
                         "\u001b[96mcontact",
-                        "\u001b[96mskibidisigmafile",
                         "\u001b[96m.env",
                         "\u001b[95mwhat",
                     );
@@ -2028,10 +2108,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                                 "<br>",
                                 "┏━━━━━Projects━━━━━┓",
                                 "┃ \u001b[96mEagler Lambda\u001b[0m    ┃",
-                                "┃ \u001b[96mScience Help\u001b[0m     ┃",
                                 "┃ \u001b[96mSpork Viewer\u001b[0m     ┃",
-                                "┃ \u001b[96mSussy OS\u001b[0m         ┃",
+                                "┃ \u001b[96mE SDR\u001b[0m            ┃",
                                 "┃ \u001b[96mYee Engine\u001b[0m       ┃",
+                                "┃ \u001b[96mLiminal.moe\u001b[0m      ┃",
+                                "┃ \u001b[96mBolt SDR\u001b[0m         ┃",
+                                "┃ \u001b[96mPowered Antenna\u001b[0m  ┃",
                                 "┗━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
                             );
@@ -2042,10 +2124,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                             writeToOutput(
                                 "<br>",
                                 "┏━━━━━━━━━━About━━━━━━━━━━━┓",
-                                "┃ \u001b[96mName: 1vers1on\u001b[0m           ┃",
+                                "┃ \u001b[96mName: Ellie Hartung\u001b[0m      ┃",
                                 `┃ \u001b[96mAge: ${yearsAgo("2009-08-07")}\u001b[0m                  ┃`,
                                 "┃ \u001b[96mPronouns: she/her\u001b[0m        ┃",
-                                "┃ \u001b[96mLanguages: C++, ts, Rust\u001b[0m ┃",
+                                "┃ \u001b[96mLanguages: C++,TS,Java\u001b[0m   ┃",
                                 "┃ \u001b[96mOS: Arch Linux          \u001b[0m ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
@@ -2058,6 +2140,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                                 "<br>",
                                 "┏━━━━━━━━━━Contact━━━━━━━━━━┓",
                                 "┃ \u001b[96mDiscord: 1vers1on\u001b[0m         ┃",
+                                "┃ \u001b[96mEmail: ellie@liminal.moe\u001b[0m  ┃",
                                 "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━┛",
                                 "<br>",
                             );
@@ -3889,6 +3972,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 "ssh - connect to a remote server",
                 "Usage: ssh &lt;username&gt",
             ],
+
+            hidden: true,
         },
 
         linux: {
@@ -4222,6 +4307,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 "trans - make the terminal trans flag colors",
                 "Usage: trans",
             ],
+
+            hidden: true,
         },
 
         man: {
@@ -4425,6 +4512,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             }
         },
     };
+
+    // Tab-completion state
+    let tabMatches: string[] = [];
+    let tabIndex = 0;
+    let tabBase = "";
+
+    function getTabMatches(prefix: string) {
+        const list: string[] = [];
+        for (const key in commands) {
+            // respect case_insensitive when matching
+            if (commands[key].case_insensitive) {
+                if (key.toLowerCase().startsWith(prefix.toLowerCase())) {
+                    list.push(key);
+                }
+            } else {
+                if (key.startsWith(prefix)) {
+                    list.push(key);
+                }
+            }
+        }
+        list.sort((a, b) => a.localeCompare(b));
+        return list;
+    }
 
     function clickEstrogen() {
         estrogenStore.set(
@@ -4780,6 +4890,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         }
 
         if (event.key === "Enter") {
+            tabMatches = [];
+            tabIndex = 0;
+            tabBase = "";
             processCommand(inputValue);
             if (commandHistory[commandHistory.length - 1] !== inputValue) {
                 commandHistory.push(inputValue);
@@ -4792,6 +4905,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 historyIndex--;
                 inputValue = commandHistory[historyIndex];
                 cursorPosition = inputValue.length;
+                tabMatches = [];
+                tabIndex = 0;
+                tabBase = "";
             }
         } else if (event.key === "ArrowDown") {
             if (historyIndex < commandHistory.length - 1) {
@@ -4806,10 +4922,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         } else if (event.key === "ArrowLeft") {
             if (cursorPosition > 0) {
                 cursorPosition--;
+                tabMatches = [];
+                tabIndex = 0;
+                tabBase = "";
             }
         } else if (event.key === "ArrowRight") {
             if (cursorPosition < inputValue.length) {
                 cursorPosition++;
+                tabMatches = [];
+                tabIndex = 0;
+                tabBase = "";
             }
         } else if (event.key === "v" && event.ctrlKey) {
             navigator.clipboard.readText().then((text) => {
@@ -4824,18 +4946,83 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         } else if (event.key === "c" && event.ctrlKey) {
             if (cmatrixInterval) clearInterval(cmatrixInterval);
             return;
+        } else if (event.key === "Tab") {
+            event.preventDefault();
+
+            const left = inputValue.slice(0, cursorPosition);
+            const tokenMatch = left.match(/(?:[^\s"]+|"[^"]*")+$/);
+            const token = tokenMatch
+                ? tokenMatch[0].replace(/(^\")|("$)/g, "")
+                : "";
+
+            if (!token || token.length === 0) {
+                return;
+            }
+
+            let tokenIsExactCommand = false;
+            for (const key in commands) {
+                if (commands[key].case_insensitive) {
+                    if (key.toLowerCase() === token.toLowerCase()) {
+                        tokenIsExactCommand = true;
+                        break;
+                    }
+                } else {
+                    if (key === token) {
+                        tokenIsExactCommand = true;
+                        break;
+                    }
+                }
+            }
+
+            if (tokenIsExactCommand) {
+                return;
+            }
+
+            if (tabMatches.length === 0 || tabBase !== token) {
+                tabBase = token;
+                tabMatches = getTabMatches(token);
+                tabIndex = 0;
+            } else {
+                if (event.shiftKey) {
+                    tabIndex =
+                        (tabIndex - 1 + tabMatches.length) % tabMatches.length;
+                } else {
+                    tabIndex = (tabIndex + 1) % tabMatches.length;
+                }
+            }
+
+            if (tabMatches.length === 0) {
+                return;
+            }
+
+            const completion = tabMatches[tabIndex];
+            // Replace the token under cursor with completion
+            const before = left.replace(/(?:[^\s"]+|"[^"]*")+$/, "");
+            const after = inputValue.slice(cursorPosition);
+
+            // If there's exactly one match, add a trailing space for convenience
+            const insert = completion + (tabMatches.length === 1 ? " " : "");
+            inputValue = before + insert + after;
+            cursorPosition = (before + insert).length;
+            return;
         } else if (event.key.length === 1) {
             inputValue =
                 inputValue.slice(0, cursorPosition) +
                 event.key +
                 inputValue.slice(cursorPosition);
             cursorPosition++;
+            tabMatches = [];
+            tabIndex = 0;
+            tabBase = "";
         } else if (event.key === "Backspace") {
             if (cursorPosition > 0) {
                 inputValue =
                     inputValue.slice(0, cursorPosition - 1) +
                     inputValue.slice(cursorPosition);
                 cursorPosition--;
+                tabMatches = [];
+                tabIndex = 0;
+                tabBase = "";
             }
         }
 
@@ -5345,6 +5532,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         -moz-user-select: none;
         -webkit-user-select: none;
         -ms-user-select: none;
+    }
+
+    a {
+        color: #7ee6b8;
+        text-decoration: none;
+        border-bottom: 1px dotted rgba(126, 230, 184, 0.2);
+        transition: color 120ms ease, border-color 120ms ease, transform 120ms ease;
+        word-break: break-all;
+    }
+
+    a:hover,
+    a:focus {
+        color: #b8ffda;
+        border-bottom-color: rgba(184, 255, 218, 0.6);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    a:visited {
+        color: #66d79f;
     }
 
     @-webkit-keyframes blink {

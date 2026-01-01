@@ -17,4 +17,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     import Desktop from "$lib/desktop.svelte";
 </script>
 
+<svelte:head>
+    <title>liminal.moe - personal site of Ellie Hartung</title>
+    <meta name="description" content="Hello! I'm 1vers1on (Ellie Hartung) — Developer and Electrical Engineer working on C++, Java, and web projects. Browse projects, contact info, and experiments." />
+    <link rel="canonical" href="https://liminal.moe/" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="1vers1on" />
+    <meta property="og:title" content="1vers1on — Ellie Hartung" />
+    <meta property="og:description" content="Hello! I'm 1vers1on (Ellie Hartung) — Developer and Electrical Engineer working on C++, Java, and web projects." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://liminal.moe/" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@1vers1on" />
+    <meta name="twitter:title" content="1vers1on — Ellie Hartung" />
+    <meta name="twitter:description" content="Hello! I'm 1vers1on (Ellie Hartung) — Developer and Electrical Engineer working on C++, Java, and web projects." />
+
+    <!-- Structured data: Person -->
+    <script type="application/ld+json">
+        {`{
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "Ellie Hartung",
+            "alternateName": "1vers1on",
+            "url": "https://liminal.moe/",
+            "sameAs": [
+                "https://github.com/1vers1on"
+            ],
+            "jobTitle": "Developer",
+            "description": "Developer and Electrical Engineer working on C++, Java, and web projects."
+        }`}
+    </script>
+</svelte:head>
+
 <Desktop />
