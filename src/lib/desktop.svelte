@@ -1719,6 +1719,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         quickhelp: {
             execute: () => {
                 writeToOutput(
+                    "\u001b[37mType freelanceInfo for info about my freelance work.",
                     "\u001b[37mUse the man command to get more information about a command.",
                     "\u001b[37mUse the ls command to list files and directories.",
                     "\u001b[37mUse the cat command to display file contents.",
@@ -1729,6 +1730,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             manual_entries: [
                 "quickhelp - help for non linux users",
                 "Usage: quickhelp",
+            ],
+        },
+
+        freelanceInfo: {
+            execute: () => {
+                writeToOutput(
+                    "\u001b[37mFreelance Work / Hite Me.",
+                    "\u001b[37mI do svelte + ts web projects, bug fixes for anything, small tools and scripts, or c++ and java work.",
+                    "\u001b[37mI will also do electrical engineering / pcb design work.",
+                    "\u001b[37mI take jobs for 10$-200$ at a flat rate",
+                    "\u001b[37mContact me at invers1on1@outlook.com for more info.",
+                );
+            },
+
+            manual_entries: [
+                "freelanceInfo - info for my freelance work",
+                "Usage: freelanceInfo",
             ],
         },
 
@@ -1800,12 +1818,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
 
                 if (
-                    command[1] === "what" ||
-                    command[1] === "what/" ||
-                    command[1] === "./what" ||
-                    command[1] === "./what/"
+                    command[1] === "server" ||
+                    command[1] === "server/" ||
+                    command[1] === "./server" ||
+                    command[1] === "./server/"
                 ) {
-                    currentDirectory = "~/what";
+                    currentDirectory = "~/server";
                     return;
                 }
 
@@ -2041,10 +2059,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         "\u001b[96mabout",
                         "\u001b[96mcontact",
                         "\u001b[96m.env",
-                        "\u001b[95mwhat",
+                        "\u001b[95mserver",
                     );
                 } else if (
-                    currentDirectory === "~/what" &&
+                    currentDirectory === "~/server" &&
                     command.length === 1
                 ) {
                     const response = await fetch(
@@ -2054,7 +2072,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                             headers: {
                                 "Content-Type": "application/json",
                             },
-                            body: JSON.stringify({ directory: "what" }),
+                            body: JSON.stringify({ directory: "server" }),
                         },
                     );
 
@@ -2067,7 +2085,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                         }
                     }
                 } else if (currentDirectory === "~" && command.length === 2) {
-                    if (command[1] === "what") {
+                    if (command[1] === "server") {
                         const response = await fetch(
                             "/api/listFilesInServerDirectory",
                             {
@@ -2075,7 +2093,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                                 headers: {
                                     "Content-Type": "application/json",
                                 },
-                                body: JSON.stringify({ directory: "what" }),
+                                body: JSON.stringify({ directory: "server" }),
                             },
                         );
 
@@ -2154,15 +2172,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                             ),
                         );
                         break;
-                    case "what":
-                        writeToOutput("what is a directory");
+                    case "server":
+                        writeToOutput("server is a directory");
                         break;
                     case "":
                         writeToOutput("cat: missing file operand");
                         break;
                 }
 
-                if (currentDirectory === "~/what") {
+                if (currentDirectory === "~/server") {
                     if (command.length === 2) {
                         const response = await fetch(
                             "/api/readFileFromServerDirectory",
@@ -2172,7 +2190,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                                     "Content-Type": "application/json",
                                 },
                                 body: JSON.stringify({
-                                    file: "what/" + command[1],
+                                    file: "server/" + command[1],
                                 }),
                             },
                         );
@@ -2186,10 +2204,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     }
                 }
 
-                // check if it starts with /what
                 if (
-                    command[1].startsWith("what/") ||
-                    command[1].startsWith("./what")
+                    command[1].startsWith("server/") ||
+                    command[1].startsWith("./server")
                 ) {
                     const response = await fetch(
                         "/api/readFileFromServerDirectory",
@@ -2225,8 +2242,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 }
 
                 if (
-                    command[1].startsWith("what/") ||
-                    command[1].startsWith("./what")
+                    command[1].startsWith("server/") ||
+                    command[1].startsWith("./server")
                 ) {
                     const response = await fetch("/api/getImageB64", {
                         method: "POST",
@@ -2251,13 +2268,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     writeToOutput(
                         `<img src="${data.base64}" style="max-width: 400px; max-height: 400px;">`,
                     );
-                } else if (currentDirectory === "~/what") {
+                } else if (currentDirectory === "~/server") {
                     const response = await fetch("/api/getImageB64", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
                         },
-                        body: JSON.stringify({ file: "what/" + command[1] }),
+                        body: JSON.stringify({ file: "server/" + command[1] }),
                     });
 
                     if (response.status === 404) {
@@ -3349,34 +3366,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             admin_only: true,
         },
 
-        speedtest: {
-            execute: async (command: string[]) => {
-                writeToOutput("\u001b[33mRunning speed test...");
-                const startTime = performance.now();
-                const responsePing = await fetch("/api/ping");
-                const endTime = performance.now();
-
-                if (responsePing.status !== 200) {
-                    writeToOutput("Failed to ping server");
-                    return;
-                }
-
-                const downloadSpeed = await measureDownloadSpeed();
-                const uploadSpeed = await measureUploadSpeed();
-
-                writeToOutput(
-                    `\u001b[37mPing: ${endTime - startTime}ms`,
-                    `\u001b[37mDownload speed: ${downloadSpeed} Mbps`,
-                    `\u001b[37mUpload speed: ${uploadSpeed} Mbps`,
-                );
-            },
-
-            manual_entries: [
-                "speedtest - run a speed test",
-                "Usage: speedtest",
-            ],
-        },
-
         estrogen_clicker: {
             execute: (command: string[]) => {
                 estrogenClickerGameActive = true;
@@ -4210,7 +4199,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
             manual_entries: [
                 "gibberish - generate gibberish",
-                "Usage: gibberish &lt;words&gt",
+                "Usage: gibberish &lt;num_words&gt",
             ],
         },
 
@@ -5050,14 +5039,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     }
 
     function processCommand(command: string) {
+        if (transMode) {
+            makeTransFlagColors();
+        }
+
         if (commandInputCallback) {
             commandInputCallback(command);
             commandInputCallback = null;
+            // Clear mobile input after callback
+            if (mobile && mobileInput) {
+                mobileInput.value = "";
+                mobileInputContent = "";
+            }
             return;
         }
         writeToOutput(`${currentDirectory} $ ${command}`);
 
         if (command.length === 0) {
+            // Clear mobile input even for empty commands
+            if (mobile && mobileInput) {
+                mobileInput.value = "";
+                mobileInputContent = "";
+            }
             return;
         }
 
@@ -5065,6 +5068,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
         if (commandSegments.length > 2) {
             writeToOutput(`\u001b[31mOnly one pipe is supported\u001b[0m`);
+            // Clear mobile input after error
+            if (mobile && mobileInput) {
+                mobileInput.value = "";
+                mobileInputContent = "";
+            }
             return;
         }
 
@@ -5088,11 +5096,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (commands[key].case_insensitive) {
                     if (key.toLowerCase() === args[0].toLowerCase()) {
                         commands[key].execute(args);
+                        // Clear mobile input after command execution
+                        if (mobile && mobileInput) {
+                            mobileInput.value = "";
+                            mobileInputContent = "";
+                        }
                         return;
                     }
                 } else {
                     if (key === args[0]) {
                         commands[key].execute(args);
+                        // Clear mobile input after command execution
+                        if (mobile && mobileInput) {
+                            mobileInput.value = "";
+                            mobileInputContent = "";
+                        }
                         return;
                     }
                 }
@@ -5117,11 +5135,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     if (commands[key].case_insensitive) {
                         if (key.toLowerCase() === pipeArgs[0].toLowerCase()) {
                             commands[key].execute(pipeArgs);
+                            // Clear mobile input after piped command execution
+                            if (mobile && mobileInput) {
+                                mobileInput.value = "";
+                                mobileInputContent = "";
+                            }
                             return;
                         }
                     } else {
                         if (key === pipeArgs[0]) {
                             commands[key].execute(pipeArgs);
+                            // Clear mobile input after piped command execution
+                            if (mobile && mobileInput) {
+                                mobileInput.value = "";
+                                mobileInputContent = "";
+                            }
                             return;
                         }
                     }
@@ -5133,8 +5161,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             pipeOutput = [];
         }
 
-        if (transMode) {
-            makeTransFlagColors();
+        // Clear mobile input at the end of processing
+        if (mobile && mobileInput) {
+            mobileInput.value = "";
+            mobileInputContent = "";
         }
     }
 
@@ -5563,6 +5593,156 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     @keyframes blink {
         50% {
             opacity: 0;
+        }
+    }
+
+    /* Mobile-specific styles */
+    @media screen and (max-width: 768px) {
+        .terminal {
+            padding: 8px;
+            font-size: 12px;
+            height: calc(100vh - 70px);
+            padding-bottom: 60px;
+        }
+
+        .terminal-line {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .input-line {
+            flex-wrap: wrap;
+            font-size: 12px;
+        }
+
+        .prompt {
+            font-size: 11px;
+            margin-right: 4px;
+        }
+
+        .input-text {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .mobileInput {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            padding: 12px 10px;
+            font-size: 16px;
+            background-color: #111;
+            border: none;
+            border-top: 2px solid #23d18b;
+            color: #23d18b;
+            box-sizing: border-box;
+            z-index: 1000;
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+
+        .mobileInput:focus {
+            outline: none;
+            border-top: 2px solid #2bffaa;
+            background-color: #1a1a1a;
+        }
+
+        .mobileInput::placeholder {
+            color: #0d6b45;
+            opacity: 1;
+        }
+
+        .estrogen-count {
+            font-size: 1rem;
+            padding: 4px 8px;
+        }
+
+        .ebutton img {
+            max-width: 60px !important;
+            max-height: 60px !important;
+        }
+
+        .minesweeperButton {
+            font-size: 14px;
+            padding: 2px;
+            min-width: 20px;
+            min-height: 20px;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto !important;
+        }
+
+        /* Make buttons more tap-friendly */
+        button {
+            min-height: 44px;
+            min-width: 44px;
+        }
+
+        /* Prevent text selection on mobile for cleaner UX */
+        .terminal {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .terminal-line {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+    }
+
+    /* Extra small devices */
+    @media screen and (max-width: 400px) {
+        .terminal {
+            font-size: 10px;
+            padding: 6px;
+        }
+
+        .prompt {
+            font-size: 10px;
+        }
+
+        .mobileInput {
+            font-size: 14px;
+            padding: 10px 8px;
+        }
+
+        .minesweeperButton {
+            font-size: 12px;
+            min-width: 18px;
+            min-height: 18px;
+        }
+    }
+
+    /* Landscape mode on mobile */
+    @media screen and (max-width: 768px) and (orientation: landscape) {
+        .terminal {
+            height: calc(100vh - 50px);
+            padding-bottom: 45px;
+        }
+
+        .mobileInput {
+            padding: 8px 10px;
+        }
+    }
+
+    /* Touch device improvements */
+    @media (hover: none) and (pointer: coarse) {
+        .minesweeperButton {
+            padding: 4px;
+        }
+
+        a {
+            padding: 2px 0;
+        }
+
+        .ebutton {
+            padding: 10px;
         }
     }
 </style>

@@ -1,18 +1,3 @@
-/* Copyright (C) 2025 Ellie Hartung
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>. */
-
 import { PrismaClient } from "@prisma/client";
 import { json } from "@sveltejs/kit";
 
@@ -21,10 +6,29 @@ import { getUsername } from "$lib/auth";
 const prisma = new PrismaClient();
 const isProduction = import.meta.env.MODE === "production";
 
-export async function GET({ cookies }) {
+const rateLimitMap = new Map<string, number>();
+const RATE_LIMIT_WINDOW_MS = 60000;
+const RATE_LIMIT_MAX_REQUESTS = 10;
+
+function checkRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const lastRequest = rateLimitMap.get(ip) || 0;
+
+    if (now - lastRequest < RATE_LIMIT_WINDOW_MS) {
+        return false;
+    }
+
+    rateLimitMap.set(ip, now);
+    return true;
+}
+
+export async function GET({ cookies, getClientAddress }) {
     if (!isProduction) {
         return json({ count: "Tracking disabled in development" });
     }
+
+    const clientIp = getClientAddress();
+    const isRateLimited = !checkRateLimit(clientIp);
 
     try {
         let visitorCount = await prisma.visitorCount.findFirst();
@@ -33,7 +37,7 @@ export async function GET({ cookies }) {
             visitorCount = await prisma.visitorCount.create({
                 data: { count: 1 },
             });
-        } else {
+        } else if (!isRateLimited) {
             const token = cookies.get("token") || "";
 
             if ((await getUsername(token)) !== "1vers1on") {
