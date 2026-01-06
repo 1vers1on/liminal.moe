@@ -4110,7 +4110,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     return;
                 }
 
-                const length = parseInt(command[1]);
+                const length = parseInt(command[1], 10);
                 if (isNaN(length)) {
                     writeToOutput("Invalid length");
                     return;
@@ -4843,7 +4843,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     function handleKeydown(event: KeyboardEvent) {
         if (v86Running) {
-            if (event.key === "Escape" && event.ctrlKey) {
+            if (event.key === "Tab" && event.ctrlKey) {
                 v86Focused = !v86Focused;
                 emulator.keyboard_set_status(v86Focused);
             }
@@ -5431,7 +5431,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     </div>
     {#if v86Running}
         <div class="terminal-line">
-            Linux is currently running. Press ctrl + escape to switch between
+            Linux is currently running. Press ctrl + tab to switch between
             terminals.
         </div>
     {/if}
