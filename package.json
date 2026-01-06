@@ -39,6 +39,7 @@
         "sanitize-html": "^2.13.1",
         "socket.io": "^4.8.1",
         "socket.io-client": "^4.8.1",
+        "svelte-meta-tags": "^4.5.0",
         "tweetnacl": "^1.0.3",
         "tweetnacl-util": "^0.15.1",
         "vite-sveltekit-node-ws": "^0.0.8",

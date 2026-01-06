@@ -1724,12 +1724,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     "\u001b[37mUse the ls command to list files and directories.",
                     "\u001b[37mUse the cat command to display file contents.",
                     "\u001b[37mUse the help command to get a list of available commands.",
+                    "\u001b[37mUse the projects command to view my projects."
                 );
             },
 
             manual_entries: [
                 "quickhelp - help for non linux users",
                 "Usage: quickhelp",
+            ],
+        },
+
+        projects: {
+            execute: () => {
+                goto("/projects");
+            },
+
+            manual_entries: [
+                "projects - view my projects",
+                "Usage: projects",
             ],
         },
 
