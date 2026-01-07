@@ -9,6 +9,8 @@
     let mouseX = $state(0);
     let mouseY = $state(0);
     let mounted = $state(false);
+    let touchStartX = $state(0);
+    let touchEndX = $state(0);
 
     onMount(() => {
         mounted = true;
@@ -17,6 +19,28 @@
     function handleMouseMove(e) {
         mouseX = e.clientX;
         mouseY = e.clientY;
+    }
+
+    function handleTouchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }
+
+    function handleTouchEnd(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                changeImage(1); // Swipe left - next image
+            } else {
+                changeImage(-1); // Swipe right - previous image
+            }
+        }
     }
 
     const projects = [
@@ -49,7 +73,8 @@
             buttonScript: () => {
             },
             images: [
-                { src: './projects/bowtie-antenna/close-up.png', alt: 'Bowtie Antenna Close-Up' }
+                { src: './projects/bowtie-antenna/close-up.jpg', alt: 'Bowtie Antenna Close-Up' },
+                { src: './projects/bowtie-antenna/pcb.png', alt: 'Bowtie Antenna PCB' }
             ]
         },
         {
@@ -93,6 +118,22 @@
                 { src: './projects/antennas/10.jpg', alt: 'Antenna 10' },
                 { src: './projects/antennas/11.jpg', alt: 'Antenna 11' },
                 { src: './projects/antennas/12.jpg', alt: 'Antenna 12' }
+            ]
+        },
+        {
+            id: 5,
+            title: 'Mini Whip',
+            tags: ['Hardware', 'RF', 'Antenna'],
+            year: '2024',
+            description:
+                'A compact pcb designed for receiving hf signals based on the PA0RDT mini whip design.',
+            buttonText: '',
+            buttonAction: '',
+            buttonScript: () => {
+            },
+            images: [
+                { src: './projects/pa0rdt/pcb.png', alt: 'PA0RDT Mini Whip PCB' },
+                { src: './projects/pa0rdt/schematic.png', alt: 'PA0RDT Mini Whip Schematic' }
             ]
         }
     ];
@@ -146,7 +187,6 @@
     }
 
     function handleButtonClick(project) {
-        // Run the custom JS action if defined
         if (project.buttonScript && typeof project.buttonScript === 'function') {
             project.buttonScript();
         }
@@ -296,13 +336,12 @@
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
-                    <div class="gallery-scroller" role="list">
+                    <div class="gallery-scroller">
                         {#each project.images as image, index}
                             <button
                                 class="gallery-item"
                                 onclick={() => openLightbox(project.images, index)}
                                 type="button"
-                                role="listitem"
                                 aria-label="View {image.alt} in fullscreen"
                             >
                                 <img src={image.src} alt={image.alt} loading="lazy" />
@@ -342,7 +381,9 @@
     </div>
 </footer>
 
-<div class="lightbox" class:active={lightboxActive} onclick={handleLightboxClick} role="dialog" aria-modal="true" aria-label="Image lightbox viewer">
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<div class="lightbox" class:active={lightboxActive} onclick={handleLightboxClick} ontouchstart={handleTouchStart} ontouchend={handleTouchEnd} role="dialog" aria-modal="true" aria-label="Image lightbox viewer">
     <div class="lightbox-backdrop"></div>
     <button class="close-btn" onclick={closeLightbox} aria-label="Close lightbox">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -429,6 +470,28 @@
         animation: float 20s ease-in-out infinite;
     }
 
+    @media (max-width: 768px) {
+        .gradient-orb {
+            opacity: 0.3;
+            filter: blur(60px);
+        }
+
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+        }
+
+        .orb-2 {
+            width: 350px;
+            height: 350px;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+        }
+    }
+
     .orb-1 {
         width: 600px;
         height: 600px;
@@ -487,6 +550,12 @@
         transform: translate(-50%, -50%);
         z-index: 0;
         transition: opacity 0.3s;
+    }
+
+    @media (max-width: 768px) {
+        .cursor-glow {
+            display: none;
+        }
     }
 
     .container {
@@ -783,8 +852,8 @@
 
     .gallery-item {
         flex: 0 0 auto;
-        width: 320px;
-        height: 220px;
+        width: 280px;
+        height: 200px;
         scroll-snap-align: center;
         border-radius: 12px;
         overflow: hidden;
@@ -800,6 +869,13 @@
         .gallery-item {
             width: 420px;
             height: 280px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .gallery-item {
+            width: 85vw;
+            height: 220px;
         }
     }
 
@@ -1097,18 +1173,288 @@
             padding: 4rem 0 2rem;
         }
 
+        header h1 {
+            font-size: 2.5rem;
+            letter-spacing: -1px;
+        }
+
+        header p {
+            font-size: 1rem;
+            padding: 0 1rem;
+        }
+
+        .label {
+            font-size: 0.65rem;
+            padding: 6px 12px;
+        }
+
         .project-info {
             padding: 1.5rem;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .project-title h2 {
+            font-size: 1.5rem;
+        }
+
+        .project-meta {
+            gap: 0.5rem;
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            padding: 4px 10px;
         }
 
         .project-description {
             padding: 1rem 1.5rem 1.5rem;
+            font-size: 0.95rem;
         }
 
         .project-number {
             font-size: 3rem;
             top: 1rem;
             right: 1rem;
+        }
+
+        .project-list {
+            gap: 3rem;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 0.875rem 1.5rem;
+        }
+
+        .gallery-scroller {
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .scroll-hint {
+            width: 40px;
+            height: 40px;
+            opacity: 0.8;
+        }
+
+        .scroll-left {
+            left: 8px;
+        }
+
+        .scroll-right {
+            right: 8px;
+        }
+
+        .gallery-wrapper:hover .scroll-hint {
+            opacity: 1;
+        }
+
+        /* Always show scroll hints on mobile for better UX */
+        .gallery-wrapper .scroll-hint {
+            opacity: 0.6;
+        }
+
+        .header-decoration .line, .footer-decoration .line {
+            width: 40px;
+        }
+
+        footer {
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            padding: 0 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        header {
+            padding: 3rem 0 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+        }
+
+        .project-info {
+            padding: 1.25rem;
+        }
+
+        .project-description {
+            padding: 0.75rem 1.25rem 1.25rem;
+        }
+
+        .project-number {
+            font-size: 2.5rem;
+            opacity: 0.5;
+        }
+
+        .gallery-item {
+            border-radius: 8px;
+        }
+
+        .gallery-overlay {
+            opacity: 1;
+            background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+        }
+
+        .zoom-icon {
+            display: none;
+        }
+    }
+
+    /* Lightbox mobile styles */
+    @media (max-width: 768px) {
+        .lightbox-content {
+            max-width: 95vw;
+            max-height: 60vh;
+            border-radius: 8px;
+        }
+
+        .lightbox-info {
+            margin-top: 1rem;
+            padding: 0 1rem;
+            text-align: center;
+        }
+
+        .lightbox-caption {
+            font-size: 0.95rem;
+        }
+
+        .lightbox-controls {
+            margin-top: 1rem;
+            gap: 0.75rem;
+        }
+
+        .nav-btn {
+            width: 48px;
+            height: 48px;
+        }
+
+        .close-btn {
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+        }
+    }
+
+    /* Toast mobile styles */
+    @media (max-width: 640px) {
+        .toast {
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            padding: 0.875rem 1rem;
+        }
+    }
+
+    /* Touch-friendly improvements */
+    @media (hover: none) and (pointer: coarse) {
+        .gallery-item:hover {
+            transform: none;
+        }
+
+        .gallery-item:hover img {
+            transform: none;
+        }
+
+        .gallery-item:active {
+            transform: scale(0.98);
+        }
+
+        .gallery-overlay {
+            opacity: 1;
+            background: linear-gradient(180deg, transparent 60%, rgba(0, 0, 0, 0.6) 100%);
+        }
+
+        .zoom-icon {
+            opacity: 0.8;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        .project-card:hover {
+            transform: none;
+        }
+
+        .project-card:active {
+            transform: scale(0.995);
+        }
+
+        .tag:hover {
+            transform: none;
+        }
+
+        .btn:hover {
+            transform: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .nav-btn:hover {
+            transform: none;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+            background: var(--accent-color);
+        }
+
+        .scroll-hint {
+            opacity: 0.7;
+        }
+
+        .scroll-hint:hover {
+            transform: translateY(-50%);
+        }
+
+        .scroll-hint:active {
+            transform: translateY(-50%) scale(0.95);
+            background: var(--accent-color);
+        }
+    }
+
+    /* Landscape mobile */
+    @media (max-height: 500px) and (orientation: landscape) {
+        header {
+            padding: 2rem 0 1rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+        }
+
+        .header-decoration {
+            margin-top: 1rem;
+        }
+
+        .lightbox-content {
+            max-height: 70vh;
+        }
+
+        .lightbox-info {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 0;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .lightbox-controls {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            justify-content: space-between;
+            padding: 0 1rem;
+            margin-top: 0;
         }
     }
 </style>

@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     import { isMobile } from "$lib/mobile";
 
+    import ArgParser from "$lib/argpase"
+
     import pako from "pako";
 
     import {
@@ -5058,7 +5060,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         if (commandInputCallback) {
             commandInputCallback(command);
             commandInputCallback = null;
-            // Clear mobile input after callback
             if (mobile && mobileInput) {
                 mobileInput.value = "";
                 mobileInputContent = "";
@@ -5068,7 +5069,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         writeToOutput(`${currentDirectory} $ ${command}`);
 
         if (command.length === 0) {
-            // Clear mobile input even for empty commands
             if (mobile && mobileInput) {
                 mobileInput.value = "";
                 mobileInputContent = "";
@@ -5108,7 +5108,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 if (commands[key].case_insensitive) {
                     if (key.toLowerCase() === args[0].toLowerCase()) {
                         commands[key].execute(args);
-                        // Clear mobile input after command execution
                         if (mobile && mobileInput) {
                             mobileInput.value = "";
                             mobileInputContent = "";
@@ -5118,7 +5117,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 } else {
                     if (key === args[0]) {
                         commands[key].execute(args);
-                        // Clear mobile input after command execution
                         if (mobile && mobileInput) {
                             mobileInput.value = "";
                             mobileInputContent = "";
@@ -5147,7 +5145,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     if (commands[key].case_insensitive) {
                         if (key.toLowerCase() === pipeArgs[0].toLowerCase()) {
                             commands[key].execute(pipeArgs);
-                            // Clear mobile input after piped command execution
                             if (mobile && mobileInput) {
                                 mobileInput.value = "";
                                 mobileInputContent = "";
@@ -5157,7 +5154,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     } else {
                         if (key === pipeArgs[0]) {
                             commands[key].execute(pipeArgs);
-                            // Clear mobile input after piped command execution
                             if (mobile && mobileInput) {
                                 mobileInput.value = "";
                                 mobileInputContent = "";
@@ -5173,7 +5169,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             pipeOutput = [];
         }
 
-        // Clear mobile input at the end of processing
         if (mobile && mobileInput) {
             mobileInput.value = "";
             mobileInputContent = "";
