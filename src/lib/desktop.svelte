@@ -4150,16 +4150,71 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     { a: "u", weight: 0.027 },
                 ];
 
+                const onsetClusters = [
+                    { a: "bl", weight: 0.08 },
+                    { a: "br", weight: 0.08 },
+                    { a: "cl", weight: 0.07 },
+                    { a: "cr", weight: 0.07 },
+                    { a: "dr", weight: 0.08 },
+                    { a: "fl", weight: 0.07 },
+                    { a: "fr", weight: 0.07 },
+                    { a: "gl", weight: 0.06 },
+                    { a: "gr", weight: 0.07 },
+                    { a: "pl", weight: 0.07 },
+                    { a: "pr", weight: 0.08 },
+                    { a: "sl", weight: 0.06 },
+                    { a: "sm", weight: 0.05 },
+                    { a: "sn", weight: 0.05 },
+                    { a: "sp", weight: 0.06 },
+                    { a: "st", weight: 0.08 },
+                    { a: "sw", weight: 0.05 },
+                    { a: "tr", weight: 0.09 },
+                    { a: "tw", weight: 0.04 },
+                    { a: "th", weight: 0.08 },
+                    { a: "sh", weight: 0.07 },
+                    { a: "ch", weight: 0.06 },
+                    { a: "wh", weight: 0.05 },
+                    { a: "scr", weight: 0.03 },
+                    { a: "spl", weight: 0.02 },
+                    { a: "spr", weight: 0.02 },
+                    { a: "str", weight: 0.04 },
+                ];
+
+                const codaClusters = [
+                    { a: "nt", weight: 0.10 },
+                    { a: "nd", weight: 0.10 },
+                    { a: "ng", weight: 0.08 },
+                    { a: "nk", weight: 0.06 },
+                    { a: "mp", weight: 0.06 },
+                    { a: "lt", weight: 0.07 },
+                    { a: "ld", weight: 0.07 },
+                    { a: "lk", weight: 0.05 },
+                    { a: "lm", weight: 0.04 },
+                    { a: "lp", weight: 0.04 },
+                    { a: "rt", weight: 0.07 },
+                    { a: "rd", weight: 0.07 },
+                    { a: "rk", weight: 0.06 },
+                    { a: "rm", weight: 0.05 },
+                    { a: "rn", weight: 0.05 },
+                    { a: "st", weight: 0.08 },
+                    { a: "sk", weight: 0.05 },
+                    { a: "sp", weight: 0.05 },
+                    { a: "ft", weight: 0.05 },
+                    { a: "pt", weight: 0.04 },
+                    { a: "ct", weight: 0.04 },
+                    { a: "sh", weight: 0.06 },
+                    { a: "th", weight: 0.06 },
+                    { a: "ch", weight: 0.05 },
+                ];
+
                 const weightedSyllables = [
-                    { a: "CV", weight: 0.4 }, // very common and simple
-                    { a: "CVC", weight: 0.35 }, // simple but a bit more complex
-                    { a: "VC", weight: 0.15 }, // still simple
-                    { a: "V", weight: 0.05 }, // single vowels (shortest)
-                    { a: "CVCV", weight: 0.02 }, // gets a little more complex
-                    { a: "CCV", weight: 0.02 }, // slightly more complex, but still simple
-                    { a: "CCVC", weight: 0.01 }, // longer and more complex
-                    { a: "CCVCC", weight: 0.01 }, // even more complex
-                    { a: "CCCVCC", weight: 0.005 }, // very rare, complex
+                    { a: "CV", weight: 0.4 },
+                    { a: "CVC", weight: 0.35 },
+                    { a: "VC", weight: 0.12 },
+                    { a: "V", weight: 0.05 },
+                    { a: "CCV", weight: 0.04 },   // uses onset cluster
+                    { a: "CVCC", weight: 0.03 },  // uses coda cluster
+                    { a: "CCVC", weight: 0.01 },  // uses onset cluster
                 ];
 
                 const pickRandomWeighted = (
@@ -4193,11 +4248,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                     );
                     for (let j = 0; j < numSyllables; j++) {
                         let pattern = pickRandomWeighted(weightedSyllables);
-                        for (let k = 0; k < pattern.length; k++) {
+                        let k = 0;
+                        while (k < pattern.length) {
                             if (pattern[k] === "C") {
-                                word += pickRandomWeighted(weightedConsonants);
-                            } else {
+                                if (pattern.substring(k, k + 2) === "CC") {
+                                    if (k === 0 || (k > 0 && pattern[k - 1] === "V")) {
+                                        word += pickRandomWeighted(onsetClusters);
+                                        k += 2;
+                                        if (pattern[k] === "C") {
+                                            k++;
+                                        }
+                                    } else {
+                                        word += pickRandomWeighted(codaClusters);
+                                        k += 2;
+                                    }
+                                } else {
+                                    word += pickRandomWeighted(weightedConsonants);
+                                    k++;
+                                }
+                            } else if (pattern[k] === "V") {
                                 word += pickRandomWeighted(weightedVowels);
+                                k++;
+                            } else {
+                                k++;
                             }
                         }
                     }
