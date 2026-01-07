@@ -4399,8 +4399,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
                 if (!result) return;
 
-                console.log(result);
-
                 const noiseType = result.type || 'white';
                 const duration = parseInt(result.duration) || 5000;
                 const volume = parseFloat(result.volume) || 0.5;
@@ -4731,6 +4729,140 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 "",
                 "Note: File output options (-o, -O) are disabled in this environment.",
                 "Responses are printed directly to the terminal output."
+            ],
+        },
+
+        password: {
+            execute: async (command: string[]) => {
+                const parser = new ArgParser({
+                    name: 'password',
+                    description: 'Generate a secure random password',
+                    version: '1.0.0'
+                });
+
+                parser.addOption({
+                    flags: ['-l', '--length'],
+                    description: 'Length of the password (default: 16)',
+                    type: 'number',
+                    defaultValue: 16,
+                });
+
+                parser.addOption({
+                    flags: ['-c', '--count'],
+                    description: 'Number of passwords to generate (default: 1)',
+                    type: 'number',
+                    defaultValue: 1,
+                });
+
+                parser.addOption({
+                    flags: ['-n', '--no-numbers'],
+                    description: 'Do not include numbers in the password',
+                    action: 'store_true',
+                    defaultValue: false,
+                });
+
+                parser.addOption({
+                    flags: ['-s', '--no-symbols'],
+                    description: 'Do not include symbols in the password',
+                    action: 'store_true',
+                    defaultValue: false,
+                });
+
+                parser.addOption({
+                    flags: ['-u', '--no-uppercase'],
+                    description: 'Do not include uppercase letters',
+                    action: 'store_true',
+                    defaultValue: false,
+                });
+
+                const result: any = await parser.run(command.slice(1), {
+                    onHelp: (helpText) => {
+                        writeToOutput(helpText);
+                    },
+                    onError: (error: string, usage: string) => {
+                        writeToOutput(`password: ${error}`);
+                        if (usage) writeToOutput(usage);
+                    },
+                    onVersion: (version) => {
+                        writeToOutput(`password ${version}`);
+                    }
+                });
+
+                if (!result) return;
+
+                const length = result.length;
+                const count = result.count;
+                const noNumbers = result.noNumbers;
+                const noSymbols = result.noSymbols;
+                const noUppercase = result.noUppercase;
+
+                if (length <= 0) {
+                    writeToOutput(`password: invalid length -- length must be a positive integer`);
+                    return;
+                }
+                if (count <= 0) {
+                    writeToOutput(`password: invalid count -- count must be a positive integer`);
+                    return;
+                }
+
+                const lowercaseChars = 'abcdefghijklmnopqrstuvwxyz';
+                const uppercaseChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const numberChars = '0123456789';
+                const symbolChars = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
+
+                let charPool = lowercaseChars;
+
+                if (!noUppercase) charPool += uppercaseChars;
+                if (!noNumbers) charPool += numberChars;
+                if (!noSymbols) charPool += symbolChars;
+
+                const getSecureRandomValues = (array: Uint32Array) => {
+                    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+                        return window.crypto.getRandomValues(array);
+                    } else {
+                        for (let i = 0; i < array.length; i++) {
+                            array[i] = Math.floor(Math.random() * 4294967296);
+                        }
+                        return array;
+                    }
+                };
+
+                const generatePassword = (len: number) => {
+                    let pass = '';
+                    const randomValues = new Uint32Array(len);
+                    getSecureRandomValues(randomValues);
+
+                    for (let i = 0; i < len; i++) {
+                        pass += charPool[randomValues[i] % charPool.length];
+                    }
+                    return pass;
+                };
+
+                for (let i = 0; i < count; i++) {
+                    writeToOutput(generatePassword(length));
+                }
+            },
+
+            manual_entries: [
+                "password - generate a secure random password",
+                "Usage: password [options]",
+                "",
+                "Options:",
+                "  -l, --length NUM       Length of the password (default: 16)",
+                "  -c, --count NUM        Number of passwords to generate (default: 1)",
+                "  -n, --no-numbers       Exclude numbers from the password",
+                "  -s, --no-symbols       Exclude symbols from the password",
+                "  -u, --no-uppercase     Exclude uppercase letters",
+                "  -h, --help             Show help message",
+                "  -V, --version          Show version number",
+                "",
+                "Examples:",
+                "  password                       Generate a 16 character password",
+                "  password -l 32                 Generate a 32 character password",
+                "  password -n -s                 Generate a password with only letters",
+                "  password -c 5                  Generate 5 different passwords",
+                "",
+                "Note: This utility uses cryptographically secure random number generation where available."
             ],
         },
 
@@ -6032,26 +6164,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         -moz-user-select: none;
         -webkit-user-select: none;
         -ms-user-select: none;
-    }
-
-    a {
-        color: #7ee6b8;
-        text-decoration: none;
-        border-bottom: 1px dotted rgba(126, 230, 184, 0.2);
-        transition: color 120ms ease, border-color 120ms ease, transform 120ms ease;
-        word-break: break-all;
-    }
-
-    a:hover,
-    a:focus {
-        color: #b8ffda;
-        border-bottom-color: rgba(184, 255, 218, 0.6);
-        transform: translateY(-1px);
-        outline: none;
-    }
-
-    a:visited {
-        color: #66d79f;
     }
 
     @-webkit-keyframes blink {
