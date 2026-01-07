@@ -89,9 +89,9 @@
             buttonScript: () => {
             },
             images: [
-                { src: './projects/security-camera/1.jpg', alt: 'Security Camera' },
-                { src: './projects/security-camera/2.jpg', alt: 'Security Camera' },
-                { src: './projects/security-camera/3.jpg', alt: 'Security Camera' }
+                { src: './projects/camera/1.jpg', alt: 'Security Camera' },
+                { src: './projects/camera/2.jpg', alt: 'Security Camera' },
+                { src: './projects/camera/3.jpg', alt: 'Security Camera' }
             ]
         },
         {
