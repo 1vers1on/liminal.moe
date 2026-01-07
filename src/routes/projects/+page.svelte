@@ -89,16 +89,16 @@
             buttonScript: () => {
             },
             images: [
-                { src: './projects/security-camera/1.png', alt: 'Security Camera' },
-                { src: './projects/security-camera/2.png', alt: 'Security Camera' },
-                { src: './projects/security-camera/3.png', alt: 'Security Camera' }
+                { src: './projects/security-camera/1.jpg', alt: 'Security Camera' },
+                { src: './projects/security-camera/2.jpg', alt: 'Security Camera' },
+                { src: './projects/security-camera/3.jpg', alt: 'Security Camera' }
             ]
         },
         {
             id: 4,
             title: 'Antennas',
             tags: ['Photography'],
-            year: '2023',
+            year: '2025-2026',
             description:
                 'A collection of photographs showing my love for infrastructure and antennas.',
             buttonText: '',
@@ -124,7 +124,7 @@
             id: 5,
             title: 'Mini Whip',
             tags: ['Hardware', 'RF', 'Antenna'],
-            year: '2024',
+            year: '2025',
             description:
                 'A compact pcb designed for receiving hf signals based on the PA0RDT mini whip design.',
             buttonText: '',
