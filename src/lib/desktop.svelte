@@ -27,6 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     import { isMobile } from "$lib/mobile";
 
     import ArgParser from "$lib/argpase"
+    import { VirtualFileSystem } from "$lib/vfs";
+    import type { FileEntry } from "$lib/vfs";
 
     import pako from "pako";
 
@@ -58,7 +60,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     } from "$lib/stores";
     import { run } from "svelte/legacy";
 
+    const vfs = new VirtualFileSystem();
+
     let audioContext: AudioContext;
+    let activeNoiseSource: AudioBufferSourceNode | null = null;
+    let activeNoiseGain: GainNode | null = null;
 
     let mobileInputContent = "";
     let doNotTrack = true;
@@ -278,7 +284,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
 
     let pipeOutput: string[] = [];
 
-    // let terminalOutput: any[] = [];
     let terminalOutput: string[] = $state([]);
     let inputValue = $state("");
     let cursorPosition = $state(0);
@@ -391,7 +396,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
     }
 
     function createWhiteNoise(duration: number): AudioBufferSourceNode {
-        // Create a buffer with random noise
         const bufferSize = audioContext.sampleRate * duration * 0.001;
         const buffer = audioContext.createBuffer(
             1,
@@ -400,19 +404,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
         );
         const data = buffer.getChannelData(0);
 
-        // Fill the buffer with random values between -1 and 1
         for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1; // Random values between -1 and 1
+            data[i] = Math.random() * 2 - 1;
         }
 
-        // Create a BufferSourceNode to play the noise
         const noise = audioContext.createBufferSource();
         noise.buffer = buffer;
 
-        // Connect to the audio context destination (speakers)
         noise.connect(audioContext.destination);
 
-        // do the gain thing
         const gain = audioContext.createGain();
         noise.connect(gain);
         gain.connect(audioContext.destination);
@@ -4273,6 +4273,155 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             ],
         },
 
+        noise: {
+            execute: async (command: string[]) => {
+                if (!audioContext) {
+                    writeToOutput("Audio not started. Use startAudio");
+                    return;
+                }
+
+                const parser = new ArgParser({
+                    name: 'noise',
+                    description: 'Noise generator',
+                    version: '1.0.0'
+                });
+
+                parser.addOption({
+                    flags: ['-t', '--type'],
+                    description: 'Type of noise to generate',
+                    defaultValue: 'white',
+                    choices: ['white', 'pink', 'brown'],
+                });
+
+                parser.addOption({
+                    flags: ['-d', '--duration'],
+                    description: 'Duration in milliseconds (ignored if --loop)',
+                    defaultValue: '5000',
+                });
+
+                parser.addOption({
+                    flags: ['-v', '--volume'],
+                    description: 'Volume (0.0 to 1.0)',
+                    defaultValue: '0.5',
+                });
+
+                parser.addOption({
+                    flags: ['-l', '--loop'],
+                    description: 'Loop forever (stop with stopNoise)',
+                    defaultValue: 'false',
+                });
+
+                const result: any = await parser.run(command.slice(1), {
+                    onHelp: (helpText) => {
+                        writeToOutput(helpText);
+                    },
+                    onError: (error: string, usage: string) => {
+                        writeToOutput(error);
+                        writeToOutput(usage);
+                    },
+                    onVersion: (version) => {
+                        writeToOutput(version);
+                    }
+                });
+
+                if (!result) return;
+
+                console.log(result);
+
+                const noiseType = result.type || 'white';
+                const duration = parseInt(result.duration) || 5000;
+                const volume = parseFloat(result.volume) || 0.5;
+                const loop = result.loop === true || result.loop === 'true';
+
+                if (activeNoiseSource) {
+                    activeNoiseSource.stop();
+                    activeNoiseSource = null;
+                    activeNoiseGain = null;
+                }
+
+                const actualDuration = loop ? 10000 : duration;
+                const bufferSize = audioContext.sampleRate * actualDuration * 0.001;
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+
+                if (noiseType === 'white') {
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                } else if (noiseType === 'pink') {
+                    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        b0 = 0.99886 * b0 + white * 0.0555179;
+                        b1 = 0.99332 * b1 + white * 0.0750759;
+                        b2 = 0.96900 * b2 + white * 0.1538520;
+                        b3 = 0.86650 * b3 + white * 0.3104856;
+                        b4 = 0.55000 * b4 + white * 0.5329522;
+                        b5 = -0.7616 * b5 - white * 0.0168980;
+                        data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+                        b6 = white * 0.115926;
+                    }
+                } else if (noiseType === 'brown') {
+                    let lastOut = 0;
+                    for (let i = 0; i < bufferSize; i++) {
+                        const white = Math.random() * 2 - 1;
+                        data[i] = (lastOut + (0.02 * white)) / 1.02;
+                        lastOut = data[i];
+                        data[i] *= 3.5;
+                    }
+                }
+
+                const noise = audioContext.createBufferSource();
+                noise.buffer = buffer;
+                noise.loop = loop;
+
+                const gain = audioContext.createGain();
+                gain.gain.setValueAtTime(volume, audioContext.currentTime);
+
+                if (!loop) {
+                    gain.gain.setValueAtTime(volume, audioContext.currentTime + duration / 1000 - 0.05);
+                    gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + duration / 1000);
+                }
+
+                noise.connect(gain);
+                gain.connect(audioContext.destination);
+                noise.start();
+
+                if (loop) {
+                    activeNoiseSource = noise;
+                    activeNoiseGain = gain;
+                    writeToOutput(`Playing ${noiseType} noise on loop at volume ${volume}. Use stopNoise to stop.`);
+                } else {
+                    writeToOutput(`Playing ${noiseType} noise for ${duration}ms at volume ${volume}`);
+                }
+            },
+
+            manual_entries: [
+                "noise - play noise",
+                "Usage: noise [-t type] [-d duration] [-v volume] [-l]",
+                "Types: white, pink, brown",
+                "-l, --loop: Loop forever until stopNoise is called",
+            ],
+        },
+
+        stopNoise: {
+            execute: () => {
+                if (activeNoiseSource) {
+                    activeNoiseSource.stop();
+                    activeNoiseSource = null;
+                    activeNoiseGain = null;
+                    writeToOutput("Noise stopped");
+                } else {
+                    writeToOutput("No noise is currently playing");
+                }
+            },
+
+            manual_entries: [
+                "stopNoise - stop looping noise",
+                "Usage: stopNoise",
+            ],
+        },
+
         noteSequenceTest: {
             execute: (command: string[]) => {
                 if (!audioContext) {
@@ -5230,6 +5379,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
                 setLineInOutput(message, 1);
                 motd[1] = message;
             });
+
+            await vfs.init();
 
             socket = io({ path: "/wss/" });
 

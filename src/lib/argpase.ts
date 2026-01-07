@@ -238,7 +238,6 @@ export class ArgParser {
 
                 i += result.consumed;
             }
-            // Handle subcommands
             else if (this.commands.has(arg)) {
                 const commandName = this.commandAliases.get(arg) || arg;
                 const subParser = this.commands.get(arg)!;
@@ -284,6 +283,27 @@ export class ArgParser {
                 success: false,
                 error: error instanceof Error ? error.message : String(error)
             };
+        }
+    }
+
+    public parseArgsWithCallback(
+        argv: string[],
+        output: (message: string) => void
+    ): ParsedArgs | null {
+        try {
+            return this.parse(argv);
+        } catch (error) {
+            if (error instanceof HelpRequested) {
+                output(error.helpText);
+                return null;
+            }
+            if (error instanceof VersionRequested) {
+                output(error.version);
+                return null;
+            }
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            output(`error: ${errorMsg}\n\n${this.formatUsage()}`);
+            return null;
         }
     }
 
