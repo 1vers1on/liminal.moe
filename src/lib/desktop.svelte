@@ -4422,6 +4422,245 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>. -->
             ],
         },
 
+        curl: {
+            execute: async (command: string[]) => {
+                const parser = new ArgParser({
+                    name: 'curl',
+                    description: 'Transfer data from or to a server',
+                    version: '1.0.0'
+                });
+
+                parser.addOption({
+                    flags: ['-X', '--request'],
+                    description: 'Specify request method (GET, POST, PUT, DELETE, etc.)',
+                });
+
+                parser.addOption({
+                    flags: ['-H', '--header'],
+                    description: 'Pass custom header(s) to server. Can be used multiple times.',
+                    defaultValue: [],
+                });
+
+                parser.addOption({
+                    flags: ['-d', '--data'],
+                    description: 'HTTP POST data (implies POST method unless -X is specified)',
+                });
+
+                parser.addOption({
+                    flags: ['-v', '--verbose'],
+                    description: 'Make the operation more talkative',
+                    defaultValue: 'false',
+                });
+
+                parser.addOption({
+                    flags: ['-i', '--include'],
+                    description: 'Include protocol response headers in the output',
+                    defaultValue: 'false',
+                });
+
+                parser.addOption({
+                    flags: ['-L', '--location'],
+                    description: 'Follow redirects',
+                    defaultValue: 'false',
+                });
+
+                parser.addOption({
+                    flags: ['-m', '--max-time'],
+                    description: 'Maximum time in seconds for the request',
+                    defaultValue: '30',
+                });
+
+                parser.addOption({
+                    flags: ['-s', '--silent'],
+                    description: 'Silent mode (hide progress/errors)',
+                    defaultValue: 'false',
+                });
+
+                parser.addArgument({
+                    name: 'url',
+                    description: 'The URL to fetch',
+                    required: true,
+                });
+
+                const result: any = await parser.run(command.slice(1), {
+                    onHelp: (helpText) => {
+                        writeToOutput(helpText);
+                    },
+                    onError: (error: string, usage: string) => {
+                        writeToOutput(`curl: ${error}`);
+                        if (usage) writeToOutput(usage);
+                    },
+                    onVersion: (version) => {
+                        writeToOutput(`curl ${version}`);
+                    }
+                });
+
+                if (!result) return;
+
+                let url = result.url;
+                
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'http://' + url;
+                }
+
+                let parsedUrl: URL;
+                try {
+                    parsedUrl = new URL(url);
+                } catch {
+                    writeToOutput(`curl: (3) URL rejected: Malformed input to a URL function`);
+                    return;
+                }
+
+                const explicitMethod = result.request || result.X;
+                const data = result.data || result.d;
+                let method: string;
+                
+                if (explicitMethod) {
+                    method = explicitMethod.toUpperCase();
+                } else if (data) {
+                    method = 'POST';
+                } else {
+                    method = 'GET';
+                }
+
+                let rawHeaders = result.header || result.H || [];
+                if (!Array.isArray(rawHeaders)) {
+                    rawHeaders = [rawHeaders];
+                }
+
+                const headersObj: { [key: string]: string } = {};
+                for (const h of rawHeaders) {
+                    const colonIndex = h.indexOf(':');
+                    if (colonIndex > 0) {
+                        const key = h.substring(0, colonIndex).trim();
+                        const val = h.substring(colonIndex + 1).trim();
+                        if (key) {
+                            headersObj[key] = val;
+                        }
+                    } else {
+                        writeToOutput(`curl: (6) Could not parse header: ${h}`);
+                        return;
+                    }
+                }
+
+                if (data && method === 'POST' && !headersObj['Content-Type']) {
+                    headersObj['Content-Type'] = 'application/x-www-form-urlencoded';
+                }
+
+                const verbose = result.verbose === 'true' || result.verbose === true;
+                const includeHeaders = result.include === 'true' || result.include === true;
+                const followRedirects = result.location === 'true' || result.location === true;
+                const silent = result.silent === 'true' || result.silent === true;
+                const maxTime = parseInt(result['max-time'] || result.m || '30', 10) * 1000;
+
+                const fetchOptions: RequestInit = {
+                    method: method,
+                    headers: headersObj,
+                    redirect: followRedirects ? 'follow' : 'manual',
+                };
+
+                if (!['GET', 'HEAD'].includes(method) && data) {
+                    fetchOptions.body = data;
+                }
+
+                if (verbose && !silent) {
+                    writeToOutput(`* Trying ${parsedUrl.hostname}:${parsedUrl.port || (parsedUrl.protocol === 'https:' ? '443' : '80')}...`);
+                    writeToOutput(`* Connected to ${parsedUrl.hostname}`);
+                    writeToOutput(`> ${method} ${parsedUrl.pathname}${parsedUrl.search} HTTP/1.1`);
+                    writeToOutput(`> Host: ${parsedUrl.host}`);
+                    Object.entries(headersObj).forEach(([k, v]) => writeToOutput(`> ${k}: ${v}`));
+                    if (data) {
+                        writeToOutput(`>`);
+                    }
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), maxTime);
+                fetchOptions.signal = controller.signal;
+
+                try {
+                    const start = Date.now();
+                    const response = await fetch(url, fetchOptions);
+                    clearTimeout(timeoutId);
+                    const duration = Date.now() - start;
+
+                    if (verbose && !silent) {
+                        writeToOutput(`* Request completely sent off`);
+                    }
+
+                    const statusLine = `< HTTP/1.1 ${response.status} ${response.statusText}`;
+                    if (verbose || includeHeaders) {
+                        writeToOutput(statusLine);
+                    }
+
+                    if (verbose || includeHeaders) {
+                        response.headers.forEach((value, key) => {
+                            writeToOutput(`< ${key}: ${value}`);
+                        });
+                        writeToOutput(`<`);
+                    }
+
+                    if (verbose && !silent) {
+                        writeToOutput(`* Response received in ${duration}ms`);
+                    }
+
+                    if (!followRedirects && [301, 302, 303, 307, 308].includes(response.status)) {
+                        const location = response.headers.get('location');
+                        if (location && !silent) {
+                            writeToOutput(`* Redirect to: ${location}`);
+                            writeToOutput(`* Use -L to follow redirects`);
+                        }
+                    }
+
+                    const text = await response.text();
+                    if (text) {
+                        if (includeHeaders || verbose) writeToOutput('');
+                        writeToOutput(text);
+                    }
+
+                    if (verbose && !silent) {
+                        writeToOutput(`* Connection #0 to host ${parsedUrl.hostname} left intact`);
+                    }
+
+                } catch (err: any) {
+                    clearTimeout(timeoutId);
+                    
+                    if (err.name === 'AbortError') {
+                        writeToOutput(`curl: (28) Operation timed out after ${maxTime / 1000} seconds`);
+                    } else if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+                        writeToOutput(`curl: (7) Failed to connect to ${parsedUrl.hostname}`);
+                    } else if (err.message?.includes('CORS') || err.message?.includes('blocked')) {
+                        writeToOutput(`curl: (7) Request blocked by CORS policy`);
+                    } else {
+                        writeToOutput(`curl: (6) Could not resolve host: ${err.message || 'Unknown error'}`);
+                    }
+                }
+            },
+
+            manual_entries: [
+                "curl - transfer a URL",
+                "Usage: curl [options] url",
+                "",
+                "Options:",
+                "  -X, --request METHOD   Specify request method (GET, POST, PUT, DELETE)",
+                "  -H, --header LINE      Pass custom header LINE to server",
+                "  -d, --data DATA        HTTP POST data (implies POST method)",
+                "  -v, --verbose          Make the operation more talkative",
+                "  -i, --include          Include response headers in output",
+                "  -L, --location         Follow redirects",
+                "  -m, --max-time SECS    Maximum time for the request (default: 30)",
+                "  -s, --silent           Silent mode",
+                "",
+                "Examples:",
+                "  curl https://api.example.com/data",
+                "  curl -X POST -d 'key=value' https://api.example.com/submit",
+                "  curl -H 'Authorization: Bearer token' https://api.example.com/auth",
+                "",
+                "Note: File output options (-o, -O) are disabled in this environment.",
+                "Responses are printed directly to the terminal output."
+            ],
+        },
+
         noteSequenceTest: {
             execute: (command: string[]) => {
                 if (!audioContext) {
